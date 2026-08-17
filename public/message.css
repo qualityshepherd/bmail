@@ -178,11 +178,8 @@ header .settings-menu { margin-left: 0; justify-self: end; }
 
 /* ─── Message content ─────────────────────────────────────── */
 .message {
-  max-width: 900px;
-  margin: 0 auto;
   padding: 1.5rem;
-  background: rgba(26, 26, 26, 0.84);
-  min-height: calc(100vh - 60px);
+  min-height: var(--content-min-height);
 }
 
 .message > h1 {

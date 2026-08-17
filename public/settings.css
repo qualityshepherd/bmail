@@ -1,9 +1,6 @@
 .settings-wrap {
-  max-width: 900px;
-  margin: 0 auto;
   padding: 1.5rem;
-  background: rgba(26, 26, 26, 0.84);
-  min-height: calc(100vh - 60px);
+  min-height: var(--content-min-height);
 }
 
 /* ─── Tab nav (same vibe as folder-links) ────────────────── */
@@ -33,6 +30,13 @@
 }
 
 /* ─── Tab content ────────────────────────────────────────── */
+.settings-section h3 {
+  font-size: 1rem;
+  font-weight: 600;
+  margin-top: 1.5rem;
+  margin-bottom: 0.5rem;
+}
+
 .settings-section .settings-hint {
   color: var(--text-dim);
   font-size: 0.9rem;
@@ -121,21 +125,7 @@
   border-color: var(--accent);
 }
 
-.settings-section button {
-  margin-top: 1rem;
-  background: transparent;
-  border: 1px solid var(--accent);
-  color: var(--accent-bright);
-  font-family: inherit;
-  font-size: 1rem;
-  font-weight: 600;
-  padding: 0.6rem 1.5rem;
-  border-radius: 6px;
-  cursor: pointer;
-}
-
-.settings-section button:hover { border-color: var(--accent-bright); color: var(--text); }
-
+.settings-section button,
 .settings-section .btn-outline {
   display: inline-block;
   margin-top: 1rem;
@@ -147,9 +137,15 @@
   font-weight: 600;
   padding: 0.6rem 1.5rem;
   border-radius: 6px;
+  cursor: pointer;
   text-decoration: none;
 }
-.settings-section .btn-outline:hover { border-color: var(--accent-bright); color: var(--text); }
+
+.settings-section button:hover,
+.settings-section .btn-outline:hover {
+  border-color: var(--accent-bright);
+  color: var(--text);
+}
 
 .clear-contacts { margin-top: 2rem; }
 
