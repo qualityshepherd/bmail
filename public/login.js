@@ -25,9 +25,7 @@ document.getElementById('login-form').addEventListener('submit', async (e) => {
     const challengeRes = await fetch('/api/challenge')
     const { challenge, configured } = await challengeRes.json()
     if (!configured) {
-      status.textContent = 'No key configured yet - visit setup first.'
-      btn.disabled = false
-      btn.textContent = 'Log in'
+      window.location.href = '/setup'
       return
     }
 
