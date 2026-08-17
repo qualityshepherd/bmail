@@ -300,16 +300,12 @@
   .search-form { padding: 0.75rem 1rem 0; }
   .folder-links, .tag-links { padding: 0.6rem 1rem 0; gap: 0.4rem 0.85rem; }
 
-  /* Collapse "+ Compose" to just "+" to keep the nav on one line */
-  .compose-btn {
-    font-size: 0;
-    padding: 0.3rem 0.6rem;
+  .folder-links {
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    scrollbar-width: none;
   }
-  .compose-btn::before {
-    content: '+';
-    font-size: 1rem;
-    font-weight: 700;
-  }
+  .folder-links::-webkit-scrollbar { display: none; }
 
   .email-row {
     padding: 0.65rem 3.25rem 0.65rem 1rem;

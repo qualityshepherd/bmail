@@ -132,7 +132,7 @@ export async function getValidSession (req, env) {
 
 const SECURITY_HEADERS = {
   'X-Content-Type-Options': 'nosniff',
-  'Content-Security-Policy': "default-src 'self'; img-src 'self' https: blob:; style-src 'self' 'unsafe-inline'; frame-ancestors 'none'"
+  'Content-Security-Policy': "default-src 'self'; script-src 'self' https://static.cloudflareinsights.com; connect-src 'self' https://cloudflareinsights.com; img-src 'self' https: blob:; style-src 'self' 'unsafe-inline'; frame-ancestors 'none'"
 }
 
 // Wraps a route handler so it 401s without a valid session, and applies

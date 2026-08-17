@@ -80,6 +80,7 @@ function renderMessagePage (email, attachments, { sent, backParam, prevId, nextI
 <meta charset="utf-8">
 <title>${subject} - Bmail</title>
 <link rel="stylesheet" href="/base.css">
+<link rel="icon" type="image/svg+xml" href="/logo.svg">
 <link rel="stylesheet" href="/message.css">
 </head>
 <body${bodyAttr} data-prev-href="${prevHref || ''}" data-next-href="${nextHref || ''}">

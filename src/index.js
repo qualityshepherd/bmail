@@ -42,7 +42,7 @@ const TWENTY_FOUR_HOURS_MS = 24 * 60 * 60 * 1000
 
 const PLAIN_SECURITY_HEADERS = {
   'X-Content-Type-Options': 'nosniff',
-  'Content-Security-Policy': "default-src 'self'; img-src 'self' https: blob:; style-src 'self' 'unsafe-inline'; frame-ancestors 'none'"
+  'Content-Security-Policy': "default-src 'self'; script-src 'self' https://static.cloudflareinsights.com; connect-src 'self' https://cloudflareinsights.com; img-src 'self' https: blob:; style-src 'self' 'unsafe-inline'; frame-ancestors 'none'"
 }
 
 const SENT_PATTERN = new URLPattern({ pathname: '/sent/:id' })

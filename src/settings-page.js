@@ -130,6 +130,7 @@ function renderSettingsPage (tab, identitiesRaw, bgImage, contactCount = 0, spam
 <meta charset="utf-8">
 <title>Settings – Bmail</title>
 <link rel="stylesheet" href="/base.css">
+<link rel="icon" type="image/svg+xml" href="/logo.svg">
 <link rel="stylesheet" href="/settings.css">
 <script src="/settings.js" defer></script>
 </head>
