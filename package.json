@@ -10,7 +10,7 @@
   "scripts": {
     "dev": "wrangler dev",
     "deploy": "wrangler deploy",
-    "test": "node --test test/*.test.js",
+    "test": "node --test test/*.test.js && npm run pretty",
     "test:e2e": "node --test test/e2e.*.test.js",
     "db:migrate:local": "wrangler d1 migrations apply bmail --local",
     "db:migrate:remote": "wrangler d1 migrations apply bmail --remote",
