@@ -2,7 +2,7 @@ import { EmailMessage } from 'cloudflare:email'
 import { parseRawEmail } from './mime.js'
 import { anyPatternMatches } from './match.js'
 import { shouldNotify, buildSmsPayload } from './notifications.js'
-import { getBlocklistPatterns, getAllowlistPatterns, insertEmail, insertAttachment, getEmailByMessageId, isDuplicateKeyError } from './db.js'
+import { getBlocklistPatterns, getAllowlistPatterns, insertEmail, insertAttachment, getEmailByMessageId, deleteEmailsByIds, isDuplicateKeyError } from './db.js'
 
 // Runs the full inbound pipeline for one message. Returns { dropped: true }
 // if the sender was blocklisted, { duplicate: true } if this message was
@@ -66,18 +66,30 @@ export async function ingestEmail ({ message, env, deepLinkBaseUrl }) {
     throw err
   }
 
-  for (const attachment of parsed.attachments) {
-    const r2Key = `attachments/${emailId}/${crypto.randomUUID()}-${attachment.filename}`
-    await env.ATTACHMENTS.put(r2Key, attachment.content, {
-      httpMetadata: { contentType: attachment.contentType }
-    })
-    await insertAttachment(env.DB, {
-      emailId,
-      filename: attachment.filename,
-      contentType: attachment.contentType,
-      r2Key,
-      size: attachment.content.byteLength
-    })
+  const uploadedR2Keys = []
+  try {
+    for (const attachment of parsed.attachments) {
+      const r2Key = `attachments/${emailId}/${crypto.randomUUID()}-${attachment.filename}`
+      await env.ATTACHMENTS.put(r2Key, attachment.content, {
+        httpMetadata: { contentType: attachment.contentType }
+      })
+      uploadedR2Keys.push(r2Key)
+      await insertAttachment(env.DB, {
+        emailId,
+        filename: attachment.filename,
+        contentType: attachment.contentType,
+        r2Key,
+        size: attachment.content.byteLength
+      })
+    }
+  } catch (err) {
+    // Roll back the email row and any R2 objects already written so that
+    // Cloudflare's retry sees a clean slate rather than a duplicate message_id.
+    await Promise.allSettled([
+      deleteEmailsByIds(env.DB, [emailId]),
+      ...uploadedR2Keys.map((key) => env.ATTACHMENTS.delete(key))
+    ])
+    throw err
   }
 
   if (notify) {

@@ -170,8 +170,8 @@ export const handleMessageView = withAuth(async (req, env, ctx, session, emailId
 
   const [attachments, prevId, nextId, identitiesRaw, allTagsRaw, bgImage, contacts] = await Promise.all([
     getAttachmentsByEmailId(env.DB, emailId),
-    getAdjacentEmailId(env.DB, filters, email.created_at, 'prev'),
-    getAdjacentEmailId(env.DB, filters, email.created_at, 'next'),
+    getAdjacentEmailId(env.DB, filters, email.created_at, email.id, 'prev'),
+    getAdjacentEmailId(env.DB, filters, email.created_at, email.id, 'next'),
     getSetting(env.DB, 'identities'),
     getAllTags(env.DB),
     getSetting(env.DB, 'bg_image'),

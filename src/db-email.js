@@ -69,12 +69,12 @@ function buildEmailConditions (filters) {
 
 // Cursor-based pagination via `before` (a created_at timestamp), not OFFSET -
 // correct under concurrent inserts and cheap at any scale.
-export async function searchEmails (db, filters, { limit = 50, before = null } = {}) {
+export async function searchEmails (db, filters, { limit = 50, before = null, beforeId = null } = {}) {
   const { conditions, params, fromClause } = buildEmailConditions(filters)
 
   if (before !== null) {
-    conditions.push('emails.created_at < ?')
-    params.push(before)
+    conditions.push('(emails.created_at < ? OR (emails.created_at = ? AND emails.id < ?))')
+    params.push(before, before, beforeId)
   }
 
   const whereClause = conditions.length > 0 ? `WHERE ${conditions.join(' AND ')}` : ''
@@ -84,7 +84,7 @@ export async function searchEmails (db, filters, { limit = 50, before = null } =
               emails.starred, emails.status, emails.read, emails.tags, emails.created_at,
               SUBSTR(emails.body, 1, 150) as preview
        ${fromClause} ${whereClause}
-       ORDER BY emails.created_at DESC LIMIT ?`
+       ORDER BY emails.created_at DESC, emails.id DESC LIMIT ?`
     )
     .bind(...params, limit)
     .all()
@@ -151,18 +151,20 @@ export async function deleteEmailsByIds (db, ids) {
 
 // Finds prev/next email id within the same filtered result set as the message
 // being viewed - arrow-key nav respects whatever search/filter you arrived from.
-export async function getAdjacentEmailId (db, filters, currentCreatedAt, direction) {
+export async function getAdjacentEmailId (db, filters, currentCreatedAt, currentId, direction) {
   const { conditions, params, fromClause } = buildEmailConditions(filters)
 
   // "Next" = newer (created_at DESC list, so next means a larger created_at).
+  // Compound cursor so two emails with the same millisecond timestamp are
+  // never skipped or duplicated.
   const comparison = direction === 'next' ? '>' : '<'
   const order = direction === 'next' ? 'ASC' : 'DESC'
-  conditions.push(`emails.created_at ${comparison} ?`)
-  params.push(currentCreatedAt)
+  conditions.push(`(emails.created_at ${comparison} ? OR (emails.created_at = ? AND emails.id ${comparison} ?))`)
+  params.push(currentCreatedAt, currentCreatedAt, currentId)
 
   const whereClause = `WHERE ${conditions.join(' AND ')}`
   const row = await db
-    .prepare(`SELECT emails.id ${fromClause} ${whereClause} ORDER BY emails.created_at ${order} LIMIT 1`)
+    .prepare(`SELECT emails.id ${fromClause} ${whereClause} ORDER BY emails.created_at ${order}, emails.id ${order} LIMIT 1`)
     .bind(...params)
     .first()
   return row ? row.id : null

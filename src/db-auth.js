@@ -11,13 +11,11 @@ export async function insertNonce (db, nonce, createdAt) {
 }
 
 export async function consumeNonce (db, nonce) {
-  // Enforces single-use: the row is read and deleted together. Callers still
-  // need to check created_at against the TTL - an expired-but-present nonce
-  // should also be treated as invalid.
-  const row = await db.prepare('SELECT created_at FROM nonces WHERE nonce = ?').bind(nonce).first()
-  if (!row) return null
-  await db.prepare('DELETE FROM nonces WHERE nonce = ?').bind(nonce).run()
-  return row.created_at
+  // Atomic: DELETE RETURNING means only one concurrent request can get the
+  // row back. A second request racing on the same nonce gets null, not the
+  // timestamp, so replays are impossible even under concurrent retries.
+  const row = await db.prepare('DELETE FROM nonces WHERE nonce = ? RETURNING created_at').bind(nonce).first()
+  return row ? row.created_at : null
 }
 
 export async function insertSession (db, token, createdAt) {

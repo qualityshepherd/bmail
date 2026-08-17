@@ -1,8 +1,9 @@
 import { withAuth } from './auth-routes.js'
-import { getEmailById, buildReferencesChain, insertSent } from './db.js'
+import { getEmailById, buildReferencesChain, insertSent, getSetting } from './db.js'
 import { buildReplySubject, generateMessageId, extractDomain } from './reply.js'
 import { sendEmail } from './mailer.js'
 import { escapeHtml, parseAddressList, extractEmail } from './html.js'
+import { parseIdentities, findIdentityByAddress } from './identities.js'
 
 export const handleReply = withAuth(async (req, env, ctx, session, emailId) => {
   const email = await getEmailById(env.DB, emailId)
@@ -10,10 +11,13 @@ export const handleReply = withAuth(async (req, env, ctx, session, emailId) => {
 
   const formData = await req.formData()
   const body = (formData.get('body') || '').toString()
-  // Falls back to email.recipient - the correct-by-construction default -
-  // if the from field is somehow missing, rather than failing outright.
   const from = (formData.get('from') || email.recipient || '').toString().trim()
   const replyAll = formData.get('replyAll') === '1'
+
+  const identities = parseIdentities(await getSetting(env.DB, 'identities'))
+  if (!findIdentityByAddress(identities, from)) {
+    return new Response('Invalid from address', { status: 400 })
+  }
 
   if (!body.trim()) {
     return new Response(null, { status: 302, headers: { Location: `/message/${emailId}` } })

@@ -1,4 +1,4 @@
-# Bmail
+# Bmail (Beta)
 
 Personal email system that runs on [Cloudflare's](https://www.cloudflare.com) free tier. Send, receive, and store plain-text emails on your own domain. Zero server costs, zero stored passwords, and one dependency.
 

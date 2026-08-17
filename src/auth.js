@@ -9,6 +9,7 @@ export const timingSafeEqual = (a, b) => {
   const ab = te.encode(a)
   const bb = te.encode(b)
   if (ab.length !== bb.length) return false
+  if (ab.length === 0) return false
   let diff = 0
   for (let i = 0; i < ab.length; i++) diff |= ab[i] ^ bb[i]
   return diff === 0

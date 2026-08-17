@@ -213,7 +213,8 @@ async function runMaintenance (env) {
   // email's ORIGINAL arrival - applies to every email regardless of status.
   // The email row and its metadata are untouched here.
   const staleAttachments = await getStaleAttachments(env.DB, now - ATTACHMENT_RETENTION_MS)
-  await Promise.all(staleAttachments.map((a) => env.ATTACHMENTS.delete(a.r2_key)))
+  const attachmentDeletes = await Promise.allSettled(staleAttachments.map((a) => env.ATTACHMENTS.delete(a.r2_key)))
+  attachmentDeletes.forEach((r, i) => { if (r.status === 'rejected') console.error('R2 attachment delete failed:', staleAttachments[i].r2_key, r.reason) })
   await deleteAttachmentsByIds(env.DB, staleAttachments.map((a) => a.id))
 
   // Separately: emails sitting in Trash/Spam for TRASH_SPAM_RETENTION_MS
@@ -224,7 +225,8 @@ async function runMaintenance (env) {
   const staleTrashSpamIds = await getStaleTrashSpamIds(env.DB, now - TRASH_SPAM_RETENTION_MS)
   const r2KeysToDelete = await getAttachmentR2Keys(env.DB, staleTrashSpamIds)
   await deleteEmailsByIds(env.DB, staleTrashSpamIds)
-  await Promise.all(r2KeysToDelete.map((key) => env.ATTACHMENTS.delete(key)))
+  const trashDeletes = await Promise.allSettled(r2KeysToDelete.map((key) => env.ATTACHMENTS.delete(key)))
+  trashDeletes.forEach((r, i) => { if (r.status === 'rejected') console.error('R2 trash delete failed:', r2KeysToDelete[i], r.reason) })
 
   await deleteExpiredNonces(env.DB, now - FIVE_MINUTES_MS)
   await deleteExpiredSessions(env.DB, now - TWENTY_FOUR_HOURS_MS)

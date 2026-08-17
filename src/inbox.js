@@ -152,7 +152,9 @@ function renderInboxPage ({ emails, total, effectiveQuery, tags, currentUrl, ren
     ? emails.map((e) => renderRowFn(e, currentUrl, contacts)).join('\n')
     : '<li class="empty">No mail here.</li>'
 
-  const oldestCreatedAt = emails.length > 0 ? emails[emails.length - 1].created_at : ''
+  const oldestEmail = emails.length > 0 ? emails[emails.length - 1] : null
+  const oldestCreatedAt = oldestEmail ? oldestEmail.created_at : ''
+  const oldestId = oldestEmail ? oldestEmail.id : ''
 
   const bodyAttr = bgImage && /^https?:\/\//i.test(bgImage)
     ? ` style="background-image: linear-gradient(rgba(0,0,0,0.55),rgba(0,0,0,0.55)),url('${escapeHtml(bgImage)}')"`
@@ -183,7 +185,7 @@ function renderInboxPage ({ emails, total, effectiveQuery, tags, currentUrl, ren
       ${renderBulkMenu(effectiveQuery, currentUrl, emails.length > 0)}
     </nav>
     ${renderTagLinks(tags)}
-    <ul class="inbox" id="email-list" data-query="${escapeHtml(effectiveQuery)}" data-oldest="${oldestCreatedAt}" data-total="${total}">
+    <ul class="inbox" id="email-list" data-query="${escapeHtml(effectiveQuery)}" data-oldest="${oldestCreatedAt}" data-oldest-id="${oldestId}" data-total="${total}">
       ${rows}
     </ul>
   </div>
@@ -197,6 +199,7 @@ export const handleInbox = withAuth(async (req, env, ctx, session) => {
   const url = new URL(req.url)
   const rawQuery = url.searchParams.get('q') || ''
   const before = url.searchParams.get('before')
+  const beforeId = url.searchParams.get('beforeId')
   const filters = resolveEffectiveQuery(rawQuery)
   const effectiveQuery = stringifySearchFilters(filters)
   const currentUrl = `/inbox?q=${encodeURIComponent(effectiveQuery)}`
@@ -232,16 +235,18 @@ export const handleInbox = withAuth(async (req, env, ctx, session) => {
 
   const emails = await searchEmails(env.DB, filters, {
     limit: 50,
-    before: before ? Number(before) : null
+    before: before ? Number(before) : null,
+    beforeId: beforeId ? Number(beforeId) : null
   })
 
   if (before !== null) {
     const rows = emails.length > 0 ? emails.map((e) => renderRow(e, currentUrl)).join('\n') : ''
-    const oldestCreatedAt = emails.length > 0 ? emails[emails.length - 1].created_at : ''
+    const oldest = emails.length > 0 ? emails[emails.length - 1] : null
     return new Response(rows, {
       headers: {
         'Content-Type': 'text/html; charset=utf-8',
-        'X-Oldest-Created-At': String(oldestCreatedAt),
+        'X-Oldest-Created-At': oldest ? String(oldest.created_at) : '',
+        'X-Oldest-Id': oldest ? String(oldest.id) : '',
         'X-Has-More': String(emails.length === 50),
         ...noStoreHeaders
       }

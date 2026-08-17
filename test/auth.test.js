@@ -47,8 +47,8 @@ test('timingSafeEqual: different lengths return false', () => {
   assert.equal(timingSafeEqual('abc', 'abcd'), false)
 })
 
-test('timingSafeEqual: empty strings return true', () => {
-  assert.equal(timingSafeEqual('', ''), true)
+test('timingSafeEqual: empty strings return false', () => {
+  assert.equal(timingSafeEqual('', ''), false)
 })
 
 // isRateLimited
