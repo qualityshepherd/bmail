@@ -10,7 +10,7 @@ import { getBlocklistPatterns, getSpamPatterns, getAllowlistPatterns, insertEmai
 // otherwise { dropped: false, emailId, notified }.
 // Callers (the email() handler) are responsible for the top-level try/catch
 // and fallback-forward behavior described in spec section 2.5.
-export async function ingestEmail ({ message, env, deepLinkBaseUrl }) {
+export async function ingestEmail ({ message, env }) {
   const blocklistPatterns = await getBlocklistPatterns(env.DB)
   if (anyPatternMatches(blocklistPatterns, message.from)) {
     return { dropped: true }
@@ -72,9 +72,12 @@ export async function ingestEmail ({ message, env, deepLinkBaseUrl }) {
     throw err
   }
 
+  const MAX_ATTACHMENT_BYTES = 25 * 1024 * 1024
+
   const uploadedR2Keys = []
   try {
     for (const attachment of parsed.attachments) {
+      if (attachment.content.byteLength > MAX_ATTACHMENT_BYTES) continue
       const r2Key = `attachments/${emailId}/${crypto.randomUUID()}-${attachment.filename}`
       await env.ATTACHMENTS.put(r2Key, attachment.content, {
         httpMetadata: { contentType: attachment.contentType }
@@ -101,8 +104,7 @@ export async function ingestEmail ({ message, env, deepLinkBaseUrl }) {
   if (notify) {
     const payload = buildSmsPayload({
       sender: message.from,
-      subject: parsed.subject,
-      deepLinkUrl: `${deepLinkBaseUrl}/message/${emailId}`
+      subject: parsed.subject
     })
     await sendSms(env, payload)
   }
@@ -111,7 +113,7 @@ export async function ingestEmail ({ message, env, deepLinkBaseUrl }) {
 }
 
 export async function sendSms (env, payload, from) {
-  const sender = from || env.FALLBACK_EMAIL
+  const sender = from || (env.EMAIL_DOMAIN ? `alerts@${env.EMAIL_DOMAIN}` : env.FALLBACK_EMAIL)
   const mimeMessage = [
     `From: ${sender}`,
     `To: ${env.SMS_GATEWAY_ADDRESS}`,

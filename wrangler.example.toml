@@ -7,26 +7,21 @@ compatibility_date = "2024-01-01"
 crons = ["42 * * * *"]
 
 [vars]
-# Your deployed Worker URL — used in SMS notification deep links
-DEEP_LINK_BASE_URL = "https://mail.yourdomain.com"
-
+# domain you'll use for email
+EMAIL_DOMAIN = "casadeocio.org"
 # Where undeliverable or pipeline-errored mail gets forwarded.
 # Must NOT be an address routed back into this Worker (infinite loop).
 FALLBACK_EMAIL = "you@gmail.com"
-
 # Any string — used as the session cookie name
 SESSION_COOKIE_NAME = "bmail_session"
-
 # Leave empty on first deploy — run the setup flow to generate this
 AUTH_PUBKEY = ""
-
 # Set to "resend" to send outbound mail via Resend API.
 # Leave unset (or anything else) to use the Cloudflare send_email binding.
 # Resend is easier: just needs an API key + verified domain.
 # CF binding requires the sending domain on the same CF account with Email Routing.
 # Note: CC/BCC and attachments only work on the Resend path.
 OUTBOUND_PROVIDER = "resend"
-
 # Your carrier's email-to-SMS gateway address.
 # Examples:
 #   Google Fi:  <10-digit-number>@msg.fi.google.com

@@ -60,11 +60,7 @@ const TAGS_PATTERN = new URLPattern({ pathname: '/message/:id/tags' })
 export default {
   async email (message, env, ctx) {
     try {
-      await ingestEmail({
-        message,
-        env,
-        deepLinkBaseUrl: env.DEEP_LINK_BASE_URL || 'https://bmail.example.com'
-      })
+      await ingestEmail({ message, env })
     } catch (err) {
       console.error('Bmail ingestion failed, forwarding to fallback:', err)
       // Per spec 2.5: never lose mail. Forward the raw message on any
@@ -208,8 +204,8 @@ async function runHourlyDigest (env) {
   if (count === 0) return
   const identitiesRaw = await env.DB.prepare("SELECT value FROM settings WHERE key = 'identities'").first()
   const from = identitiesRaw ? (identitiesRaw.value || '').split('\n')[0].split(',')[0].trim() : env.FALLBACK_EMAIL
-  const base = (env.DEEP_LINK_BASE_URL || '').replace(/\/$/, '')
-  const payload = `${count} unread · ${base}/inbox`
+  const base = env.EMAIL_DOMAIN ? `https://bmail.${env.EMAIL_DOMAIN}` : ''
+  const payload = base ? `${count} unread · ${base}/inbox` : `${count} unread`
   await sendSms(env, payload, from)
 }
 

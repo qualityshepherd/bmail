@@ -8,7 +8,7 @@ export function shouldNotify ({ senderPatterns, aliasPatterns, sender, recipient
   return anyPatternMatches(senderPatterns, sender) || anyPatternMatches(aliasPatterns, recipient)
 }
 
-export function buildSmsPayload ({ sender, subject, deepLinkUrl }) {
+export function buildSmsPayload ({ sender, subject }) {
   const cleanSubject = subject && subject.trim().length > 0 ? subject.trim() : '(no subject)'
-  return `From: ${sender}\nSubject: ${cleanSubject}\n${deepLinkUrl}`
+  return `bmail: ${sender} — ${cleanSubject}`
 }

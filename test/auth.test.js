@@ -4,7 +4,7 @@ import {
   timingSafeEqual, isAuthorizedPubkey, isRateLimited, incrementAttempt,
   generateNonce, generateSessionToken, isNonceExpired, isSessionExpired,
   hexToBytes, sessionCookie, clearedSessionCookie, parseCookies,
-  NONCE_TTL_MS, SESSION_TTL_MS
+  hashToken, NONCE_TTL_MS, SESSION_TTL_MS
 } from '../src/auth.js'
 
 // isAuthorizedPubkey
@@ -159,4 +159,19 @@ test('parseCookies: parses multiple cookies', () => {
 test('parseCookies: handles empty/missing header', () => {
   assert.deepEqual(parseCookies(null), {})
   assert.deepEqual(parseCookies(''), {})
+})
+
+// hashToken
+test('hashToken: returns 64-char hex SHA-256', async () => {
+  const h = await hashToken('sometoken')
+  assert.equal(h.length, 64)
+  assert.match(h, /^[0-9a-f]+$/)
+})
+
+test('hashToken: same input yields same hash', async () => {
+  assert.equal(await hashToken('abc'), await hashToken('abc'))
+})
+
+test('hashToken: different inputs yield different hashes', async () => {
+  assert.notEqual(await hashToken('abc'), await hashToken('xyz'))
 })

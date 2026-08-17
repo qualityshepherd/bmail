@@ -56,22 +56,19 @@ test('shouldNotify: false by default (silent aliases)', () => {
   assert.equal(result, false)
 })
 
-test('buildSmsPayload: includes sender, subject, and link', () => {
+test('buildSmsPayload: includes sender and subject', () => {
   const payload = buildSmsPayload({
     sender: 'alice@example.com',
-    subject: 'Test Subject',
-    deepLinkUrl: 'https://bmail.example.com/messages/42'
+    subject: 'Test Subject'
   })
   assert.match(payload, /alice@example.com/)
   assert.match(payload, /Test Subject/)
-  assert.match(payload, /messages\/42/)
 })
 
 test('buildSmsPayload: falls back on empty subject', () => {
   const payload = buildSmsPayload({
     sender: 'alice@example.com',
-    subject: '',
-    deepLinkUrl: 'https://bmail.example.com/messages/42'
+    subject: ''
   })
   assert.match(payload, /\(no subject\)/)
 })

@@ -58,6 +58,11 @@ export function isSessionExpired (createdAt, now) {
   return now - createdAt > SESSION_TTL_MS
 }
 
+export async function hashToken (token) {
+  const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(token))
+  return Array.from(new Uint8Array(buf)).map((b) => b.toString(16).padStart(2, '0')).join('')
+}
+
 export function hexToBytes (hex) {
   const bytes = new Uint8Array(hex.length / 2)
   for (let i = 0; i < bytes.length; i++) {

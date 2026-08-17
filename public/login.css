@@ -19,6 +19,11 @@
   margin-bottom: 0.4rem;
 }
 
+.passphrase-wrap {
+  position: relative;
+  margin-bottom: 1rem;
+}
+
 .login input {
   width: 100%;
   background: var(--panel);
@@ -26,9 +31,8 @@
   color: var(--text);
   font-family: inherit;
   font-size: 1rem;
-  padding: 0.6rem 0.75rem;
+  padding: 0.6rem 2.5rem 0.6rem 0.75rem;
   border-radius: 6px;
-  margin-bottom: 1rem;
 }
 
 .login input:focus {
@@ -36,7 +40,23 @@
   border-color: var(--accent);
 }
 
-.login button {
+#toggle-passphrase {
+  position: absolute;
+  right: 0.5rem;
+  top: 50%;
+  transform: translateY(-50%);
+  background: none;
+  border: none;
+  color: var(--text-dim);
+  cursor: pointer;
+  padding: 0.2rem;
+  display: flex;
+  align-items: center;
+}
+
+#toggle-passphrase:hover { color: var(--accent-bright); }
+
+#login-btn {
   width: 100%;
   background: var(--accent);
   border: none;
@@ -49,11 +69,11 @@
   cursor: pointer;
 }
 
-.login button:hover {
+#login-btn:hover {
   background: var(--accent-bright);
 }
 
-.login button:disabled {
+#login-btn:disabled {
   opacity: 0.5;
   cursor: not-allowed;
 }

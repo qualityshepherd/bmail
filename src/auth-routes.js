@@ -2,7 +2,8 @@ import {
   timingSafeEqual, isAuthorizedPubkey, isRateLimited, incrementAttempt,
   LOGIN_RATE_LIMIT_MAX_ATTEMPTS, LOGIN_RATE_LIMIT_WINDOW_MS,
   generateNonce, generateSessionToken, isNonceExpired, isSessionExpired,
-  verifySignature, hexToBytes, sessionCookie, clearedSessionCookie, parseCookies
+  verifySignature, hexToBytes, sessionCookie, clearedSessionCookie, parseCookies,
+  hashToken
 } from './auth.js'
 import {
   insertNonce, consumeNonce, insertSession, getSessionCreatedAt, deleteSession,
@@ -79,7 +80,7 @@ export async function handleLogin (req, env) {
   await deleteLoginAttempts(env.DB, ip)
 
   const token = generateSessionToken()
-  await insertSession(env.DB, token, now)
+  await insertSession(env.DB, await hashToken(token), now)
 
   return new Response(JSON.stringify({ ok: true }), {
     headers: {
@@ -93,7 +94,7 @@ export async function handleLogin (req, env) {
 export async function handleLogout (req, env) {
   const cookies = parseCookies(req.headers.get('Cookie'))
   const token = cookies[env.SESSION_COOKIE_NAME]
-  if (token) await deleteSession(env.DB, token)
+  if (token) await deleteSession(env.DB, await hashToken(token))
 
   return new Response(null, {
     status: 302,
@@ -118,10 +119,11 @@ export async function getValidSession (req, env) {
   const token = cookies[env.SESSION_COOKIE_NAME]
   if (!token) return null
 
-  const createdAt = await getSessionCreatedAt(env.DB, token)
+  const tokenHash = await hashToken(token)
+  const createdAt = await getSessionCreatedAt(env.DB, tokenHash)
   if (createdAt === null) return null
   if (isSessionExpired(createdAt, Date.now())) {
-    await deleteSession(env.DB, token) // clean up eagerly rather than waiting for cron
+    await deleteSession(env.DB, tokenHash)
     return null
   }
 
