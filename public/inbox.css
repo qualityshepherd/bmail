@@ -1,8 +1,15 @@
-/* ─── Search ─────────────────────────────────────────────── */
+/* ─── Search + compose row ───────────────────────────────── */
+.search-bar {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 1rem 1.25rem 0;
+}
+
 .search-form {
   display: flex;
   gap: 0.5rem;
-  padding: 1rem 1.25rem 0;
+  flex: 1;
 }
 
 .search-form input {
@@ -16,20 +23,19 @@
   border-radius: 6px;
 }
 
-.search-form input:focus { outline: none; border-color: var(--accent); }
-
-.search-form button {
+.search-submit {
   background: none;
   border: 1px solid var(--border);
   color: var(--text-dim);
-  font-family: inherit;
-  font-size: 0.9rem;
-  padding: 0.5rem 1rem;
+  padding: 0.4rem 0.5rem;
   border-radius: 6px;
   cursor: pointer;
+  display: flex;
+  align-items: center;
+  flex-shrink: 0;
 }
 
-.search-form button:hover { border-color: var(--accent); color: var(--accent-bright); }
+.search-submit:hover { border-color: var(--accent); color: var(--accent-bright); }
 
 /* ─── Folder / tag nav ───────────────────────────────────── */
 .folder-links,
@@ -65,7 +71,6 @@
   border-radius: 6px;
   text-decoration: none;
   flex-shrink: 0;
-  margin-right: 0.3rem;
 }
 
 .compose-btn:hover { border-color: var(--accent-bright); color: var(--text); }
@@ -297,7 +302,7 @@
 
 /* ─── Mobile ─────────────────────────────────────────────── */
 @media (max-width: 600px) {
-  .search-form { padding: 0.75rem 1rem 0; }
+  .search-bar { padding: 0.75rem 1rem 0; }
   .folder-links, .tag-links { padding: 0.6rem 1rem 0; gap: 0.4rem 0.85rem; }
 
   .bulk-menu { margin-left: 0; }

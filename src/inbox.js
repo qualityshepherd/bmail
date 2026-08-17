@@ -4,7 +4,7 @@ import { searchSent, getSentCount } from './db-sent.js'
 import { getSetting } from './db-admin.js'
 import { getContactsByEmails } from './db-contacts.js'
 import { resolveEffectiveQuery, stringifySearchFilters, parseTags, topTags } from './search.js'
-import { escapeHtml, formatDate, formatShortDate, avatarHue, avatarInitials, extractEmail, extractDisplayName, renderSettingsMenu } from './html.js'
+import { escapeHtml, formatShortDate, avatarHue, avatarInitials, extractEmail, extractDisplayName, renderSettingsMenu } from './html.js'
 import { renderStatusIcons, renderStarIcon } from './status-icons.js'
 import { parseIdentities, getDefaultIdentity } from './identities.js'
 
@@ -42,13 +42,13 @@ function renderSentRow (sent, currentUrl, contacts = new Map()) {
     : `<span class="avatar" style="--hue:${hue}" aria-hidden="true">${initials}</span>`
 
   return `<li class="email-item" data-created-at="${sent.created_at}">
-    <a class="email-row" href="/sent/${sent.id}?back=${encodeURIComponent(currentUrl)}" title="${escapeHtml(formatDate(sent.created_at))}">
+    <a class="email-row" href="/sent/${sent.id}?back=${encodeURIComponent(currentUrl)}" data-ts="${sent.created_at}">
       ${avatarHtml}
       <span class="row-body">
         <span class="row-subject"><span class="subject-text">${subjectText}</span>${renderPreview(sent.preview)}</span>
         <span class="row-meta"><span class="row-sender" title="${escapeHtml(sent.to_address)}">${escapeHtml(displayName)}</span></span>
       </span>
-      <span class="row-date">${formatShortDate(sent.created_at)}</span>
+      <span class="row-date" data-ts="${sent.created_at}">${formatShortDate(sent.created_at)}</span>
     </a>
     <span class="row-icons"></span>
   </li>`
@@ -69,13 +69,13 @@ function renderRow (email, currentUrl, contacts = new Map()) {
     : `<span class="avatar" style="--hue:${hue}" aria-hidden="true">${initials}</span>`
 
   return `<li class="email-item${unreadClass}" data-created-at="${email.created_at}">
-    <a class="email-row" href="/message/${email.id}?back=${encodeURIComponent(currentUrl)}" title="${escapeHtml(formatDate(email.created_at))}">
+    <a class="email-row" href="/message/${email.id}?back=${encodeURIComponent(currentUrl)}" data-ts="${email.created_at}">
       ${avatarHtml}
       <span class="row-body">
         <span class="row-subject"><span class="subject-text">${subjectText}</span>${renderPreview(email.preview)}</span>
         <span class="row-meta"><span class="row-sender" title="${escapeHtml(senderTooltip)}">${escapeHtml(displayName)}</span>${tagChips}</span>
       </span>
-      <span class="row-date">${formatShortDate(email.created_at)}</span>
+      <span class="row-date" data-ts="${email.created_at}">${formatShortDate(email.created_at)}</span>
     </a>
     <span class="row-icons">${renderStarIcon(email.id, email.starred, currentUrl)}${renderStatusIcons(email.id, email.status, currentUrl)}</span>
   </li>`
@@ -177,13 +177,19 @@ function renderInboxPage ({ emails, total, effectiveQuery, tags, currentUrl, ren
     ${renderSettingsMenu(identity)}
   </header>
   <div class="page-wrap">
-    <form method="get" action="/inbox" class="search-form">
-      <input type="text" name="q" value="${escapeHtml(effectiveQuery)}"
-             placeholder="inbox: sent: tag: starred: ..." autocomplete="off">
-      <button type="submit">Search</button>
-    </form>
-    <nav class="folder-links">
+    <div class="search-bar">
       <a href="/compose" class="compose-btn">+ Compose</a>
+      <form method="get" action="/inbox" class="search-form">
+        <input type="text" name="q" value="${escapeHtml(effectiveQuery)}"
+               placeholder="inbox: sent: tag: starred: ..." autocomplete="off">
+        <button type="submit" class="search-submit" aria-label="Search">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+          </svg>
+        </button>
+      </form>
+    </div>
+    <nav class="folder-links">
       ${renderFolderLinks(effectiveQuery, unreadCount)}
       ${renderBulkMenu(effectiveQuery, currentUrl, emails.length > 0)}
     </nav>

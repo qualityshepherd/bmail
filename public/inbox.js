@@ -1,3 +1,29 @@
+function localizeDate (ts) {
+  const date = new Date(Number(ts))
+  const isThisYear = date.getFullYear() === new Date().getFullYear()
+  return date.toLocaleDateString(undefined, {
+    month: 'short', day: 'numeric', year: isThisYear ? undefined : 'numeric'
+  })
+}
+
+function localizeTitle (ts) {
+  return new Date(Number(ts)).toLocaleString(undefined, {
+    month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit'
+  })
+}
+
+function localizeDates (root) {
+  const scope = root || document
+  scope.querySelectorAll('.row-date[data-ts]').forEach((el) => {
+    el.textContent = localizeDate(el.dataset.ts)
+  })
+  scope.querySelectorAll('a.email-row[data-ts]').forEach((el) => {
+    el.title = localizeTitle(el.dataset.ts)
+  })
+}
+
+localizeDates()
+
 document.addEventListener('submit', (e) => {
   const form = e.target
   if (form.id === 'empty-trash-form') {
@@ -25,6 +51,7 @@ if (list && list.dataset.newest) {
       const newNewestId = res.headers.get('X-Newest-Id')
       if (html.trim() && newNewest) {
         list.insertAdjacentHTML('afterbegin', html)
+        localizeDates(list)
         newest = newNewest
         newestId = newNewestId
       }

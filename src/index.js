@@ -202,11 +202,7 @@ async function runHourlyDigest (env) {
   ).first()
   const count = row ? row.count : 0
   if (count === 0) return
-  const identitiesRaw = await env.DB.prepare("SELECT value FROM settings WHERE key = 'identities'").first()
-  const from = identitiesRaw ? (identitiesRaw.value || '').split('\n')[0].split(',')[0].trim() : env.FALLBACK_EMAIL
-  const base = env.EMAIL_DOMAIN ? `https://bmail.${env.EMAIL_DOMAIN}` : ''
-  const payload = base ? `${count} unread · ${base}/inbox` : `${count} unread`
-  await sendSms(env, payload, from)
+  await sendSms(env, `bmail: ${count} unread`)
 }
 
 async function runMaintenance (env) {

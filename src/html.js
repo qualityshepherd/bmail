@@ -13,20 +13,25 @@ export function escapeHtml (str) {
     .replace(/'/g, '&#039;')
 }
 
-export function formatDate (timestampMs) {
+export function formatDate (timestampMs, tz) {
   return new Date(timestampMs).toLocaleString(undefined, {
-    month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit'
+    month: 'short',
+    day: 'numeric',
+    hour: 'numeric',
+    minute: '2-digit',
+    timeZone: tz || undefined
   })
 }
 
-// Short form for row/list display - no time, just enough to scan a list.
-// Omits the year for the current year, includes it otherwise (so old mail
-// doesn't silently look recent).
-export function formatShortDate (timestampMs) {
+export function formatShortDate (timestampMs, tz) {
   const date = new Date(timestampMs)
-  const isThisYear = date.getFullYear() === new Date().getFullYear()
+  const now = tz ? new Date(new Date().toLocaleString('en-US', { timeZone: tz })) : new Date()
+  const isThisYear = date.toLocaleDateString('en-US', { year: 'numeric', timeZone: tz || undefined }) === String(now.getFullYear())
   return date.toLocaleDateString(undefined, {
-    month: 'short', day: 'numeric', year: isThisYear ? undefined : 'numeric'
+    month: 'short',
+    day: 'numeric',
+    year: isThisYear ? undefined : 'numeric',
+    timeZone: tz || undefined
   })
 }
 
