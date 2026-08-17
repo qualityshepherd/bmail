@@ -1,0 +1,23 @@
+From: Alice Example <alice@example.com>
+To: inbox@bmail.example.com
+Subject: Hello from the fixture corpus
+Message-ID: <fixture-1@example.com>
+Content-Type: multipart/alternative; boundary="BOUNDARY1"
+MIME-Version: 1.0
+
+--BOUNDARY1
+Content-Type: text/plain; charset=utf-8
+Content-Transfer-Encoding: 7bit
+
+Hi there,
+
+This is the plain text part of a simple test fixture.
+
+Thanks,
+Alice
+--BOUNDARY1
+Content-Type: text/html; charset=utf-8
+Content-Transfer-Encoding: 7bit
+
+<html><body><p>Hi there,</p><p>This is the <b>HTML</b> part of a simple test fixture.</p><p>Thanks,<br>Alice</p></body></html>
+--BOUNDARY1--

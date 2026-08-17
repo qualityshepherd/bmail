@@ -1,0 +1,189 @@
+.settings-wrap {
+  max-width: 640px;
+  margin: 0 auto;
+  padding: 1.5rem;
+}
+
+/* ─── Tab nav (same vibe as folder-links) ────────────────── */
+.settings-tabs {
+  display: flex;
+  gap: 1.5rem;
+  border-bottom: 1px solid var(--border);
+  margin-bottom: 2rem;
+  padding-bottom: 0;
+}
+
+.settings-tabs a {
+  color: var(--text-dim);
+  text-decoration: none;
+  font-size: 0.9rem;
+  padding-bottom: 0.6rem;
+  border-bottom: 2px solid transparent;
+  margin-bottom: -1px;
+}
+
+.settings-tabs a:hover { color: var(--accent-bright); }
+
+.settings-tabs a.active {
+  color: var(--accent-bright);
+  border-bottom-color: var(--accent);
+  font-weight: 600;
+}
+
+/* ─── Tab content ────────────────────────────────────────── */
+.settings-section .settings-hint {
+  color: var(--text-dim);
+  font-size: 0.9rem;
+  margin-bottom: 1.5rem;
+  line-height: 1.6;
+}
+
+.settings-section .settings-hint code {
+  background: var(--panel);
+  padding: 0.15em 0.4em;
+  border-radius: 4px;
+}
+
+.empty-hint {
+  color: var(--text-dim);
+  font-size: 0.9rem;
+  margin-bottom: 1.5rem;
+}
+
+/* ─── Identity preview list ──────────────────────────────── */
+.identity-preview {
+  list-style: none;
+  margin-bottom: 2rem;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.identity-preview li {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.75rem 1rem;
+}
+
+.identity-preview li:not(:last-child) { border-bottom: 1px solid var(--border); }
+
+.identity-avatar {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  object-fit: cover;
+  flex-shrink: 0;
+  background: var(--panel);
+}
+
+.identity-avatar-blank {
+  display: inline-block;
+  border: 1px dashed var(--border);
+}
+
+.identity-address { font-weight: 500; color: var(--text); }
+.identity-name { color: var(--text-dim); font-size: 0.9rem; }
+
+.default-badge {
+  margin-left: auto;
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--accent-bright);
+  border: 1px solid var(--accent);
+  padding: 0.15em 0.5em;
+  border-radius: 4px;
+}
+
+/* ─── Forms ──────────────────────────────────────────────── */
+.settings-section textarea,
+.settings-section input[type="url"] {
+  width: 100%;
+  background: var(--panel);
+  border: 1px solid var(--border);
+  color: var(--text);
+  font-family: inherit;
+  font-size: 0.9rem;
+  line-height: 1.6;
+  padding: 0.75rem;
+  border-radius: 6px;
+  box-sizing: border-box;
+}
+
+.settings-section textarea { font-family: monospace; resize: vertical; }
+
+.settings-section textarea:focus,
+.settings-section input[type="url"]:focus {
+  outline: none;
+  border-color: var(--accent);
+}
+
+.settings-section button {
+  margin-top: 1rem;
+  background: transparent;
+  border: 1px solid var(--accent);
+  color: var(--accent-bright);
+  font-family: inherit;
+  font-size: 1rem;
+  font-weight: 600;
+  padding: 0.6rem 1.5rem;
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+.settings-section button:hover { border-color: var(--accent-bright); color: var(--text); }
+
+.settings-section .btn-outline {
+  display: inline-block;
+  margin-top: 1rem;
+  background: transparent;
+  border: 1px solid var(--accent);
+  color: var(--accent-bright);
+  font-family: inherit;
+  font-size: 1rem;
+  font-weight: 600;
+  padding: 0.6rem 1.5rem;
+  border-radius: 6px;
+  text-decoration: none;
+}
+.settings-section .btn-outline:hover { border-color: var(--accent-bright); color: var(--text); }
+
+.clear-contacts { margin-top: 2rem; }
+
+.clear-contacts > summary {
+  list-style: none;
+  cursor: pointer;
+  color: #a04040;
+  font-size: 0.85rem;
+  display: inline;
+}
+
+.clear-contacts > summary::-webkit-details-marker { display: none; }
+.clear-contacts > summary:hover { color: #c05050; }
+
+.clear-contacts form {
+  margin-top: 0.75rem;
+  padding: 0.75rem 1rem;
+  border: 1px solid #5a2020;
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.clear-contacts form p {
+  font-size: 0.85rem;
+  color: var(--text-dim);
+  flex: 1;
+}
+
+.clear-contacts form button {
+  margin-top: 0;
+  background: #7a2020;
+  flex-shrink: 0;
+  font-size: 0.85rem;
+  padding: 0.4rem 1rem;
+}
+
+.clear-contacts form button:hover { background: #a03030; }

@@ -1,0 +1,113 @@
+.identities {
+  max-width: 640px;
+  margin: 2rem auto;
+  padding: 0 1.5rem;
+}
+
+.identities h1 {
+  font-size: 1.4rem;
+  margin-bottom: 0.5rem;
+}
+
+.identities .hint {
+  color: var(--text-dim);
+  font-size: 0.9rem;
+  margin-bottom: 1.5rem;
+  line-height: 1.6;
+}
+
+.identities .hint code {
+  background: var(--panel);
+  padding: 0.15em 0.4em;
+  border-radius: 4px;
+}
+
+.identity-preview {
+  list-style: none;
+  margin-bottom: 2rem;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.identity-preview li {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.75rem 1rem;
+}
+
+.identity-preview li:not(:last-child) {
+  border-bottom: 1px solid var(--border);
+}
+
+.avatar {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  object-fit: cover;
+  flex-shrink: 0;
+  background: var(--panel);
+}
+
+.avatar-blank {
+  display: inline-block;
+  border: 1px dashed var(--border);
+}
+
+.identity-address {
+  font-weight: 500;
+  color: var(--text);
+}
+
+.identity-name {
+  color: var(--text-dim);
+  font-size: 0.9rem;
+}
+
+.default-badge {
+  margin-left: auto;
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--accent-bright);
+  border: 1px solid var(--accent);
+  padding: 0.15em 0.5em;
+  border-radius: 4px;
+}
+
+.identities textarea {
+  width: 100%;
+  background: var(--panel);
+  border: 1px solid var(--border);
+  color: var(--text);
+  font-family: monospace;
+  font-size: 0.9rem;
+  line-height: 1.6;
+  padding: 0.75rem;
+  border-radius: 6px;
+  box-sizing: border-box;
+  resize: vertical;
+}
+
+.identities textarea:focus {
+  outline: none;
+  border-color: var(--accent);
+}
+
+.identities button {
+  margin-top: 1rem;
+  background: var(--accent);
+  border: none;
+  color: var(--bg);
+  font-family: inherit;
+  font-size: 1rem;
+  font-weight: 600;
+  padding: 0.6rem 1.5rem;
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+.identities button:hover {
+  background: var(--accent-bright);
+}

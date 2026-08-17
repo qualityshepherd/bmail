@@ -1,0 +1,25 @@
+{
+  "name": "bmail",
+  "version": "0.1.0",
+  "description": "Bmail is a zero-dependency* personal email engine on Cloudflare Workers, D1, and R2",
+  "type": "module",
+  "private": true,
+  "scripts": {
+    "dev": "wrangler dev",
+    "deploy": "wrangler deploy",
+    "test": "node --test test/*.test.js",
+    "test:e2e": "node --test test/e2e.*.test.js",
+    "db:migrate:local": "wrangler d1 migrations apply bmail --local",
+    "db:migrate:remote": "wrangler d1 migrations apply bmail --remote",
+    "pretty": "npx standard --fix .",
+    "panic": "node scripts/panic.js",
+    "backup": "node scripts/backup.js"
+  },
+  "dependencies": {
+    "postal-mime": "^2.7.6"
+  },
+  "devDependencies": {
+    "puppeteer": "^25.7.0",
+    "wrangler": "^4.123.0"
+  }
+}

@@ -1,0 +1,378 @@
+/* ─── Message page header layout (3-col grid) ────────────── */
+header {
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  align-items: center;
+}
+
+.header-center {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  justify-content: center;
+}
+
+/* Override base.css margin-left:auto — grid handles positioning */
+header .settings-menu { margin-left: 0; justify-self: end; }
+
+/* ─── Header action icons ─────────────────────────────────── */
+.header-actions {
+  display: flex;
+  gap: 0.4rem;
+}
+
+.header-actions .status-icon-form button {
+  background: none;
+  border: 1px solid var(--border);
+  color: var(--text-dim);
+  padding: 0.45rem;
+  border-radius: 6px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+}
+
+.header-actions .status-icon-form button:hover {
+  border-color: var(--accent);
+  color: var(--accent-bright);
+}
+
+.header-actions .block-form button {
+  border-color: #6a2a2a;
+  color: #b06060;
+}
+
+.header-actions .block-form button:hover {
+  background: #6a2a2a;
+  border-color: #6a2a2a;
+  color: var(--text);
+}
+
+/* ─── Tag icon dropdown ───────────────────────────────────── */
+.tag-details {
+  position: relative;
+}
+
+.tag-details > summary {
+  list-style: none;
+  background: none;
+  border: 1px solid var(--border);
+  color: var(--text-dim);
+  padding: 0.45rem;
+  border-radius: 6px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+}
+
+.tag-details > summary::-webkit-details-marker { display: none; }
+
+.tag-details > summary:hover,
+.tag-details[open] > summary {
+  border-color: var(--accent);
+  color: var(--accent-bright);
+}
+
+.tag-panel {
+  position: absolute;
+  top: calc(100% + 0.5rem);
+  left: 50%;
+  transform: translateX(-50%);
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 0.6rem;
+  z-index: 100;
+  min-width: 260px;
+}
+
+.tag-panel form {
+  display: flex;
+  gap: 0.4rem;
+}
+
+.tag-panel input {
+  flex: 1;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  color: var(--text);
+  font-family: inherit;
+  font-size: 0.9rem;
+  padding: 0.4rem 0.6rem;
+  border-radius: 6px;
+}
+
+.tag-panel input:focus {
+  outline: none;
+  border-color: var(--accent);
+}
+
+.tag-panel button {
+  background: transparent;
+  border: 1px solid var(--accent);
+  color: var(--accent-bright);
+  font-family: inherit;
+  font-size: 0.85rem;
+  padding: 0.4rem 0.75rem;
+  border-radius: 6px;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.tag-panel button:hover {
+  border-color: var(--accent-bright);
+  color: var(--text);
+}
+
+/* ─── Message content ─────────────────────────────────────── */
+.message {
+  max-width: 900px;
+  margin: 0 auto;
+  padding: 1.5rem;
+  background: rgba(26, 26, 26, 0.84);
+  min-height: calc(100vh - 60px);
+}
+
+.message > h1 {
+  font-size: 1.4rem;
+  font-weight: 600;
+  color: var(--text);
+  margin-bottom: 1rem;
+}
+
+/* ─── Inline sender header (Gmail-style) ─────────────────── */
+.msg-header {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.75rem;
+  margin-bottom: 1.5rem;
+}
+
+.msg-avatar {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  flex-shrink: 0;
+  background: hsl(var(--hue), 12%, 26%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: hsl(var(--hue), 18%, 68%);
+}
+
+.msg-avatar-img {
+  border-radius: 50%;
+  object-fit: cover;
+}
+
+.msg-meta { flex: 1; min-width: 0; }
+
+.msg-sender-row {
+  display: flex;
+  align-items: baseline;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.msg-from { font-size: 0.95rem; color: var(--text); }
+
+.msg-email {
+  font-size: 0.82rem;
+  color: var(--text-dim);
+  font-weight: 400;
+}
+
+.msg-date {
+  margin-left: auto;
+  font-size: 0.82rem;
+  color: var(--text-dim);
+  white-space: nowrap;
+}
+
+.msg-to,
+.msg-cc {
+  font-size: 0.82rem;
+  color: var(--text-dim);
+  margin-top: 0.15rem;
+}
+
+.reply-actions {
+  display: flex;
+  gap: 0.75rem;
+}
+
+/* ─── Attachments ─────────────────────────────────────────── */
+.attachments {
+  list-style: none;
+  margin: 1rem 0 1.5rem;
+  padding: 0.75rem 1rem;
+  background: var(--panel);
+  border-radius: 8px;
+}
+
+.attachment {
+  display: flex;
+  justify-content: space-between;
+  padding: 0.4rem 0;
+}
+
+.attachment a {
+  color: var(--accent-bright);
+  text-decoration: none;
+}
+
+.attachment a:hover { text-decoration: underline; }
+
+.attachment-size {
+  color: var(--text-dim);
+  font-size: 0.85rem;
+}
+
+/* ─── Body ────────────────────────────────────────────────── */
+.body {
+  white-space: pre-wrap;
+  word-wrap: break-word;
+  font-family: var(--font);
+  font-size: 1rem;
+  line-height: 1.7;
+  color: var(--text);
+}
+
+.body a {
+  color: var(--accent-bright);
+  word-break: break-all;
+}
+
+.body a:hover { color: var(--text); }
+
+.sent-banner {
+  color: var(--accent-bright);
+  margin-top: 2rem;
+  font-size: 0.95rem;
+}
+
+/* ─── Reply form ──────────────────────────────────────────── */
+.reply-form {
+  margin-top: 2rem;
+  padding-top: 1.5rem;
+  border-top: 1px solid var(--border);
+}
+
+.reply-form select {
+  background: var(--panel);
+  border: 1px solid var(--border);
+  color: var(--text-dim);
+  font-family: inherit;
+  font-size: 0.85rem;
+  padding: 0.4rem 0.6rem;
+  border-radius: 6px;
+  margin-bottom: 0.75rem;
+}
+
+.reply-form textarea {
+  width: 100%;
+  background: var(--panel);
+  border: 1px solid var(--border);
+  color: var(--text);
+  font-family: var(--font);
+  font-size: 1rem;
+  line-height: 1.6;
+  padding: 0.75rem;
+  border-radius: 6px;
+  resize: vertical;
+  margin-bottom: 1rem;
+}
+
+.reply-form textarea:focus {
+  outline: none;
+  border-color: var(--accent);
+}
+
+.reply-form button {
+  background: transparent;
+  border: 1px solid var(--accent);
+  color: var(--accent-bright);
+  font-family: inherit;
+  font-size: 1rem;
+  font-weight: 600;
+  padding: 0.6rem 1.5rem;
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+.reply-form button:hover {
+  border-color: var(--accent-bright);
+  color: var(--text);
+}
+
+/* ─── Nav buttons ─────────────────────────────────────────── */
+.nav-buttons {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.nav-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.2rem;
+  height: 2.2rem;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  color: var(--text-dim);
+  text-decoration: none;
+  font-size: 1.1rem;
+}
+
+.nav-btn:hover {
+  border-color: var(--accent);
+  color: var(--accent-bright);
+}
+
+.nav-btn.disabled {
+  opacity: 0.3;
+  pointer-events: none;
+}
+
+/* ─── Forward link (icon-sized <a> matching icon buttons) ─── */
+.header-actions .icon-link {
+  display: inline-flex;
+  align-items: center;
+  background: none;
+  border: 1px solid var(--border);
+  color: var(--text-dim);
+  padding: 0.45rem;
+  border-radius: 6px;
+  text-decoration: none;
+}
+
+.header-actions .icon-link:hover {
+  border-color: var(--accent);
+  color: var(--accent-bright);
+}
+
+/* ─── Delete form (sent view) ─────────────────────────────── */
+.delete-form {
+  margin-top: 2rem;
+  padding-top: 1.5rem;
+  border-top: 1px solid var(--border);
+}
+
+.delete-form button {
+  background: transparent;
+  border: 1px solid #6a2a2a;
+  color: #b06060;
+  font-family: inherit;
+  font-size: 0.9rem;
+  padding: 0.45rem 1rem;
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+.delete-form button:hover {
+  background: #6a2a2a;
+  border-color: #6a2a2a;
+  color: var(--text);
+}

@@ -1,0 +1,8 @@
+body { font-family: system-ui, sans-serif; max-width: 640px; margin: 3rem auto; padding: 0 1rem; line-height: 1.5; }
+code, pre { background: #f2f2f2; padding: 0.2rem 0.4rem; border-radius: 4px; }
+pre { padding: 1rem; overflow-x: auto; }
+button { font-size: 1rem; padding: 0.5rem 1rem; cursor: pointer; margin-bottom: 1.5rem; }
+input[type="text"] { font-size: 1rem; padding: 0.5rem; width: 100%; margin: 0.5rem 0 1.5rem; box-sizing: border-box; }
+.warn { color: #a00; }
+#output { display: none; margin-top: 1.5rem; }
+#output.visible { display: block; }

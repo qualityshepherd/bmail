@@ -1,0 +1,201 @@
+/* ─── Compose panel ───────────────────────────────────────── */
+.compose-wrap {
+  max-width: 900px;
+  margin: 0 auto;
+  padding: 1.5rem 1.5rem 2rem;
+  background: rgba(26, 26, 26, 0.84);
+  min-height: calc(100vh - 60px);
+}
+
+.compose-wrap h2 {
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: var(--text);
+  margin-bottom: 1rem;
+}
+
+/* ─── Form rows ───────────────────────────────────────────── */
+#compose-form {
+  display: flex;
+  flex-direction: column;
+}
+
+.compose-row {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.55rem 0;
+  border-bottom: 1px solid var(--border);
+}
+
+.compose-label {
+  width: 3.5rem;
+  flex-shrink: 0;
+  color: var(--text-dim);
+  font-size: 0.88rem;
+}
+
+.compose-row input,
+.compose-row select {
+  flex: 1;
+  background: transparent;
+  border: none;
+  color: var(--text);
+  font-family: inherit;
+  font-size: 0.95rem;
+  outline: none;
+  padding: 0;
+  min-width: 0;
+}
+
+.compose-row select {
+  cursor: pointer;
+  color: var(--text-dim);
+}
+
+/* ─── Cc / Bcc toggles ────────────────────────────────────── */
+.addr-toggles {
+  display: flex;
+  gap: 0.6rem;
+  flex-shrink: 0;
+}
+
+.addr-toggles button {
+  background: none;
+  border: none;
+  color: var(--text-dim);
+  font-family: inherit;
+  font-size: 0.85rem;
+  cursor: pointer;
+  padding: 0;
+}
+
+.addr-toggles button:hover { color: var(--accent-bright); }
+
+/* ─── Body ────────────────────────────────────────────────── */
+#compose-form textarea {
+  width: 100%;
+  background: transparent;
+  border: none;
+  border-bottom: 1px solid var(--border);
+  color: var(--text);
+  font-family: inherit;
+  font-size: 0.95rem;
+  line-height: 1.7;
+  resize: vertical;
+  outline: none;
+  padding: 0.6rem 0;
+  box-sizing: border-box;
+  min-height: 220px;
+}
+
+/* ─── Attachment drop zone ────────────────────────────────── */
+.drop-zone {
+  border: 1px dashed var(--border);
+  border-radius: 6px;
+  padding: 0.65rem 1rem;
+  margin-top: 0.75rem;
+  color: var(--text-dim);
+  font-size: 0.85rem;
+  transition: border-color 0.15s, background 0.15s;
+}
+
+.drop-zone.drag-over {
+  border-color: var(--accent);
+  background: rgba(143, 114, 80, 0.08);
+}
+
+.drop-hint button {
+  background: none;
+  border: none;
+  color: var(--accent-bright);
+  font-family: inherit;
+  font-size: inherit;
+  cursor: pointer;
+  padding: 0;
+  text-decoration: underline;
+}
+
+.file-list {
+  list-style: none;
+  margin-top: 0.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+}
+
+.file-list li {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 0.85rem;
+  color: var(--text);
+  background: var(--panel);
+  padding: 0.3rem 0.6rem;
+  border-radius: 4px;
+}
+
+.file-list li button {
+  background: none;
+  border: none;
+  color: var(--text-dim);
+  cursor: pointer;
+  font-size: 1rem;
+  padding: 0 0.25rem;
+  line-height: 1;
+}
+
+.file-list li button:hover { color: #b06060; }
+
+/* ─── Send row ────────────────────────────────────────────── */
+.compose-actions {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  margin-top: 1.25rem;
+}
+
+.compose-actions button[type="submit"] {
+  background: transparent;
+  border: 1px solid var(--accent);
+  color: var(--accent-bright);
+  font-family: inherit;
+  font-size: 1rem;
+  font-weight: 600;
+  padding: 0.65rem 1.5rem;
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+.compose-actions button[type="submit"]:hover {
+  border-color: var(--accent-bright);
+  color: var(--text);
+}
+
+.compose-actions button[type="submit"]:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+
+.compose-send-error {
+  color: #c0614a;
+  font-size: 0.88rem;
+}
+
+/* ─── Inline validation errors ────────────────────────────── */
+.field-error {
+  display: block;
+  color: #c0614a;
+  font-size: 0.82rem;
+  padding: 0.2rem 0;
+  padding-left: 4.25rem;
+}
+
+/* ─── Helpers ─────────────────────────────────────────────── */
+.compose-hidden { display: none !important; }
+
+/* ─── Mobile ─────────────────────────────────────────────── */
+@media (max-width: 600px) {
+  .compose-wrap { padding: 1.25rem 1rem 1.5rem; }
+  .compose-label { width: 2.75rem; }
+}

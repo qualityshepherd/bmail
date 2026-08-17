@@ -1,0 +1,72 @@
+name = "bmail"
+main = "src/index.js"
+compatibility_date = "2024-01-01"
+
+[triggers]
+# Hourly: SMS digest (fires only if unread inbox exists) + maintenance
+crons = ["42 * * * *"]
+
+[vars]
+# Your deployed Worker URL — used in SMS notification deep links
+DEEP_LINK_BASE_URL = "https://mail.yourdomain.com"
+
+# Where undeliverable or pipeline-errored mail gets forwarded.
+# Must NOT be an address routed back into this Worker (infinite loop).
+FALLBACK_EMAIL = "you@gmail.com"
+
+# Any string — used as the session cookie name
+SESSION_COOKIE_NAME = "bmail_session"
+
+# Leave empty on first deploy — run the setup flow to generate this
+AUTH_PUBKEY = ""
+
+# Set to "resend" to send outbound mail via Resend API.
+# Leave unset (or anything else) to use the Cloudflare send_email binding.
+# Resend is easier: just needs an API key + verified domain.
+# CF binding requires the sending domain on the same CF account with Email Routing.
+# Note: CC/BCC and attachments only work on the Resend path.
+OUTBOUND_PROVIDER = "resend"
+
+# Your carrier's email-to-SMS gateway address.
+# Examples:
+#   Google Fi:  <10-digit-number>@msg.fi.google.com
+#   AT&T:       <10-digit-number>@txt.att.net
+#   Verizon:    <10-digit-number>@vtext.com
+#   T-Mobile:   <10-digit-number>@tmomail.net
+# Remove or leave empty to disable SMS notifications entirely.
+SMS_GATEWAY_ADDRESS = "5551234567@msg.fi.google.com"
+
+[[d1_databases]]
+binding  = "DB"
+database_name = "bmail"
+database_id   = "YOUR_D1_DATABASE_ID"
+
+[[r2_buckets]]
+binding     = "ATTACHMENTS"
+bucket_name = "bmail-attachments"
+# Tip: add an R2 lifecycle rule (CF dashboard → R2 → bucket → Settings → Lifecycle rules)
+# with prefix "backups/" and 30-day expiry to auto-purge nightly SQL dumps.
+
+# Outbound email via Cloudflare send_email binding.
+# Used for SMS gateway notifications (and outbound mail when OUTBOUND_PROVIDER != "resend").
+[[send_email]]
+name = "OUTBOUND"
+
+# CF Email Service binding — set OUTBOUND_PROVIDER = "cf-email" to use this instead of Resend.
+# Requires Workers paid plan ($5/mo). Supports CC/BCC, attachments (5 MiB total), named recipients.
+# Add your sending domain in CF dashboard → Email → Email Service first.
+# Disable "Email preview" in domain settings — it's auto-enabled for new domains.
+[[send_email]]
+name = "EMAIL"
+
+# Second send_email binding pointed at the SMS gateway worker/address.
+# Can be the same binding as OUTBOUND if your setup allows it.
+[[send_email]]
+name               = "SMS_GATEWAY"
+destination_address = "5551234567@msg.fi.google.com"
+
+[assets]
+directory = "./public"
+
+# Secrets (set via `wrangler secret put`, never in this file):
+#   RESEND_API_KEY   — required when OUTBOUND_PROVIDER=resend

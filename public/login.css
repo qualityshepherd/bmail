@@ -1,0 +1,67 @@
+.login {
+  max-width: 360px;
+  margin: 4rem auto;
+  padding: 0 1.5rem;
+  text-align: center;
+}
+
+.login h1 {
+  color: var(--accent-bright);
+  font-size: 1.5rem;
+  margin-bottom: 2rem;
+}
+
+.login label {
+  display: block;
+  text-align: left;
+  color: var(--text-dim);
+  font-size: 0.9rem;
+  margin-bottom: 0.4rem;
+}
+
+.login input {
+  width: 100%;
+  background: var(--panel);
+  border: 1px solid var(--border);
+  color: var(--text);
+  font-family: inherit;
+  font-size: 1rem;
+  padding: 0.6rem 0.75rem;
+  border-radius: 6px;
+  margin-bottom: 1rem;
+}
+
+.login input:focus {
+  outline: none;
+  border-color: var(--accent);
+}
+
+.login button {
+  width: 100%;
+  background: var(--accent);
+  border: none;
+  color: var(--bg);
+  font-family: inherit;
+  font-size: 1rem;
+  font-weight: 600;
+  padding: 0.7rem;
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+.login button:hover {
+  background: var(--accent-bright);
+}
+
+.login button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.status {
+  display: block;
+  color: var(--text-dim);
+  margin-top: 1rem;
+  min-height: 1.2rem;
+  font-size: 0.9rem;
+}
