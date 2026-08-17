@@ -57,6 +57,55 @@ const STATUS_PATTERN = new URLPattern({ pathname: '/message/:id/status' })
 const SPAM_RECIPIENT_PATTERN = new URLPattern({ pathname: '/message/:id/spam-recipient' })
 const TAGS_PATTERN = new URLPattern({ pathname: '/message/:id/tags' })
 
+const ROUTES = [
+  ['GET', '/api/challenge', (req, env) => handleChallenge(req, env)],
+  ['POST', '/api/login', (req, env) => handleLogin(req, env)],
+  ['POST', '/api/logout', (req, env) => handleLogout(req, env)],
+  ['GET', '/api/me', (req, env) => handleMe(req, env)],
+  ['GET', '/inbox', (req, env, ctx) => handleInbox(req, env, ctx)],
+  ['GET', '/compose', (req, env, ctx) => handleComposePage(req, env, ctx)],
+  ['POST', '/compose', (req, env, ctx) => handleCompose(req, env, ctx)],
+  ['GET', '/settings', (req, env, ctx) => handleSettingsPage(req, env, ctx)],
+  ['POST', '/settings/identities', (req, env, ctx) => handleSettingsSaveIdentities(req, env, ctx)],
+  ['POST', '/settings/appearance', (req, env, ctx) => handleSettingsSaveAppearance(req, env, ctx)],
+  ['POST', '/settings/contacts', (req, env, ctx) => handleSettingsImportContacts(req, env, ctx)],
+  ['POST', '/settings/contacts/clear', (req, env, ctx) => handleSettingsClearContacts(req, env, ctx)],
+  ['POST', '/settings/filters', (req, env, ctx) => handleSettingsSaveFilters(req, env, ctx)],
+  ['POST', '/trash/empty', (req, env, ctx) => handleEmptyTrash(req, env, ctx)],
+  ['POST', '/spam/empty', (req, env, ctx) => handleEmptySpam(req, env, ctx)],
+  ['POST', '/inbox/mark-all-read', (req, env, ctx) => handleMarkAllRead(req, env, ctx)],
+  ['POST', '/inbox/archive-all', (req, env, ctx) => handleArchiveAll(req, env, ctx)],
+  ['GET', '/export/mbox', (req, env) => handleMboxExport(req, env)],
+  ['POST', '/backup/run', (req, env) => handleManualBackup(req, env)],
+  ['GET', '/login', () => new Response(renderLoginPage(), { headers: { 'Content-Type': 'text/html; charset=utf-8' } })],
+  ['GET', '/', (req) => new Response(null, { status: 302, headers: { Location: new URL('/inbox', req.url).toString() } })],
+  ['GET', '/identities', () => new Response(null, { status: 302, headers: { Location: '/settings?tab=identities' } })],
+  // Pattern routes — matched against full URL, groups forwarded to handler
+  ['POST', REPLY_PATTERN, (req, env, ctx, m) => handleReply(req, env, ctx, m.pathname.groups.id)],
+  ['POST', STAR_PATTERN, (req, env, ctx, m) => handleStarToggle(req, env, ctx, m.pathname.groups.id)],
+  ['POST', BLOCK_PATTERN, (req, env, ctx, m) => handleBlockSender(req, env, ctx, m.pathname.groups.id)],
+  ['POST', STATUS_PATTERN, (req, env, ctx, m) => handleStatusChange(req, env, ctx, m.pathname.groups.id)],
+  ['POST', SPAM_RECIPIENT_PATTERN, (req, env, ctx, m) => handleSpamRecipient(req, env, ctx, m.pathname.groups.id)],
+  ['POST', TAGS_PATTERN, (req, env, ctx, m) => handleTagsChange(req, env, ctx, m.pathname.groups.id)],
+  ['GET', ATTACHMENT_PATTERN, (req, env, ctx, m) => handleAttachmentDownload(req, env, ctx, m.pathname.groups.id, m.pathname.groups.attachmentId)],
+  ['POST', DELETE_SENT_PATTERN, (req, env, ctx, m) => handleDeleteSent(req, env, ctx, m.pathname.groups.id)],
+  ['GET', SENT_PATTERN, (req, env, ctx, m) => handleSentView(req, env, ctx, m.pathname.groups.id)],
+  ['GET', FORWARD_PATTERN, (req, env, ctx, m) => handleForwardPage(req, env, ctx, m.pathname.groups.id)],
+  ['GET', MESSAGE_PATTERN, (req, env, ctx, m) => handleMessageView(req, env, ctx, m.pathname.groups.id)]
+]
+
+async function route (request, env, ctx, method, pathname) {
+  for (const [routeMethod, pattern, handler] of ROUTES) {
+    if (method !== routeMethod) continue
+    const match = typeof pattern === 'string'
+      ? (pathname === pattern ? {} : null)
+      : pattern.exec(request.url)
+    if (match === null) continue
+    return handler(request, env, ctx, match)
+  }
+  return new Response('Not found', { status: 404, headers: { 'Content-Type': 'text/plain; charset=utf-8' } })
+}
+
 export default {
   async email (message, env, ctx) {
     try {
@@ -82,104 +131,14 @@ export default {
     const { pathname } = url
     const method = request.method
 
+    // Special case: no pubkey = first-run setup, show setup page everywhere.
+    if (!env.AUTH_PUBKEY) {
+      return new Response(renderSetupPage(), { headers: { 'Content-Type': 'text/html; charset=utf-8' } })
+    }
+
     let response
     try {
-      if (method === 'GET' && pathname === '/api/challenge') {
-        response = await handleChallenge(request, env)
-      } else if (method === 'POST' && pathname === '/api/login') {
-        response = await handleLogin(request, env)
-      } else if (method === 'POST' && pathname === '/api/logout') {
-        response = await handleLogout(request, env)
-      } else if (method === 'GET' && pathname === '/api/me') {
-        response = await handleMe(request, env)
-      } else if (method === 'GET' && pathname === '/inbox') {
-        response = await handleInbox(request, env, ctx)
-      } else if (method === 'GET' && pathname === '/compose') {
-        response = await handleComposePage(request, env, ctx)
-      } else if (method === 'POST' && pathname === '/compose') {
-        response = await handleCompose(request, env, ctx)
-      } else if (method === 'GET' && pathname === '/settings') {
-        response = await handleSettingsPage(request, env, ctx)
-      } else if (method === 'POST' && pathname === '/settings/identities') {
-        response = await handleSettingsSaveIdentities(request, env, ctx)
-      } else if (method === 'POST' && pathname === '/settings/appearance') {
-        response = await handleSettingsSaveAppearance(request, env, ctx)
-      } else if (method === 'POST' && pathname === '/settings/contacts') {
-        response = await handleSettingsImportContacts(request, env, ctx)
-      } else if (method === 'POST' && pathname === '/settings/contacts/clear') {
-        response = await handleSettingsClearContacts(request, env, ctx)
-      } else if (method === 'POST' && pathname === '/settings/filters') {
-        response = await handleSettingsSaveFilters(request, env, ctx)
-      } else if (method === 'GET' && pathname === '/identities') {
-        response = new Response(null, { status: 302, headers: { Location: '/settings?tab=identities' } })
-      } else if (method === 'POST' && REPLY_PATTERN.test(request.url)) {
-        const { id } = REPLY_PATTERN.exec(request.url).pathname.groups
-        response = await handleReply(request, env, ctx, id)
-      } else if (method === 'POST' && STAR_PATTERN.test(request.url)) {
-        const { id } = STAR_PATTERN.exec(request.url).pathname.groups
-        response = await handleStarToggle(request, env, ctx, id)
-      } else if (method === 'POST' && BLOCK_PATTERN.test(request.url)) {
-        const { id } = BLOCK_PATTERN.exec(request.url).pathname.groups
-        response = await handleBlockSender(request, env, ctx, id)
-      } else if (method === 'POST' && STATUS_PATTERN.test(request.url)) {
-        const { id } = STATUS_PATTERN.exec(request.url).pathname.groups
-        response = await handleStatusChange(request, env, ctx, id)
-      } else if (method === 'POST' && SPAM_RECIPIENT_PATTERN.test(request.url)) {
-        const { id } = SPAM_RECIPIENT_PATTERN.exec(request.url).pathname.groups
-        response = await handleSpamRecipient(request, env, ctx, id)
-      } else if (method === 'POST' && TAGS_PATTERN.test(request.url)) {
-        const { id } = TAGS_PATTERN.exec(request.url).pathname.groups
-        response = await handleTagsChange(request, env, ctx, id)
-      } else if (method === 'GET' && ATTACHMENT_PATTERN.test(request.url)) {
-        const { id, attachmentId } = ATTACHMENT_PATTERN.exec(request.url).pathname.groups
-        response = await handleAttachmentDownload(request, env, ctx, id, attachmentId)
-      } else if (method === 'POST' && pathname === '/trash/empty') {
-        response = await handleEmptyTrash(request, env, ctx)
-      } else if (method === 'POST' && pathname === '/spam/empty') {
-        response = await handleEmptySpam(request, env, ctx)
-      } else if (method === 'POST' && pathname === '/inbox/mark-all-read') {
-        response = await handleMarkAllRead(request, env, ctx)
-      } else if (method === 'POST' && pathname === '/inbox/archive-all') {
-        response = await handleArchiveAll(request, env, ctx)
-      } else if (method === 'GET' && pathname === '/export/mbox') {
-        response = await handleMboxExport(request, env)
-      } else if (method === 'POST' && pathname === '/backup/run') {
-        response = await handleManualBackup(request, env)
-      } else if (method === 'POST' && DELETE_SENT_PATTERN.test(request.url)) {
-        const { id } = DELETE_SENT_PATTERN.exec(request.url).pathname.groups
-        response = await handleDeleteSent(request, env, ctx, id)
-      } else if (method === 'GET' && SENT_PATTERN.test(request.url)) {
-        const { id } = SENT_PATTERN.exec(request.url).pathname.groups
-        response = await handleSentView(request, env, ctx, id)
-      } else if (method === 'GET' && FORWARD_PATTERN.test(request.url)) {
-        const { id } = FORWARD_PATTERN.exec(request.url).pathname.groups
-        response = await handleForwardPage(request, env, ctx, id)
-      } else if (method === 'GET' && MESSAGE_PATTERN.test(request.url)) {
-        const { id } = MESSAGE_PATTERN.exec(request.url).pathname.groups
-        response = await handleMessageView(request, env, ctx, id)
-      } else if (!env.AUTH_PUBKEY) {
-        // No owner key configured yet - show the setup form on every route
-        // rather than a bare 404, since there's nothing useful to protect
-        // or display until this is done. setup.css/setup.js are real static
-        // files under public/, served directly by Cloudflare's assets layer
-        // (see [assets] in wrangler.toml) - they never reach this handler.
-        response = new Response(renderSetupPage(), { headers: { 'Content-Type': 'text/html; charset=utf-8' } })
-      } else if (method === 'GET' && pathname === '/login') {
-        response = new Response(renderLoginPage(), { headers: { 'Content-Type': 'text/html; charset=utf-8' } })
-      } else if (method === 'GET' && pathname === '/') {
-        // AUTH_PUBKEY is set and there's no dedicated login page yet, so
-        // send people straight to the inbox - withAuth() there already
-        // 401s correctly if there's no valid session.
-        // NOTE: deliberately NOT using Response.redirect() here - it
-        // returns a response with immutable headers, which throws when
-        // the shared security-header loop below tries to set() on it.
-        response = new Response(null, {
-          status: 302,
-          headers: { Location: new URL('/inbox', request.url).toString() }
-        })
-      } else {
-        response = new Response('Not found', { status: 404, headers: { 'Content-Type': 'text/plain; charset=utf-8' } })
-      }
+      response = await route(request, env, ctx, method, pathname)
     } catch (err) {
       // Without this, an unhandled throw anywhere in routing just becomes
       // an opaque 500 with zero context - console.error here means
