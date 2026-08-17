@@ -27,7 +27,7 @@ const TABLES = [
 async function writeBackup (env) {
   const date = new Date().toISOString().slice(0, 10)
   let sql = `-- Bmail backup ${date}\n`
-  sql += '-- Restore: wrangler d1 execute bmail --remote --file=schema.sql\n'
+  sql += '-- Restore: wrangler d1 migrations apply bmail --remote\n'
   sql += '--          wrangler d1 execute bmail --remote --file=this-file.sql\n\n'
   sql += 'PRAGMA foreign_keys = OFF;\n\n'
 
