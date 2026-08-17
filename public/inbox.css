@@ -300,12 +300,7 @@
   .search-form { padding: 0.75rem 1rem 0; }
   .folder-links, .tag-links { padding: 0.6rem 1rem 0; gap: 0.4rem 0.85rem; }
 
-  .folder-links {
-    flex-wrap: nowrap;
-    overflow-x: auto;
-    scrollbar-width: none;
-  }
-  .folder-links::-webkit-scrollbar { display: none; }
+  .bulk-menu { margin-left: 0; }
 
   .email-row {
     padding: 0.65rem 3.25rem 0.65rem 1rem;

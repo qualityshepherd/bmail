@@ -26,7 +26,6 @@ function renderSentPage (sent, backUrl, { identity = null, bgImage = '', contact
 <meta charset="utf-8">
 <title>${subject} - Bmail</title>
 <link rel="stylesheet" href="/base.css">
-<link rel="icon" type="image/svg+xml" href="/logo.svg">
 <link rel="stylesheet" href="/message.css">
 </head>
 <body${bodyAttr}>

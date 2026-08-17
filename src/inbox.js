@@ -169,7 +169,6 @@ function renderInboxPage ({ emails, total, effectiveQuery, tags, currentUrl, ren
 <meta charset="utf-8">
 <title>${unreadCount > 0 ? `(${unreadCount}) ` : ''}Bmail</title>
 <link rel="stylesheet" href="/base.css">
-<link rel="icon" type="image/svg+xml" href="/logo.svg">
 <link rel="stylesheet" href="/inbox.css">
 </head>
 <body${bodyAttr}>

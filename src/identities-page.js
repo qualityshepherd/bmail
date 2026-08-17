@@ -23,7 +23,6 @@ function renderIdentitiesPage (rawValue) {
 <meta charset="utf-8">
 <title>Identities - Bmail</title>
 <link rel="stylesheet" href="/base.css">
-<link rel="icon" type="image/svg+xml" href="/logo.svg">
 <link rel="stylesheet" href="/identities.css">
 </head>
 <body>
