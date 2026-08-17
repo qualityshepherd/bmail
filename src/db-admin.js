@@ -7,6 +7,41 @@ export async function addBlocklistPattern (db, pattern) {
   await db.prepare('INSERT OR IGNORE INTO blocklist (pattern) VALUES (?)').bind(pattern).run()
 }
 
+export async function getBlocklistText (db) {
+  const { results } = await db.prepare('SELECT pattern FROM blocklist ORDER BY pattern').all()
+  return results.map((r) => r.pattern).join('\n')
+}
+
+export async function setBlocklist (db, patterns) {
+  const stmts = [db.prepare('DELETE FROM blocklist')]
+  for (const p of patterns) {
+    stmts.push(db.prepare('INSERT OR IGNORE INTO blocklist (pattern) VALUES (?)').bind(p))
+  }
+  await db.batch(stmts)
+}
+
+export async function getSpamPatterns (db) {
+  const { results } = await db.prepare('SELECT pattern FROM spamlist').all()
+  return results.map((row) => row.pattern)
+}
+
+export async function addSpamPattern (db, pattern) {
+  await db.prepare('INSERT OR IGNORE INTO spamlist (pattern) VALUES (?)').bind(pattern).run()
+}
+
+export async function getSpamlistText (db) {
+  const { results } = await db.prepare('SELECT pattern FROM spamlist ORDER BY pattern').all()
+  return results.map((r) => r.pattern).join('\n')
+}
+
+export async function setSpamlist (db, patterns) {
+  const stmts = [db.prepare('DELETE FROM spamlist')]
+  for (const p of patterns) {
+    stmts.push(db.prepare('INSERT OR IGNORE INTO spamlist (pattern) VALUES (?)').bind(p))
+  }
+  await db.batch(stmts)
+}
+
 export async function getAllowlistPatterns (db, kind) {
   const { results } = await db
     .prepare('SELECT pattern FROM allowed_notifications WHERE kind = ?')

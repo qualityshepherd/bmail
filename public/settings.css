@@ -1,7 +1,9 @@
 .settings-wrap {
-  max-width: 640px;
+  max-width: 900px;
   margin: 0 auto;
   padding: 1.5rem;
+  background: rgba(26, 26, 26, 0.84);
+  min-height: calc(100vh - 60px);
 }
 
 /* ─── Tab nav (same vibe as folder-links) ────────────────── */

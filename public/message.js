@@ -52,13 +52,14 @@ document.addEventListener('keydown', (e) => {
   }
 })
 
-// Block sender - confirm before submitting, since it's a real destructive
-// action (adds a permanent blocklist entry + trashes this message).
-const blockForm = document.getElementById('block-form')
-if (blockForm) {
-  blockForm.addEventListener('submit', (e) => {
-    const sender = blockForm.dataset.sender || 'this sender'
-    if (!confirm(`Block ${sender} and trash this message?`)) {
+// Traffic menu — confirm destructive actions before submitting
+const trafficPanel = document.querySelector('.traffic-panel')
+if (trafficPanel) {
+  trafficPanel.addEventListener('submit', (e) => {
+    const action = e.target.action || ''
+    if (action.includes('/block') && !confirm('Block this sender permanently?')) {
+      e.preventDefault()
+    } else if (action.includes('/spam-recipient') && !confirm('Always spam messages to this address?')) {
       e.preventDefault()
     }
   })

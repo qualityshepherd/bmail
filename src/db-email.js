@@ -14,7 +14,7 @@ export async function insertEmail (db, email) {
   const result = await db
     .prepare(
       `INSERT INTO emails (sender, recipient, subject, body, message_id, in_reply_to, notify, created_at, sender_display, cc, status, status_changed_at)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'inbox', ?)`
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
     )
     .bind(
       email.sender,
@@ -27,6 +27,7 @@ export async function insertEmail (db, email) {
       email.createdAt,
       email.senderDisplay || null,
       email.cc || null,
+      email.status || 'inbox',
       email.createdAt
     )
     .run()
@@ -69,12 +70,16 @@ function buildEmailConditions (filters) {
 
 // Cursor-based pagination via `before` (a created_at timestamp), not OFFSET -
 // correct under concurrent inserts and cheap at any scale.
-export async function searchEmails (db, filters, { limit = 50, before = null, beforeId = null } = {}) {
+export async function searchEmails (db, filters, { limit = 50, before = null, beforeId = null, after = null, afterId = null } = {}) {
   const { conditions, params, fromClause } = buildEmailConditions(filters)
 
   if (before !== null) {
     conditions.push('(emails.created_at < ? OR (emails.created_at = ? AND emails.id < ?))')
     params.push(before, before, beforeId)
+  }
+  if (after !== null) {
+    conditions.push('(emails.created_at > ? OR (emails.created_at = ? AND emails.id > ?))')
+    params.push(after, after, afterId)
   }
 
   const whereClause = conditions.length > 0 ? `WHERE ${conditions.join(' AND ')}` : ''

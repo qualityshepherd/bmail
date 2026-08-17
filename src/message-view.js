@@ -105,9 +105,19 @@ function renderMessagePage (email, attachments, { sent, backParam, prevId, nextI
             </form>
           </div>
         </details>
-        <form method="post" action="/message/${email.id}/block" class="status-icon-form block-form" id="block-form" data-sender="${escapeHtml(email.sender)}">
-          <button type="submit" title="Block sender" aria-label="Block sender"><svg viewBox="0 0 24 24" width="16" height="16"><path d="M18 6L6 18M6 6l12 12" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/></svg></button>
-        </form>
+        <details class="traffic-menu">
+          <summary title="More actions" aria-label="More actions">···</summary>
+          <div class="traffic-panel">
+            <form method="post" action="/message/${email.id}/block">
+              <input type="hidden" name="back" value="${escapeHtml(backParam)}">
+              <button type="submit">Block sender</button>
+            </form>
+            <form method="post" action="/message/${email.id}/spam-recipient">
+              <input type="hidden" name="back" value="${escapeHtml(backParam)}">
+              <button type="submit">Spam recipient</button>
+            </form>
+          </div>
+        </details>
       </span>
     </span>
     ${renderSettingsMenu(identity)}

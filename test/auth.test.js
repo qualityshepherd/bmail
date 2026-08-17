@@ -137,11 +137,11 @@ test('hexToBytes: converts hex string to byte array', () => {
 })
 
 // cookies
-test('sessionCookie: includes HttpOnly, Secure, SameSite=Strict', () => {
+test('sessionCookie: includes HttpOnly, Secure, SameSite=Lax', () => {
   const cookie = sessionCookie('abc123', 'bmail_session', 86400)
   assert.match(cookie, /HttpOnly/)
   assert.match(cookie, /Secure/)
-  assert.match(cookie, /SameSite=Strict/)
+  assert.match(cookie, /SameSite=Lax/)
   assert.match(cookie, /bmail_session=abc123/)
 })
 

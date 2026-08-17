@@ -18,6 +18,7 @@ import { handleReply } from './reply-handler.js'
 import { handleStarToggle } from './star-handler.js'
 import { handleBlockSender } from './block-handler.js'
 import { handleStatusChange } from './status-handler.js'
+import { handleSpamRecipient } from './spam-recipient-handler.js'
 import { handleTagsChange } from './tags-handler.js'
 import { handleComposePage, handleForwardPage } from './compose-page.js'
 import { handleCompose } from './compose-handler.js'
@@ -26,7 +27,7 @@ import { handleEmptyTrash } from './empty-trash-handler.js'
 import { handleEmptySpam } from './empty-spam-handler.js'
 import { handleMarkAllRead } from './mark-read-handler.js'
 import { handleArchiveAll } from './archive-all-handler.js'
-import { handleSettingsPage, handleSettingsSaveIdentities, handleSettingsSaveAppearance, handleSettingsImportContacts, handleSettingsClearContacts } from './settings-page.js'
+import { handleSettingsPage, handleSettingsSaveIdentities, handleSettingsSaveAppearance, handleSettingsImportContacts, handleSettingsClearContacts, handleSettingsSaveFilters } from './settings-page.js'
 import { handleSentView } from './sent-view.js'
 import { handleMboxExport } from './export-handler.js'
 import { runDailyBackup } from './backup.js'
@@ -53,6 +54,7 @@ const REPLY_PATTERN = new URLPattern({ pathname: '/message/:id/reply' })
 const STAR_PATTERN = new URLPattern({ pathname: '/message/:id/star' })
 const BLOCK_PATTERN = new URLPattern({ pathname: '/message/:id/block' })
 const STATUS_PATTERN = new URLPattern({ pathname: '/message/:id/status' })
+const SPAM_RECIPIENT_PATTERN = new URLPattern({ pathname: '/message/:id/spam-recipient' })
 const TAGS_PATTERN = new URLPattern({ pathname: '/message/:id/tags' })
 
 export default {
@@ -110,6 +112,8 @@ export default {
         response = await handleSettingsImportContacts(request, env, ctx)
       } else if (method === 'POST' && pathname === '/settings/contacts/clear') {
         response = await handleSettingsClearContacts(request, env, ctx)
+      } else if (method === 'POST' && pathname === '/settings/filters') {
+        response = await handleSettingsSaveFilters(request, env, ctx)
       } else if (method === 'GET' && pathname === '/identities') {
         response = new Response(null, { status: 302, headers: { Location: '/settings?tab=identities' } })
       } else if (method === 'POST' && REPLY_PATTERN.test(request.url)) {
@@ -124,6 +128,9 @@ export default {
       } else if (method === 'POST' && STATUS_PATTERN.test(request.url)) {
         const { id } = STATUS_PATTERN.exec(request.url).pathname.groups
         response = await handleStatusChange(request, env, ctx, id)
+      } else if (method === 'POST' && SPAM_RECIPIENT_PATTERN.test(request.url)) {
+        const { id } = SPAM_RECIPIENT_PATTERN.exec(request.url).pathname.groups
+        response = await handleSpamRecipient(request, env, ctx, id)
       } else if (method === 'POST' && TAGS_PATTERN.test(request.url)) {
         const { id } = TAGS_PATTERN.exec(request.url).pathname.groups
         response = await handleTagsChange(request, env, ctx, id)

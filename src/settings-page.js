@@ -1,5 +1,6 @@
 import { withAuth } from './auth-routes.js'
-import { getSetting, setSetting } from './db-admin.js'
+import { getSetting, setSetting, getSpamlistText, setSpamlist, getBlocklistText, setBlocklist } from './db-admin.js'
+import { autoWildcard } from './filters.js'
 import { getAllContactsCount, upsertContacts, deleteAllContacts } from './db-contacts.js'
 import { parseIdentities, formatIdentities } from './identities.js'
 import { parseVCards } from './contacts.js'
@@ -68,6 +69,19 @@ function renderContactsTab (contactCount) {
   </section>`
 }
 
+function renderFiltersTab (spamText, blockText) {
+  return `<section class="settings-section">
+    <p class="settings-hint">One pattern per line. Accepted formats: <code>user@domain.com</code> or <code>*@domain.com</code>.</p>
+    <form method="post" action="/settings/filters">
+      <label for="spamlist">Spam list — always deliver to Spam</label>
+      <textarea id="spamlist" name="spamlist" rows="8" placeholder="shadyrv@example.com&#10;*@marketing.example.com">${escapeHtml(spamText)}</textarea>
+      <label for="blocklist">Block list — silently drop, never stored</label>
+      <textarea id="blocklist" name="blocklist" rows="8" placeholder="troll@example.com&#10;*@spam.example.com">${escapeHtml(blockText)}</textarea>
+      <button type="submit">Save filters</button>
+    </form>
+  </section>`
+}
+
 function renderExportTab () {
   return `<section class="settings-section">
     <p class="settings-hint">Download all received and sent mail as a single <code>.mbox</code> file.
@@ -82,11 +96,12 @@ function renderExportTab () {
   </section>`
 }
 
-function renderSettingsPage (tab, identitiesRaw, bgImage, contactCount = 0) {
+function renderSettingsPage (tab, identitiesRaw, bgImage, contactCount = 0, spamText = '', blockText = '') {
   const tabs = [
     { key: 'identities', label: 'Identities' },
     { key: 'appearance', label: 'Appearance' },
     { key: 'contacts', label: 'Contacts' },
+    { key: 'filters', label: 'Filters' },
     { key: 'export', label: 'Export' }
   ]
 
@@ -99,9 +114,11 @@ function renderSettingsPage (tab, identitiesRaw, bgImage, contactCount = 0) {
     ? renderAppearanceTab(bgImage)
     : tab === 'contacts'
       ? renderContactsTab(contactCount)
-      : tab === 'export'
-        ? renderExportTab()
-        : renderIdentitiesTab(identitiesRaw)
+      : tab === 'filters'
+        ? renderFiltersTab(spamText, blockText)
+        : tab === 'export'
+          ? renderExportTab()
+          : renderIdentitiesTab(identitiesRaw)
 
   const bodyAttr = bgImage && /^https?:\/\//i.test(bgImage)
     ? ` style="background-image: linear-gradient(rgba(0,0,0,0.55),rgba(0,0,0,0.55)),url('${escapeHtml(bgImage)}')"`
@@ -131,12 +148,14 @@ function renderSettingsPage (tab, identitiesRaw, bgImage, contactCount = 0) {
 export const handleSettingsPage = withAuth(async (req, env) => {
   const url = new URL(req.url)
   const tab = url.searchParams.get('tab') || 'identities'
-  const [identitiesRaw, bgImage, contactCount] = await Promise.all([
+  const [identitiesRaw, bgImage, contactCount, spamText, blockText] = await Promise.all([
     getSetting(env.DB, 'identities'),
     getSetting(env.DB, 'bg_image'),
-    getAllContactsCount(env.DB)
+    getAllContactsCount(env.DB),
+    getSpamlistText(env.DB),
+    getBlocklistText(env.DB)
   ])
-  return new Response(renderSettingsPage(tab, identitiesRaw || '', bgImage || '', contactCount), {
+  return new Response(renderSettingsPage(tab, identitiesRaw || '', bgImage || '', contactCount, spamText, blockText), {
     headers: { 'Content-Type': 'text/html; charset=utf-8' }
   })
 })
@@ -170,4 +189,34 @@ export const handleSettingsImportContacts = withAuth(async (req, env) => {
 export const handleSettingsClearContacts = withAuth(async (req, env) => {
   await deleteAllContacts(env.DB)
   return new Response(null, { status: 302, headers: { Location: '/settings?tab=contacts' } })
+})
+
+function parseFilterPatterns (raw) {
+  return raw.split('\n').map((l) => l.trim()).filter(Boolean)
+}
+
+function validateFilterPatterns (patterns) {
+  const emailRe = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+  const wildcardRe = /^\*@[^\s@]+\.[^\s@]+$/
+  const bad = patterns.filter((p) => !emailRe.test(p) && !wildcardRe.test(p))
+  return bad
+}
+
+export const handleSettingsSaveFilters = withAuth(async (req, env) => {
+  const formData = await req.formData()
+  const spamPatterns = autoWildcard(parseFilterPatterns((formData.get('spamlist') || '').toString()))
+  const blockPatterns = autoWildcard(parseFilterPatterns((formData.get('blocklist') || '').toString()))
+
+  const badSpam = validateFilterPatterns(spamPatterns)
+  const badBlock = validateFilterPatterns(blockPatterns)
+  if (badSpam.length > 0 || badBlock.length > 0) {
+    const all = [...badSpam, ...badBlock]
+    return new Response(`Invalid pattern(s): ${all.join(', ')}`, { status: 400 })
+  }
+
+  await Promise.all([
+    setSpamlist(env.DB, spamPatterns),
+    setBlocklist(env.DB, blockPatterns)
+  ])
+  return new Response(null, { status: 302, headers: { Location: '/settings?tab=filters' } })
 })

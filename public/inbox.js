@@ -10,6 +10,30 @@ document.addEventListener('submit', (e) => {
 const list = document.getElementById('email-list')
 const sentinel = document.getElementById('scroll-sentinel')
 
+if (list && list.dataset.newest) {
+  let newest = list.dataset.newest
+  let newestId = list.dataset.newestId
+  const query = list.dataset.query
+
+  setInterval(async () => {
+    if (document.hidden) return
+    try {
+      const res = await fetch(`/inbox?q=${encodeURIComponent(query)}&after=${newest}&afterId=${newestId}`)
+      if (!res.ok) return
+      const html = await res.text()
+      const newNewest = res.headers.get('X-Newest-Created-At')
+      const newNewestId = res.headers.get('X-Newest-Id')
+      if (html.trim() && newNewest) {
+        list.insertAdjacentHTML('afterbegin', html)
+        newest = newNewest
+        newestId = newNewestId
+      }
+    } catch (err) {
+      console.error('inbox poll failed:', err)
+    }
+  }, 60000)
+}
+
 if (list && sentinel) {
   let loading = false
   let hasMore = true

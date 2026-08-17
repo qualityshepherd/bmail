@@ -89,11 +89,11 @@ export async function verifySignature (nonceHex, sigHex, publicKeyBytes) {
 }
 
 export function sessionCookie (token, cookieName, maxAgeSeconds) {
-  return `${cookieName}=${token}; Path=/; Max-Age=${maxAgeSeconds}; HttpOnly; Secure; SameSite=Strict`
+  return `${cookieName}=${token}; Path=/; Max-Age=${maxAgeSeconds}; HttpOnly; Secure; SameSite=Lax`
 }
 
 export function clearedSessionCookie (cookieName) {
-  return `${cookieName}=; Path=/; Max-Age=0; HttpOnly; Secure; SameSite=Strict`
+  return `${cookieName}=; Path=/; Max-Age=0; HttpOnly; Secure; SameSite=Lax`
 }
 
 export function parseCookies (cookieHeader) {

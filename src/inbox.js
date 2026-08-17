@@ -155,6 +155,9 @@ function renderInboxPage ({ emails, total, effectiveQuery, tags, currentUrl, ren
   const oldestEmail = emails.length > 0 ? emails[emails.length - 1] : null
   const oldestCreatedAt = oldestEmail ? oldestEmail.created_at : ''
   const oldestId = oldestEmail ? oldestEmail.id : ''
+  const newestEmail = emails.length > 0 ? emails[0] : null
+  const newestCreatedAt = newestEmail ? newestEmail.created_at : ''
+  const newestId = newestEmail ? newestEmail.id : ''
 
   const bodyAttr = bgImage && /^https?:\/\//i.test(bgImage)
     ? ` style="background-image: linear-gradient(rgba(0,0,0,0.55),rgba(0,0,0,0.55)),url('${escapeHtml(bgImage)}')"`
@@ -185,7 +188,7 @@ function renderInboxPage ({ emails, total, effectiveQuery, tags, currentUrl, ren
       ${renderBulkMenu(effectiveQuery, currentUrl, emails.length > 0)}
     </nav>
     ${renderTagLinks(tags)}
-    <ul class="inbox" id="email-list" data-query="${escapeHtml(effectiveQuery)}" data-oldest="${oldestCreatedAt}" data-oldest-id="${oldestId}" data-total="${total}">
+    <ul class="inbox" id="email-list" data-query="${escapeHtml(effectiveQuery)}" data-oldest="${oldestCreatedAt}" data-oldest-id="${oldestId}" data-newest="${newestCreatedAt}" data-newest-id="${newestId}" data-total="${total}">
       ${rows}
     </ul>
   </div>
@@ -200,6 +203,8 @@ export const handleInbox = withAuth(async (req, env, ctx, session) => {
   const rawQuery = url.searchParams.get('q') || ''
   const before = url.searchParams.get('before')
   const beforeId = url.searchParams.get('beforeId')
+  const after = url.searchParams.get('after')
+  const afterId = url.searchParams.get('afterId')
   const filters = resolveEffectiveQuery(rawQuery)
   const effectiveQuery = stringifySearchFilters(filters)
   const currentUrl = `/inbox?q=${encodeURIComponent(effectiveQuery)}`
@@ -248,6 +253,24 @@ export const handleInbox = withAuth(async (req, env, ctx, session) => {
         'X-Oldest-Created-At': oldest ? String(oldest.created_at) : '',
         'X-Oldest-Id': oldest ? String(oldest.id) : '',
         'X-Has-More': String(emails.length === 50),
+        ...noStoreHeaders
+      }
+    })
+  }
+
+  if (after !== null) {
+    const newEmails = await searchEmails(env.DB, filters, {
+      limit: 50,
+      after: Number(after),
+      afterId: afterId ? Number(afterId) : null
+    })
+    const rows = newEmails.length > 0 ? newEmails.map((e) => renderRow(e, currentUrl)).join('\n') : ''
+    const newest = newEmails.length > 0 ? newEmails[0] : null
+    return new Response(rows, {
+      headers: {
+        'Content-Type': 'text/html; charset=utf-8',
+        'X-Newest-Created-At': newest ? String(newest.created_at) : '',
+        'X-Newest-Id': newest ? String(newest.id) : '',
         ...noStoreHeaders
       }
     })

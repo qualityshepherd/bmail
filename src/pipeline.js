@@ -2,7 +2,7 @@ import { EmailMessage } from 'cloudflare:email'
 import { parseRawEmail } from './mime.js'
 import { anyPatternMatches } from './match.js'
 import { shouldNotify, buildSmsPayload } from './notifications.js'
-import { getBlocklistPatterns, getAllowlistPatterns, insertEmail, insertAttachment, getEmailByMessageId, deleteEmailsByIds, isDuplicateKeyError } from './db.js'
+import { getBlocklistPatterns, getSpamPatterns, getAllowlistPatterns, insertEmail, insertAttachment, getEmailByMessageId, deleteEmailsByIds, isDuplicateKeyError } from './db.js'
 
 // Runs the full inbound pipeline for one message. Returns { dropped: true }
 // if the sender was blocklisted, { duplicate: true } if this message was
@@ -15,6 +15,10 @@ export async function ingestEmail ({ message, env, deepLinkBaseUrl }) {
   if (anyPatternMatches(blocklistPatterns, message.from)) {
     return { dropped: true }
   }
+
+  const spamPatterns = await getSpamPatterns(env.DB)
+  const isSpam = spamPatterns.length > 0 &&
+    (anyPatternMatches(spamPatterns, message.from) || anyPatternMatches(spamPatterns, message.to))
 
   const parsed = await parseRawEmail(message.raw)
   const messageId = parsed.messageId || message.headers.get('message-id')
@@ -32,12 +36,13 @@ export async function ingestEmail ({ message, env, deepLinkBaseUrl }) {
 
   const senderPatterns = await getAllowlistPatterns(env.DB, 'sender')
   const aliasPatterns = await getAllowlistPatterns(env.DB, 'alias')
-  const notify = shouldNotify({
+  const notifyAllowed = shouldNotify({
     senderPatterns,
     aliasPatterns,
     sender: message.from,
     recipient: message.to
   })
+  const notify = notifyAllowed && !isSpam
 
   let emailId
   try {
@@ -51,7 +56,8 @@ export async function ingestEmail ({ message, env, deepLinkBaseUrl }) {
       notify,
       createdAt: Date.now(),
       senderDisplay: parsed.senderDisplay,
-      cc: parsed.cc
+      cc: parsed.cc,
+      status: isSpam ? 'spam' : 'inbox'
     })
   } catch (err) {
     // Race window: two near-simultaneous retries both passed the check

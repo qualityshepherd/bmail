@@ -5,10 +5,21 @@ Personal email system that runs on [Cloudflare's](https://www.cloudflare.com) fr
 ## Features
 
 - **Inbound**: Cloudflare Email Routing delivers raw messages to the Worker. Parsed, stored in D1, attachments in R2.
-- **Outbound**: Resend API (free) or Cloudflare's $5 tier.
+- **Outbound**: Compose, reply, reply-all, and forward via Resend API (free tier) or Cloudflare's $5 Email Service. CC/BCC/attachments supported.
 - **Auth**: Ed25519 keypair derived from a passphrase that never leaves your browser. Public key lives in `wrangler.toml`. No passwords stored anywhere.
+- **Multiple identities**: Send from different addresses and aliases. Top identity is the compose default.
 - **SMS**: Hourly cron texts you if there's unread mail, using your carrier's email-to-SMS gateway.
 - **Plain text only**: Incoming HTML is stripped to its text part. Outgoing is plain text.
+- **Spam/block filters**: Spam list routes matched senders or recipient aliases to Spam automatically. Block list drops mail silently. Managed in Settings → Filters; also updated when you mark a message spam.
+- **Search**: FTS5 full-text search across subject and body.
+- **Tags**: Free-text per-message tags, filterable from the inbox.
+- **Starred**: Star messages and filter by them.
+- **Folders**: Inbox, Archive, Trash, Spam. Bulk actions: empty trash, archive all, mark all read.
+- **Attachments**: Inbound attachments stored in R2 and downloadable. Outbound attachments supported via Resend.
+- **Contacts**: Import from `.vcf`. Names and avatars appear in the inbox and message view.
+- **Sent**: Browsable sent mail history.
+- **Export**: Full `.mbox` dump, importable into Thunderbird, Apple Mail, and most clients.
+- **Backup**: Nightly SQL dump to R2. Manual trigger in Settings → Export.
 
 ## Prerequisites
 
