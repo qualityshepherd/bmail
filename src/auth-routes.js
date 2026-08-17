@@ -30,6 +30,11 @@ async function parseJsonBody (req) {
 // tells the frontend whether AUTH_PUBKEY is configured yet (so it knows
 // whether to show the login form or the first-run setup form).
 export async function handleChallenge (req, env) {
+  const ip = req.headers.get('CF-Connecting-IP') || 'unknown'
+  const rlRecord = await getLoginAttempts(env.DB, ip)
+  if (isRateLimited(rlRecord, Date.now(), LOGIN_RATE_LIMIT_MAX_ATTEMPTS)) {
+    return json({ error: 'too many attempts' }, 429)
+  }
   const nonce = generateNonce()
   await insertNonce(env.DB, nonce, Date.now())
   return json({ challenge: nonce, configured: !!env.AUTH_PUBKEY })

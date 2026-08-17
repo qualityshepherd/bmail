@@ -18,6 +18,9 @@
   "dependencies": {
     "postal-mime": "^2.7.6"
   },
+  "standard": {
+    "env": ["browser"]
+  },
   "devDependencies": {
     "puppeteer": "^25.7.0",
     "wrangler": "^4.123.0"

@@ -1,4 +1,3 @@
-/* global confirm */
 const replyBody = document.getElementById('body')
 const replyForm = document.querySelector('.reply-form')
 

@@ -1,5 +1,5 @@
 import { withAuth } from './auth-routes.js'
-import { getEmailById, buildReferencesChain, insertSent, getSetting } from './db.js'
+import { getEmailById, buildReferencesChain, insertSent, deleteSentById, getSetting } from './db.js'
 import { buildReplySubject, generateMessageId, extractDomain } from './reply.js'
 import { sendEmail } from './mailer.js'
 import { escapeHtml, parseAddressList, extractEmail } from './html.js'
@@ -36,6 +36,17 @@ export const handleReply = withAuth(async (req, env, ctx, session, emailId) => {
   const messageId = generateMessageId(extractDomain(from))
   const subject = buildReplySubject(email.subject)
 
+  const sentId = await insertSent(env.DB, {
+    messageId,
+    fromAddress: from,
+    toAddress: email.sender,
+    ccAddress: ccList && ccList.length ? ccList.join(', ') : null,
+    subject,
+    body,
+    inReplyTo: email.message_id,
+    createdAt: Date.now()
+  })
+
   try {
     await sendEmail(env, {
       from,
@@ -49,6 +60,7 @@ export const handleReply = withAuth(async (req, env, ctx, session, emailId) => {
     })
   } catch (err) {
     console.error('Bmail reply send failed:', err)
+    await deleteSentById(env.DB, sentId).catch(() => {})
     return new Response(
       `<!DOCTYPE html><html><body style="font-family:sans-serif;max-width:500px;margin:3rem auto;">
         <p><strong>Failed to send:</strong> ${escapeHtml(err.message || 'unknown error')}</p>
@@ -57,17 +69,6 @@ export const handleReply = withAuth(async (req, env, ctx, session, emailId) => {
       { status: 400, headers: { 'Content-Type': 'text/html; charset=utf-8' } }
     )
   }
-
-  await insertSent(env.DB, {
-    messageId,
-    fromAddress: from,
-    toAddress: email.sender,
-    ccAddress: ccList && ccList.length ? ccList.join(', ') : null,
-    subject,
-    body,
-    inReplyTo: email.message_id,
-    createdAt: Date.now()
-  })
 
   return new Response(null, {
     status: 302,

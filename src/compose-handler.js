@@ -1,5 +1,5 @@
 import { withAuth } from './auth-routes.js'
-import { getSetting, insertSent } from './db.js'
+import { getSetting, insertSent, deleteSentById } from './db.js'
 import { parseIdentities, findIdentityByAddress } from './identities.js'
 import { generateMessageId, extractDomain } from './reply.js'
 import { sendEmail } from './mailer.js'
@@ -62,6 +62,18 @@ export const handleCompose = withAuth(async (req, env, ctx, session) => {
 
   const messageId = generateMessageId(extractDomain(from))
 
+  const sentId = await insertSent(env.DB, {
+    messageId,
+    fromAddress: from,
+    toAddress: toList.join(', '),
+    ccAddress: ccList.length ? ccList.join(', ') : null,
+    bccAddress: bccList.length ? bccList.join(', ') : null,
+    subject,
+    body,
+    inReplyTo: null,
+    createdAt: Date.now()
+  })
+
   try {
     await sendEmail(env, {
       from,
@@ -75,6 +87,7 @@ export const handleCompose = withAuth(async (req, env, ctx, session) => {
     })
   } catch (err) {
     console.error('Bmail compose send failed:', err)
+    await deleteSentById(env.DB, sentId).catch(() => {})
     return new Response(
       `<!DOCTYPE html><html><body style="font-family:sans-serif;max-width:500px;margin:3rem auto;">
         <p><strong>Failed to send:</strong> ${escapeHtml(err.message || 'unknown error')}</p>
@@ -85,18 +98,6 @@ export const handleCompose = withAuth(async (req, env, ctx, session) => {
       { status: 400, headers: { 'Content-Type': 'text/html; charset=utf-8' } }
     )
   }
-
-  await insertSent(env.DB, {
-    messageId,
-    fromAddress: from,
-    toAddress: toList.join(', '),
-    ccAddress: ccList.length ? ccList.join(', ') : null,
-    bccAddress: bccList.length ? bccList.join(', ') : null,
-    subject,
-    body,
-    inReplyTo: null,
-    createdAt: Date.now()
-  })
 
   return new Response(null, {
     status: 302,

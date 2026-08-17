@@ -1,4 +1,3 @@
-/* global confirm */
 const deleteForm = document.getElementById('delete-form')
 if (deleteForm) {
   deleteForm.addEventListener('submit', (e) => {

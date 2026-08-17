@@ -1,5 +1,3 @@
-/* global alert */
-
 // ─── CC / BCC toggles ─────────────────────────────────────
 const showCcBtn = document.getElementById('show-cc')
 const showBccBtn = document.getElementById('show-bcc')

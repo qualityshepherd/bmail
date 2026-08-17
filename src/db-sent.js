@@ -6,13 +6,14 @@ export async function getSentByMessageId (db, messageId) {
 }
 
 export async function insertSent (db, sent) {
-  await db
+  const result = await db
     .prepare(
       `INSERT INTO sent (message_id, from_address, to_address, cc_address, bcc_address, subject, body, in_reply_to, created_at)
        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`
     )
     .bind(sent.messageId, sent.fromAddress, sent.toAddress, sent.ccAddress || null, sent.bccAddress || null, sent.subject || null, sent.body || null, sent.inReplyTo || null, sent.createdAt)
     .run()
+  return result.meta.last_row_id
 }
 
 export async function getSentById (db, id) {

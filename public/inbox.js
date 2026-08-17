@@ -1,5 +1,3 @@
-/* global IntersectionObserver, confirm */
-
 document.addEventListener('submit', (e) => {
   const form = e.target
   if (form.id === 'empty-trash-form') {
