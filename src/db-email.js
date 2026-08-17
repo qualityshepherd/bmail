@@ -48,10 +48,8 @@ function buildEmailConditions (filters) {
     conditions.push('emails.status = ?')
     params.push(filters.status)
   }
-  for (const tag of filters.tags) {
-    conditions.push('emails.tags LIKE ?')
-    params.push(`%${tag}%`)
-  }
+  conditions.push(...filters.tags.map(() => 'emails.tags LIKE ?'))
+  params.push(...filters.tags.map((tag) => `%${tag}%`))
   if (filters.starred) conditions.push('emails.starred = 1')
   if (filters.text) {
     fromClause = 'FROM emails JOIN emails_fts ON emails.id = emails_fts.rowid'

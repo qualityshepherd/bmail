@@ -44,10 +44,9 @@ export const handleCompose = withAuth(async (req, env, ctx, session) => {
     return new Response('From address is not a configured identity', { status: 400 })
   }
 
-  for (const f of files) {
-    if (f.size > MAX_ATTACHMENT_BYTES) {
-      return new Response(`Attachment "${f.name}" exceeds 15MB`, { status: 400 })
-    }
+  const oversized = files.find((f) => f.size > MAX_ATTACHMENT_BYTES)
+  if (oversized) {
+    return new Response(`Attachment "${oversized.name}" exceeds 15MB`, { status: 400 })
   }
   const totalSize = files.reduce((s, f) => s + f.size, 0)
   if (totalSize > MAX_TOTAL_BYTES) {

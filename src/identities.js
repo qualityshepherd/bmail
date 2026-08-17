@@ -38,8 +38,8 @@ export function formatIdentities (identities) {
   return identities
     .map((i) => {
       const fields = [i.address, i.name || '', i.avatarUrl || '']
-      while (fields.length > 1 && fields[fields.length - 1] === '') fields.pop()
-      return fields.join(',')
+      const end = fields.findLastIndex((f) => f !== '')
+      return fields.slice(0, end + 1).join(',')
     })
     .join('\n')
 }

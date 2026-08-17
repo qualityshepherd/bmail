@@ -13,11 +13,10 @@ export async function getBlocklistText (db) {
 }
 
 export async function setBlocklist (db, patterns) {
-  const stmts = [db.prepare('DELETE FROM blocklist')]
-  for (const p of patterns) {
-    stmts.push(db.prepare('INSERT OR IGNORE INTO blocklist (pattern) VALUES (?)').bind(p))
-  }
-  await db.batch(stmts)
+  await db.batch([
+    db.prepare('DELETE FROM blocklist'),
+    ...patterns.map((p) => db.prepare('INSERT OR IGNORE INTO blocklist (pattern) VALUES (?)').bind(p))
+  ])
 }
 
 export async function getSpamPatterns (db) {
@@ -35,11 +34,10 @@ export async function getSpamlistText (db) {
 }
 
 export async function setSpamlist (db, patterns) {
-  const stmts = [db.prepare('DELETE FROM spamlist')]
-  for (const p of patterns) {
-    stmts.push(db.prepare('INSERT OR IGNORE INTO spamlist (pattern) VALUES (?)').bind(p))
-  }
-  await db.batch(stmts)
+  await db.batch([
+    db.prepare('DELETE FROM spamlist'),
+    ...patterns.map((p) => db.prepare('INSERT OR IGNORE INTO spamlist (pattern) VALUES (?)').bind(p))
+  ])
 }
 
 export async function getAllowlistPatterns (db, kind) {

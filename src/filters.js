@@ -1,26 +1,18 @@
 export function autoWildcard (patterns) {
-  const byDomain = {}
-  for (const p of patterns) {
+  const byDomain = patterns.reduce((acc, p) => {
     const at = p.lastIndexOf('@')
-    if (at === -1) continue
+    if (at === -1) return acc
     const domain = p.slice(at + 1)
-    ;(byDomain[domain] = byDomain[domain] || []).push(p)
-  }
+    return { ...acc, [domain]: [...(acc[domain] || []), p] }
+  }, {})
 
-  const seen = new Set()
-  const result = []
-  for (const p of patterns) {
+  const candidates = patterns.map((p) => {
     const at = p.lastIndexOf('@')
-    if (at === -1) { if (!seen.has(p)) { seen.add(p); result.push(p) }; continue }
+    if (at === -1) return p
     const domain = p.slice(at + 1)
     const group = byDomain[domain]
-    const hasWildcard = group.some((g) => g.includes('*'))
-    if (!hasWildcard && group.length >= 2) {
-      const wildcard = `*@${domain}`
-      if (!seen.has(wildcard)) { seen.add(wildcard); result.push(wildcard) }
-    } else {
-      if (!seen.has(p)) { seen.add(p); result.push(p) }
-    }
-  }
-  return result
+    return (!group.some((g) => g.includes('*')) && group.length >= 2) ? `*@${domain}` : p
+  })
+
+  return [...new Set(candidates)]
 }

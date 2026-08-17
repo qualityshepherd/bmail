@@ -265,11 +265,14 @@ export const handleInbox = withAuth(async (req, env, ctx, session) => {
   }
 
   if (after !== null) {
-    const newEmails = await searchEmails(env.DB, filters, {
-      limit: 50,
-      after: Number(after),
-      afterId: afterId ? Number(afterId) : null
-    })
+    const [newEmails, pollUnread] = await Promise.all([
+      searchEmails(env.DB, filters, {
+        limit: 50,
+        after: Number(after),
+        afterId: afterId ? Number(afterId) : null
+      }),
+      getUnreadInboxCount(env.DB)
+    ])
     const rows = newEmails.length > 0 ? newEmails.map((e) => renderRow(e, currentUrl)).join('\n') : ''
     const newest = newEmails.length > 0 ? newEmails[0] : null
     return new Response(rows, {
@@ -277,6 +280,7 @@ export const handleInbox = withAuth(async (req, env, ctx, session) => {
         'Content-Type': 'text/html; charset=utf-8',
         'X-Newest-Created-At': newest ? String(newest.created_at) : '',
         'X-Newest-Id': newest ? String(newest.id) : '',
+        'X-Unread-Count': String(pollUnread),
         ...noStoreHeaders
       }
     })

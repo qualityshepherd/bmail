@@ -12,6 +12,25 @@ function localizeTitle (ts) {
   })
 }
 
+function updateUnreadBadge (count) {
+  document.title = count > 0 ? `(${count}) Bmail` : 'Bmail'
+  const folderLinks = document.querySelector('.folder-links')
+  if (!folderLinks) return
+  const inboxLink = folderLinks.querySelector('a[href*="inbox%3A"]')
+  if (!inboxLink) return
+  let badge = inboxLink.querySelector('.inbox-count')
+  if (count > 0) {
+    if (!badge) {
+      badge = document.createElement('span')
+      badge.className = 'inbox-count'
+      inboxLink.appendChild(badge)
+    }
+    badge.textContent = count
+  } else if (badge) {
+    badge.remove()
+  }
+}
+
 function localizeDates (root) {
   const scope = root || document
   scope.querySelectorAll('.row-date[data-ts]').forEach((el) => {
@@ -49,12 +68,14 @@ if (list && list.dataset.newest) {
       const html = await res.text()
       const newNewest = res.headers.get('X-Newest-Created-At')
       const newNewestId = res.headers.get('X-Newest-Id')
+      const newUnread = res.headers.get('X-Unread-Count')
       if (html.trim() && newNewest) {
         list.insertAdjacentHTML('afterbegin', html)
         localizeDates(list)
         newest = newNewest
         newestId = newNewestId
       }
+      if (newUnread !== null) updateUnreadBadge(Number(newUnread))
     } catch (err) {
       console.error('inbox poll failed:', err)
     }
