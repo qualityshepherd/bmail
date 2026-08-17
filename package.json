@@ -1,9 +1,12 @@
 {
   "name": "bmail",
   "version": "0.1.0",
-  "description": "Bmail is a zero-dependency* personal email engine on Cloudflare Workers, D1, and R2",
+  "description": "Personal email system that runs on Cloudflare's free tier. Send, receive, and store plain-text emails on your own domain. Zero server costs, zero stored passwords, and one dependency.",
   "type": "module",
   "private": true,
+  "standard": {
+    "env": ["browser"]
+  },
   "scripts": {
     "dev": "wrangler dev",
     "deploy": "wrangler deploy",
@@ -17,9 +20,6 @@
   },
   "dependencies": {
     "postal-mime": "^2.7.6"
-  },
-  "standard": {
-    "env": ["browser"]
   },
   "devDependencies": {
     "puppeteer": "^25.7.0",
