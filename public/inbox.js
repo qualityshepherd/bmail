@@ -55,7 +55,7 @@ document.addEventListener('submit', (e) => {
 const list = document.getElementById('email-list')
 const sentinel = document.getElementById('scroll-sentinel')
 
-if (list && list.dataset.newest) {
+if (list && list.dataset.newest && !list.dataset.query.startsWith('sent:')) {
   let newest = list.dataset.newest
   let newestId = list.dataset.newestId
   const query = list.dataset.query

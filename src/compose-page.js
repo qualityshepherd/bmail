@@ -34,6 +34,10 @@ export function renderComposePage (identities, contacts = [], defaults = {}, { i
 <title>Compose - Bmail</title>
 <link rel="icon" href="/favicon.svg" type="image/svg+xml">
 <link rel="icon" href="/favicon.gif" type="image/gif">
+<link rel="manifest" href="/manifest.json">
+<meta name="theme-color" content="#BF5520">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<link rel="apple-touch-icon" href="/bmail_logo2.png">
 <link rel="stylesheet" href="/base.css">
 <link rel="stylesheet" href="/compose.css">
 </head>
@@ -47,6 +51,7 @@ export function renderComposePage (identities, contacts = [], defaults = {}, { i
     <p>Add at least one sending identity first.</p>
     <p><a href="/settings">Set up identities &rarr;</a></p>
   </div>
+<script src="/sw-register.js" defer></script>
 </body>
 </html>`
   }
@@ -58,6 +63,10 @@ export function renderComposePage (identities, contacts = [], defaults = {}, { i
 <title>${pageTitle} - Bmail</title>
 <link rel="icon" href="/favicon.svg" type="image/svg+xml">
 <link rel="icon" href="/favicon.gif" type="image/gif">
+<link rel="manifest" href="/manifest.json">
+<meta name="theme-color" content="#BF5520">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<link rel="apple-touch-icon" href="/bmail_logo2.png">
 <link rel="stylesheet" href="/base.css">
 <link rel="stylesheet" href="/compose.css">
 </head>
@@ -120,6 +129,7 @@ export function renderComposePage (identities, contacts = [], defaults = {}, { i
     </form>
   </div>
   <script src="/compose.js"></script>
+<script src="/sw-register.js" defer></script>
 </body>
 </html>`
 }

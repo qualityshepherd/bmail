@@ -27,6 +27,10 @@ function renderSentPage (sent, backUrl, { identity = null, bgImage = '', contact
 <title>${subject} - Bmail</title>
 <link rel="icon" href="/favicon.svg" type="image/svg+xml">
 <link rel="icon" href="/favicon.gif" type="image/gif">
+<link rel="manifest" href="/manifest.json">
+<meta name="theme-color" content="#BF5520">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<link rel="apple-touch-icon" href="/bmail_logo2.png">
 <link rel="stylesheet" href="/base.css">
 <link rel="stylesheet" href="/message.css">
 </head>
@@ -63,6 +67,7 @@ function renderSentPage (sent, backUrl, { identity = null, bgImage = '', contact
     </form>
   </main>
   <script src="/sent.js"></script>
+<script src="/sw-register.js" defer></script>
 </body>
 </html>`
 }

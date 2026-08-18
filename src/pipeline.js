@@ -53,6 +53,7 @@ export async function ingestEmail ({ message, env }) {
       body: parsed.text,
       messageId,
       inReplyTo: message.headers.get('in-reply-to'),
+      listUnsubscribe: message.headers.get('list-unsubscribe'),
       notify,
       createdAt: Date.now(),
       senderDisplay: parsed.senderDisplay,

@@ -1,5 +1,5 @@
 import {
-  timingSafeEqual, isAuthorizedPubkey, isRateLimited, incrementAttempt,
+  isAuthorizedPubkey, isRateLimited, incrementAttempt,
   LOGIN_RATE_LIMIT_MAX_ATTEMPTS, LOGIN_RATE_LIMIT_WINDOW_MS,
   generateNonce, generateSessionToken, isNonceExpired, isSessionExpired,
   verifySignature, hexToBytes, sessionCookie, clearedSessionCookie, parseCookies,
@@ -9,8 +9,6 @@ import {
   insertNonce, consumeNonce, insertSession, getSessionCreatedAt, deleteSession,
   getLoginAttempts, setLoginAttempts, deleteLoginAttempts
 } from './db.js'
-
-export { timingSafeEqual } // re-exported for anything that wants the raw compare
 
 function json (data, status = 200) {
   return new Response(JSON.stringify(data), {
@@ -148,10 +146,6 @@ export function withAuth (handler) {
         { status: 401, headers: { ...SECURITY_HEADERS, 'Content-Type': 'text/html; charset=utf-8' } }
       )
     }
-    const response = await handler(req, env, ctx, session, ...extra)
-    for (const [key, value] of Object.entries(SECURITY_HEADERS)) {
-      response.headers.set(key, value)
-    }
-    return response
+    return handler(req, env, ctx, session, ...extra)
   }
 }

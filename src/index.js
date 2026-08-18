@@ -29,6 +29,7 @@ import { handleMarkAllRead } from './mark-read-handler.js'
 import { handleArchiveAll } from './archive-all-handler.js'
 import { handleSettingsPage, handleSettingsSaveIdentities, handleSettingsSaveAppearance, handleSettingsImportContacts, handleSettingsClearContacts, handleSettingsSaveFilters } from './settings-page.js'
 import { handleSentView } from './sent-view.js'
+import { handleUnsubscribe } from './unsubscribe-handler.js'
 import { handleMboxExport } from './export-handler.js'
 import { runDailyBackup } from './backup.js'
 import { handleManualBackup } from './backup-handler.js'
@@ -56,6 +57,7 @@ const BLOCK_PATTERN = new URLPattern({ pathname: '/message/:id/block' })
 const STATUS_PATTERN = new URLPattern({ pathname: '/message/:id/status' })
 const SPAM_RECIPIENT_PATTERN = new URLPattern({ pathname: '/message/:id/spam-recipient' })
 const TAGS_PATTERN = new URLPattern({ pathname: '/message/:id/tags' })
+const UNSUBSCRIBE_PATTERN = new URLPattern({ pathname: '/message/:id/unsubscribe' })
 
 const ROUTES = [
   ['GET', '/api/challenge', (req, env) => handleChallenge(req, env)],
@@ -87,6 +89,7 @@ const ROUTES = [
   ['POST', STATUS_PATTERN, (req, env, ctx, m) => handleStatusChange(req, env, ctx, m.pathname.groups.id)],
   ['POST', SPAM_RECIPIENT_PATTERN, (req, env, ctx, m) => handleSpamRecipient(req, env, ctx, m.pathname.groups.id)],
   ['POST', TAGS_PATTERN, (req, env, ctx, m) => handleTagsChange(req, env, ctx, m.pathname.groups.id)],
+  ['POST', UNSUBSCRIBE_PATTERN, (req, env, ctx, m) => handleUnsubscribe(req, env, ctx, m.pathname.groups.id)],
   ['GET', ATTACHMENT_PATTERN, (req, env, ctx, m) => handleAttachmentDownload(req, env, ctx, m.pathname.groups.id, m.pathname.groups.attachmentId)],
   ['POST', DELETE_SENT_PATTERN, (req, env, ctx, m) => handleDeleteSent(req, env, ctx, m.pathname.groups.id)],
   ['GET', SENT_PATTERN, (req, env, ctx, m) => handleSentView(req, env, ctx, m.pathname.groups.id)],

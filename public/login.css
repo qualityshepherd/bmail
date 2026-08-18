@@ -5,6 +5,13 @@
   text-align: center;
 }
 
+.login-logo {
+  width: 80px;
+  height: 80px;
+  object-fit: contain;
+  margin-bottom: 0.5rem;
+}
+
 .login h1 {
   color: var(--accent-bright);
   font-size: 1.5rem;
@@ -76,6 +83,29 @@
 #login-btn:disabled {
   opacity: 0.5;
   cursor: not-allowed;
+}
+
+.phrase-strength {
+  height: 3px;
+  background: var(--border);
+  border-radius: 2px;
+  margin-bottom: 0.5rem;
+  overflow: hidden;
+}
+
+.strength-bar {
+  height: 100%;
+  width: 0%;
+  border-radius: 2px;
+  transition: width 0.25s, background 0.25s;
+}
+
+.strength-flavor {
+  font-size: 0.8rem;
+  color: var(--text-dim);
+  min-height: 1rem;
+  margin-bottom: 0.75rem;
+  text-align: left;
 }
 
 .status {

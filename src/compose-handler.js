@@ -37,7 +37,7 @@ export const handleCompose = withAuth(async (req, env, ctx, session) => {
 
   const badAddr = [...toList, ...ccList, ...bccList].find((a) => !looksLikeAddress(a))
   if (badAddr) {
-    return new Response(`Invalid address: ${badAddr}`, { status: 400 })
+    return new Response(`Invalid address: ${badAddr}`, { status: 400, headers: { 'Content-Type': 'text/plain; charset=utf-8' } })
   }
 
   if (!findIdentityByAddress(identities, from)) {
@@ -46,7 +46,7 @@ export const handleCompose = withAuth(async (req, env, ctx, session) => {
 
   const oversized = files.find((f) => f.size > MAX_ATTACHMENT_BYTES)
   if (oversized) {
-    return new Response(`Attachment "${oversized.name}" exceeds 15MB`, { status: 400 })
+    return new Response(`Attachment "${oversized.name}" exceeds 15MB`, { status: 400, headers: { 'Content-Type': 'text/plain; charset=utf-8' } })
   }
   const totalSize = files.reduce((s, f) => s + f.size, 0)
   if (totalSize > MAX_TOTAL_BYTES) {

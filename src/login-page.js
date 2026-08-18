@@ -6,11 +6,16 @@ export function renderLoginPage () {
 <title>Log in - Bmail</title>
 <link rel="icon" href="/favicon.svg" type="image/svg+xml">
 <link rel="icon" href="/favicon.gif" type="image/gif">
+<link rel="manifest" href="/manifest.json">
+<meta name="theme-color" content="#BF5520">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<link rel="apple-touch-icon" href="/bmail_logo2.png">
 <link rel="stylesheet" href="/base.css">
 <link rel="stylesheet" href="/login.css">
 </head>
 <body>
   <main class="login">
+    <img src="/bmail_logo2.png" alt="" class="login-logo">
     <h1>Bmail</h1>
     <form id="login-form">
       <label for="passphrase">passphrase</label>
@@ -23,11 +28,14 @@ export function renderLoginPage () {
           </svg>
         </button>
       </div>
+      <div class="phrase-strength"><div class="strength-bar" id="strength-bar"></div></div>
+      <div class="strength-flavor" id="strength-flavor"></div>
       <button id="login-btn" type="submit">Log in</button>
       <span id="status" class="status"></span>
     </form>
   </main>
   <script src="/login.js"></script>
+<script src="/sw-register.js" defer></script>
 </body>
 </html>`
 }

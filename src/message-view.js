@@ -64,6 +64,7 @@ function renderMessagePage (email, attachments, { sent, backParam, prevId, nextI
     : ''
 
   const sentBanner = sent ? '<p class="sent-banner">Reply sent.</p>' : ''
+  const unsubscribedBanner = email.unsubscribed ? '<p class="sent-banner">Unsubscribed.</p>' : ''
   const tagsValue = escapeHtml(formatTags(parseTags(email.tags)))
 
   // backParam is already a full, valid path (e.g. "/inbox?q=status%3Ainbox")
@@ -98,6 +99,10 @@ function renderMessagePage (email, attachments, { sent, backParam, prevId, nextI
 <title>${subject} - Bmail</title>
 <link rel="icon" href="/favicon.svg" type="image/svg+xml">
 <link rel="icon" href="/favicon.gif" type="image/gif">
+<link rel="manifest" href="/manifest.json">
+<meta name="theme-color" content="#BF5520">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<link rel="apple-touch-icon" href="/bmail_logo2.png">
 <link rel="stylesheet" href="/base.css">
 <link rel="stylesheet" href="/message.css">
 </head>
@@ -127,6 +132,10 @@ function renderMessagePage (email, attachments, { sent, backParam, prevId, nextI
         <details class="traffic-menu">
           <summary title="More actions" aria-label="More actions">···</summary>
           <div class="traffic-panel">
+            ${email.list_unsubscribe ? `<form method="post" action="/message/${email.id}/unsubscribe">
+              <input type="hidden" name="back" value="${escapeHtml(backParam)}">
+              <button type="submit">Unsubscribe</button>
+            </form>` : ''}
             <form method="post" action="/message/${email.id}/block">
               <input type="hidden" name="back" value="${escapeHtml(backParam)}">
               <button type="submit">Block sender</button>
@@ -161,6 +170,7 @@ function renderMessagePage (email, attachments, { sent, backParam, prevId, nextI
     <pre class="body">${body}</pre>
 
     ${sentBanner}
+    ${unsubscribedBanner}
     <form method="post" action="/message/${email.id}/reply" class="reply-form">
       <select name="from">${renderIdentityOptions(identities, email.recipient)}</select>
       <textarea id="body" name="body" rows="12" placeholder="Reply...">${quotedTextareaContent}</textarea>
@@ -171,6 +181,7 @@ function renderMessagePage (email, attachments, { sent, backParam, prevId, nextI
     </form>
   </main>
   <script src="/message.js"></script>
+<script src="/sw-register.js" defer></script>
 </body>
 </html>`
 }
@@ -183,6 +194,7 @@ export const handleMessageView = withAuth(async (req, env, ctx, session, emailId
 
   const url = new URL(req.url)
   const sent = url.searchParams.get('sent') === '1'
+  const unsubscribed = url.searchParams.get('unsubscribed') === '1'
   const rawBack = url.searchParams.get('back') || ''
   const backParam = (rawBack.startsWith('/') && !rawBack.startsWith('//')) ? rawBack : DEFAULT_BACK
 
@@ -211,7 +223,7 @@ export const handleMessageView = withAuth(async (req, env, ctx, session, emailId
   const allTags = [...new Set(allTagsRaw.flatMap((t) => parseTags(t)))]
   const contact = contacts.get(email.sender.toLowerCase()) || null
 
-  return new Response(renderMessagePage(email, attachments, { sent, backParam, prevId, nextId, identities, allTags, identity, bgImage: bgImage || '', contact }), {
-    headers: { 'Content-Type': 'text/html; charset=utf-8' }
+  return new Response(renderMessagePage({ ...email, unsubscribed }, attachments, { sent, backParam, prevId, nextId, identities, allTags, identity, bgImage: bgImage || '', contact }), {
+    headers: { 'Content-Type': 'text/html; charset=utf-8', 'Cache-Control': 'no-store' }
   })
 })

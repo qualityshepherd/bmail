@@ -1,0 +1,14 @@
+{
+  "name": "Bmail",
+  "short_name": "Bmail",
+  "description": "Personal email on your own infrastructure",
+  "start_url": "/inbox",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#1a1818",
+  "theme_color": "#BF5520",
+  "icons": [
+    { "src": "/favicon.svg", "sizes": "any", "type": "image/svg+xml" },
+    { "src": "/bmail_logo2.png", "sizes": "512x512", "type": "image/png" }
+  ]
+}

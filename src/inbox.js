@@ -174,6 +174,10 @@ function renderInboxPage ({ emails, total, effectiveQuery, tags, currentUrl, ren
 <title>${unreadCount > 0 ? `(${unreadCount}) ` : ''}Bmail</title>
 <link rel="icon" href="/favicon.svg" type="image/svg+xml">
 <link rel="icon" href="/favicon.gif" type="image/gif">
+<link rel="manifest" href="/manifest.json">
+<meta name="theme-color" content="#BF5520">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<link rel="apple-touch-icon" href="/bmail_logo2.png">
 <link rel="stylesheet" href="/base.css">
 <link rel="stylesheet" href="/inbox.css">
 </head>
@@ -206,6 +210,7 @@ function renderInboxPage ({ emails, total, effectiveQuery, tags, currentUrl, ren
   </div>
   <div id="scroll-sentinel"></div>
   <script src="/inbox.js"></script>
+<script src="/sw-register.js" defer></script>
 </body>
 </html>`
 }
@@ -257,7 +262,8 @@ export const handleInbox = withAuth(async (req, env, ctx, session) => {
   })
 
   if (before !== null) {
-    const rows = emails.length > 0 ? emails.map((e) => renderRow(e, currentUrl)).join('\n') : ''
+    const contacts = emails.length > 0 ? await getContactsByEmails(env.DB, emails.map((e) => e.sender)) : new Map()
+    const rows = emails.length > 0 ? emails.map((e) => renderRow(e, currentUrl, contacts)).join('\n') : ''
     const oldest = emails.length > 0 ? emails[emails.length - 1] : null
     return new Response(rows, {
       headers: {
@@ -279,7 +285,8 @@ export const handleInbox = withAuth(async (req, env, ctx, session) => {
       }),
       getUnreadInboxCount(env.DB)
     ])
-    const rows = newEmails.length > 0 ? newEmails.map((e) => renderRow(e, currentUrl)).join('\n') : ''
+    const contacts = newEmails.length > 0 ? await getContactsByEmails(env.DB, newEmails.map((e) => e.sender)) : new Map()
+    const rows = newEmails.length > 0 ? newEmails.map((e) => renderRow(e, currentUrl, contacts)).join('\n') : ''
     const newest = newEmails.length > 0 ? newEmails[0] : null
     return new Response(rows, {
       headers: {
