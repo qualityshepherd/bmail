@@ -4,6 +4,8 @@ export function renderLoginPage () {
 <head>
 <meta charset="utf-8">
 <title>Log in - Bmail</title>
+<link rel="icon" href="/favicon.svg" type="image/svg+xml">
+<link rel="icon" href="/favicon.gif" type="image/gif">
 <link rel="stylesheet" href="/base.css">
 <link rel="stylesheet" href="/login.css">
 </head>

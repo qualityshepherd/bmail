@@ -129,13 +129,15 @@ function renderSettingsPage (tab, identitiesRaw, bgImage, contactCount = 0, spam
 <head>
 <meta charset="utf-8">
 <title>Settings – Bmail</title>
+<link rel="icon" href="/favicon.svg" type="image/svg+xml">
+<link rel="icon" href="/favicon.gif" type="image/gif">
 <link rel="stylesheet" href="/base.css">
 <link rel="stylesheet" href="/settings.css">
 <script src="/settings.js" defer></script>
 </head>
 <body${bodyAttr}>
   <header>
-    <h1><a href="/inbox">Bmail</a></h1>
+    <h1><a href="/inbox"><img src="/bmail_logo2.png" alt="" class="site-logo">Bmail</a></h1>
   </header>
   <div class="settings-wrap">
     <nav class="settings-tabs">${tabNav}</nav>

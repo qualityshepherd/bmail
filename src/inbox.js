@@ -172,12 +172,14 @@ function renderInboxPage ({ emails, total, effectiveQuery, tags, currentUrl, ren
 <head>
 <meta charset="utf-8">
 <title>${unreadCount > 0 ? `(${unreadCount}) ` : ''}Bmail</title>
+<link rel="icon" href="/favicon.svg" type="image/svg+xml">
+<link rel="icon" href="/favicon.gif" type="image/gif">
 <link rel="stylesheet" href="/base.css">
 <link rel="stylesheet" href="/inbox.css">
 </head>
 <body${bodyAttr}>
   <header>
-    <h1><a href="/inbox">Bmail</a></h1>
+    <h1><a href="/inbox"><img src="/bmail_logo2.png" alt="" class="site-logo">Bmail</a></h1>
     ${renderSettingsMenu(identity)}
   </header>
   <div class="page-wrap">

@@ -51,8 +51,9 @@ a { color: var(--accent-bright); }
 .back:hover { color: var(--accent-bright); }
 
 h1 { font-size: 1.15rem; font-weight: 600; }
-h1 a { text-decoration: none; }
+h1 a { text-decoration: none; display: flex; align-items: center; gap: 0.4rem; }
 h1 a:hover { color: var(--accent); }
+.site-logo { width: 28px; height: 28px; flex-shrink: 0; }
 
 /* ─── Settings menu (avatar trigger) ─────────────────────── */
 .settings-menu {

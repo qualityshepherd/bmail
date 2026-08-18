@@ -96,12 +96,14 @@ function renderMessagePage (email, attachments, { sent, backParam, prevId, nextI
 <head>
 <meta charset="utf-8">
 <title>${subject} - Bmail</title>
+<link rel="icon" href="/favicon.svg" type="image/svg+xml">
+<link rel="icon" href="/favicon.gif" type="image/gif">
 <link rel="stylesheet" href="/base.css">
 <link rel="stylesheet" href="/message.css">
 </head>
 <body${bodyAttr} data-prev-href="${prevHref || ''}" data-next-href="${nextHref || ''}">
   <header>
-    <h1><a href="/inbox">Bmail</a></h1>
+    <h1><a href="/inbox"><img src="/bmail_logo2.png" alt="" class="site-logo">Bmail</a></h1>
     <span class="header-center">
       <span class="nav-buttons">${navButtons}</span>
       <span class="header-actions">

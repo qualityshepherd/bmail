@@ -22,6 +22,8 @@ function renderIdentitiesPage (rawValue) {
 <head>
 <meta charset="utf-8">
 <title>Identities - Bmail</title>
+<link rel="icon" href="/favicon.svg" type="image/svg+xml">
+<link rel="icon" href="/favicon.gif" type="image/gif">
 <link rel="stylesheet" href="/base.css">
 <link rel="stylesheet" href="/identities.css">
 </head>

@@ -32,12 +32,14 @@ export function renderComposePage (identities, contacts = [], defaults = {}, { i
 <head>
 <meta charset="utf-8">
 <title>Compose - Bmail</title>
+<link rel="icon" href="/favicon.svg" type="image/svg+xml">
+<link rel="icon" href="/favicon.gif" type="image/gif">
 <link rel="stylesheet" href="/base.css">
 <link rel="stylesheet" href="/compose.css">
 </head>
 <body${bodyAttr}>
   <header>
-    <h1><a href="/inbox">Bmail</a></h1>
+    <h1><a href="/inbox"><img src="/bmail_logo2.png" alt="" class="site-logo">Bmail</a></h1>
     ${renderSettingsMenu(identity)}
   </header>
   <div class="compose-wrap">
@@ -54,12 +56,14 @@ export function renderComposePage (identities, contacts = [], defaults = {}, { i
 <head>
 <meta charset="utf-8">
 <title>${pageTitle} - Bmail</title>
+<link rel="icon" href="/favicon.svg" type="image/svg+xml">
+<link rel="icon" href="/favicon.gif" type="image/gif">
 <link rel="stylesheet" href="/base.css">
 <link rel="stylesheet" href="/compose.css">
 </head>
 <body${bodyAttr}>
   <header>
-    <h1><a href="/inbox">Bmail</a></h1>
+    <h1><a href="/inbox"><img src="/bmail_logo2.png" alt="" class="site-logo">Bmail</a></h1>
     ${renderSettingsMenu(identity)}
   </header>
   <div class="compose-wrap">
