@@ -98,10 +98,9 @@ function renderMessagePage (email, attachments, { sent, backParam, prevId, nextI
 <meta charset="utf-8">
 <title>${subject} - Bmail</title>
 <link rel="icon" href="/favicon.svg" type="image/svg+xml">
-<link rel="icon" href="/favicon.gif" type="image/gif">
 <link rel="manifest" href="/manifest.json">
 <meta name="theme-color" content="#BF5520">
-<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
 <link rel="apple-touch-icon" href="/bmail_logo2.png">
 <link rel="stylesheet" href="/base.css">
 <link rel="stylesheet" href="/message.css">
@@ -132,10 +131,12 @@ function renderMessagePage (email, attachments, { sent, backParam, prevId, nextI
         <details class="traffic-menu">
           <summary title="More actions" aria-label="More actions">···</summary>
           <div class="traffic-panel">
-            ${email.list_unsubscribe ? `<form method="post" action="/message/${email.id}/unsubscribe">
+            ${email.list_unsubscribe
+? `<form method="post" action="/message/${email.id}/unsubscribe">
               <input type="hidden" name="back" value="${escapeHtml(backParam)}">
               <button type="submit">Unsubscribe</button>
-            </form>` : ''}
+            </form>`
+: ''}
             <form method="post" action="/message/${email.id}/block">
               <input type="hidden" name="back" value="${escapeHtml(backParam)}">
               <button type="submit">Block sender</button>
