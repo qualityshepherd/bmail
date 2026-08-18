@@ -1,5 +1,5 @@
 import { withAuth } from './auth-routes.js'
-import { getSetting, insertSent, deleteSentById } from './db.js'
+import { getSetting, insertSent, updateSentStatus } from './db.js'
 import { parseIdentities, findIdentityByAddress } from './identities.js'
 import { generateMessageId, extractDomain } from './reply.js'
 import { sendEmail } from './mailer.js'
@@ -84,15 +84,16 @@ export const handleCompose = withAuth(async (req, env, ctx, session) => {
       messageId,
       attachments: attachments.length ? attachments : undefined
     })
+    await updateSentStatus(env.DB, sentId, 'sent')
   } catch (err) {
     console.error('Bmail compose send failed:', err)
-    await deleteSentById(env.DB, sentId).catch(() => {})
+    await updateSentStatus(env.DB, sentId, 'failed', err.message || 'unknown error').catch(() => {})
     return new Response(
       `<!DOCTYPE html><html><body style="font-family:sans-serif;max-width:500px;margin:3rem auto;">
         <p><strong>Failed to send:</strong> ${escapeHtml(err.message || 'unknown error')}</p>
         <p>Common cause: this domain isn't onboarded for Email Routing/sending on this
         Cloudflare account yet.</p>
-        <p><a href="/compose">&larr; Back to compose</a></p>
+        <p><a href="/sent/${sentId}">&larr; View in Sent</a></p>
       </body></html>`,
       { status: 400, headers: { 'Content-Type': 'text/html; charset=utf-8' } }
     )

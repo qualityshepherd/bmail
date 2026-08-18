@@ -14,8 +14,10 @@ export function buildReplySubject (originalSubject) {
 }
 
 export function extractDomain (address) {
-  const parts = String(address || '').split('@')
-  return parts.length === 2 && parts[1] ? parts[1] : 'localhost'
+  const str = String(address || '')
+  const bare = str.includes('<') ? (str.match(/<([^>]+)>/) || [])[1] || str : str
+  const at = bare.lastIndexOf('@')
+  return at !== -1 && bare.slice(at + 1) ? bare.slice(at + 1) : 'localhost'
 }
 
 // A fresh Message-ID for OUR outbound reply, so that if the recipient

@@ -75,7 +75,7 @@ export function renderComposePage (identities, contacts = [], defaults = {}, { i
       <div class="compose-row" id="to-row">
         <span class="compose-label">To</span>
         <input type="text" id="to" name="to" placeholder="Recipients"
-               list="addr-datalist" autocomplete="off" value="${escapeHtml(to)}">
+               autocomplete="off" value="${escapeHtml(to)}">
         <div class="addr-toggles" id="addr-toggles">
           <button type="button" id="show-cc">Cc</button>
           <button type="button" id="show-bcc">Bcc</button>
@@ -85,18 +85,18 @@ export function renderComposePage (identities, contacts = [], defaults = {}, { i
       <div class="compose-row compose-hidden" id="cc-row">
         <span class="compose-label">Cc</span>
         <input type="text" id="cc" name="cc" placeholder="CC recipients"
-               list="addr-datalist" autocomplete="off">
+               autocomplete="off">
       </div>
 
       <div class="compose-row compose-hidden" id="bcc-row">
         <span class="compose-label">Bcc</span>
         <input type="text" id="bcc" name="bcc" placeholder="BCC recipients"
-               list="addr-datalist" autocomplete="off">
+               autocomplete="off">
       </div>
 
       <div class="compose-row">
         <span class="compose-label">Subject</span>
-        <input type="text" id="subject" name="subject" placeholder="Subject"
+        <input type="text" id="subject" name="subject"
                value="${escapeHtml(subject)}">
       </div>
 

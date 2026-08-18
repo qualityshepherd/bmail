@@ -41,11 +41,15 @@ function renderSentRow (sent, currentUrl, contacts = new Map()) {
     ? `<img class="avatar avatar-img" src="${escapeHtml(contact.avatarUrl)}" alt="" aria-hidden="true">`
     : `<span class="avatar" style="--hue:${hue}" aria-hidden="true">${initials}</span>`
 
+  const statusBadge = sent.send_status && sent.send_status !== 'sent'
+    ? `<span class="sent-status-badge sent-status-${escapeHtml(sent.send_status)}">${escapeHtml(sent.send_status)}</span>`
+    : ''
+
   return `<li class="email-item" data-created-at="${sent.created_at}">
     <a class="email-row" href="/sent/${sent.id}?back=${encodeURIComponent(currentUrl)}" data-ts="${sent.created_at}">
       ${avatarHtml}
       <span class="row-body">
-        <span class="row-subject"><span class="subject-text">${subjectText}</span>${renderPreview(sent.preview)}</span>
+        <span class="row-subject"><span class="subject-text">${subjectText}</span>${statusBadge}${renderPreview(sent.preview)}</span>
         <span class="row-meta"><span class="row-sender" title="${escapeHtml(sent.to_address)}">${escapeHtml(displayName)}</span></span>
       </span>
       <span class="row-date" data-ts="${sent.created_at}">${formatShortDate(sent.created_at)}</span>

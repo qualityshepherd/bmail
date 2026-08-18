@@ -75,6 +75,19 @@
 
 .compose-btn:hover { border-color: var(--accent-bright); color: var(--text); }
 
+.sent-status-badge {
+  display: inline-block;
+  font-size: 0.68rem;
+  font-weight: 600;
+  padding: 0.05em 0.4em;
+  border-radius: 4px;
+  margin-left: 0.4rem;
+  vertical-align: middle;
+}
+
+.sent-status-failed { background: rgba(176,96,96,0.18); color: #c07070; }
+.sent-status-pending { background: rgba(160,160,100,0.15); color: #aaa860; }
+
 .inbox-count {
   display: inline-flex;
   align-items: center;

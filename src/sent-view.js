@@ -52,6 +52,8 @@ function renderSentPage (sent, backUrl, { identity = null, bgImage = '', contact
         ${sent.bcc_address ? `<div class="msg-to">bcc ${escapeHtml(sent.bcc_address)}</div>` : ''}
       </div>
     </div>
+    ${sent.send_status === 'failed' ? `<p class="send-error-banner">Send failed: ${escapeHtml(sent.send_error || 'unknown error')}</p>` : ''}
+    ${sent.send_status === 'pending' ? '<p class="send-error-banner">Send status unknown — the worker may have crashed after inserting this record.</p>' : ''}
     <pre class="body">${linkify(sent.body || '')}</pre>
     <form method="post" action="/sent/${sent.id}/delete" class="delete-form" id="delete-form">
       <input type="hidden" name="back" value="${escapeHtml(backUrl)}">

@@ -57,6 +57,14 @@ test('extractDomain: falls back to localhost for malformed input', () => {
   assert.equal(extractDomain(null), 'localhost')
 })
 
+test('extractDomain: strips display name before extracting domain', () => {
+  assert.equal(extractDomain('"John Doe" <john@example.com>'), 'example.com')
+})
+
+test('extractDomain: display name with comma does not corrupt domain', () => {
+  assert.equal(extractDomain('"Smith, John" <john@example.com>'), 'example.com')
+})
+
 // generateMessageId
 test('generateMessageId: wraps in angle brackets with the given domain', () => {
   const id = generateMessageId('example.com')

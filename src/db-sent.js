@@ -8,17 +8,24 @@ export async function getSentByMessageId (db, messageId) {
 export async function insertSent (db, sent) {
   const result = await db
     .prepare(
-      `INSERT INTO sent (message_id, from_address, to_address, cc_address, bcc_address, subject, body, in_reply_to, created_at)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`
+      `INSERT INTO sent (message_id, from_address, to_address, cc_address, bcc_address, subject, body, in_reply_to, created_at, send_status)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 'pending')`
     )
     .bind(sent.messageId, sent.fromAddress, sent.toAddress, sent.ccAddress || null, sent.bccAddress || null, sent.subject || null, sent.body || null, sent.inReplyTo || null, sent.createdAt)
     .run()
   return result.meta.last_row_id
 }
 
+export async function updateSentStatus (db, id, status, error = null) {
+  await db
+    .prepare('UPDATE sent SET send_status = ?, send_error = ? WHERE id = ?')
+    .bind(status, error, id)
+    .run()
+}
+
 export async function getSentById (db, id) {
   return db
-    .prepare('SELECT id, message_id, from_address, to_address, cc_address, bcc_address, subject, body, in_reply_to, created_at FROM sent WHERE id = ?')
+    .prepare('SELECT id, message_id, from_address, to_address, cc_address, bcc_address, subject, body, in_reply_to, created_at, send_status, send_error FROM sent WHERE id = ?')
     .bind(id)
     .first()
 }
@@ -41,7 +48,7 @@ export async function searchSent (db, { limit = 50, before = null, text = '' } =
 
   const { results } = await db
     .prepare(
-      `SELECT id, message_id, from_address, to_address, subject, created_at,
+      `SELECT id, message_id, from_address, to_address, subject, created_at, send_status,
               SUBSTR(body, 1, 150) as preview
        FROM sent ${whereClause}
        ORDER BY created_at DESC LIMIT ?`
