@@ -180,13 +180,23 @@
 .file-list li {
   display: flex;
   align-items: center;
-  justify-content: space-between;
+  gap: 0.5rem;
   font-size: 0.85rem;
   color: var(--text);
   background: var(--panel);
   padding: 0.3rem 0.6rem;
   border-radius: 4px;
 }
+
+.attach-thumb {
+  width: 48px;
+  height: 48px;
+  object-fit: cover;
+  border-radius: 4px;
+  flex-shrink: 0;
+}
+
+.attach-meta { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 
 .file-list li button {
   background: none;
@@ -196,6 +206,7 @@
   font-size: 1rem;
   padding: 0 0.25rem;
   line-height: 1;
+  flex-shrink: 0;
 }
 
 .file-list li button:hover { color: #b06060; }

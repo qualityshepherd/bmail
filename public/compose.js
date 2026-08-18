@@ -150,6 +150,7 @@ const MAX_FILE_BYTES = 15 * 1024 * 1024
 const MAX_TOTAL_BYTES = 40 * 1024 * 1024
 
 const attachedFiles = new Map()
+const previewUrls = new Map()
 const fileInput = document.getElementById('file-input')
 const browseBtn = document.getElementById('browse-btn')
 const fileList = document.getElementById('file-list')
@@ -169,15 +170,35 @@ function fmtSize (bytes) {
 
 function renderFileList () {
   if (!fileList) return
+  for (const [name, url] of previewUrls) {
+    if (!attachedFiles.has(name)) { URL.revokeObjectURL(url); previewUrls.delete(name) }
+  }
   fileList.innerHTML = ''
   for (const [name, file] of attachedFiles) {
+    const isImage = file.type.startsWith('image/') && file.type !== 'image/svg+xml'
+    if (isImage && !previewUrls.has(name)) previewUrls.set(name, URL.createObjectURL(file))
     const li = document.createElement('li')
-    li.innerHTML = '<span>' + esc(name) + ' <small>(' + fmtSize(file.size) + ')</small></span>' +
-      '<button type="button" data-name="' + esc(name) + '" aria-label="Remove ' + esc(name) + '">×</button>'
-    li.querySelector('button').addEventListener('click', () => {
+    if (isImage) {
+      const img = document.createElement('img')
+      img.src = previewUrls.get(name)
+      img.className = 'attach-thumb'
+      img.alt = ''
+      li.appendChild(img)
+    }
+    const meta = document.createElement('span')
+    meta.className = 'attach-meta'
+    meta.innerHTML = esc(name) + ' <small>(' + fmtSize(file.size) + ')</small>'
+    const btn = document.createElement('button')
+    btn.type = 'button'
+    btn.setAttribute('aria-label', 'Remove ' + name)
+    btn.textContent = '×'
+    btn.addEventListener('click', () => {
+      if (previewUrls.has(name)) { URL.revokeObjectURL(previewUrls.get(name)); previewUrls.delete(name) }
       attachedFiles.delete(name)
       renderFileList()
     })
+    li.appendChild(meta)
+    li.appendChild(btn)
     fileList.appendChild(li)
   }
 }
