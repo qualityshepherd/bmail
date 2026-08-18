@@ -191,4 +191,9 @@
   padding: 0.4rem 1rem;
 }
 
+@media (max-width: 600px) {
+  .settings-wrap { padding: 1rem; }
+  .settings-tabs { gap: 0.75rem; }
+}
+
 .clear-contacts form button:hover { background: #a03030; }

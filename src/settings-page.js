@@ -26,7 +26,7 @@ function renderIdentitiesTab (rawValue) {
        (name and avatar are optional). Top line is the default used when composing.</p>
     ${renderIdentityPreviewList(identities)}
     <form method="post" action="/settings/identities">
-      <textarea name="identities" rows="10" placeholder="you@example.com,Your Name,https://...
+      <textarea name="identities" rows="5" placeholder="you@example.com,Your Name,https://...
 alias@example.com">${escapeHtml(rawValue)}</textarea>
       <button type="submit">Save identities</button>
     </form>
@@ -54,7 +54,7 @@ function renderContactsTab (contactCount) {
        Names and avatar URLs are used in the inbox. New contacts are added; existing overwritten. Base64 photos are skipped.</p>
     ${countLine}
     <form method="post" action="/settings/contacts">
-      <textarea name="vcf" rows="10" placeholder="BEGIN:VCARD&#10;VERSION:3.0&#10;FN:Jane Smith&#10;EMAIL:jane@example.com&#10;PHOTO;VALUE=URI:https://example.com/jane.jpg&#10;END:VCARD"></textarea>
+      <textarea name="vcf" rows="5" placeholder="BEGIN:VCARD&#10;VERSION:3.0&#10;FN:Jane Smith&#10;EMAIL:jane@example.com&#10;PHOTO;VALUE=URI:https://example.com/jane.jpg&#10;END:VCARD"></textarea>
       <button type="submit">Import contacts</button>
     </form>
     ${contactCount > 0
@@ -74,9 +74,9 @@ function renderFiltersTab (spamText, blockText) {
     <p class="settings-hint">One pattern per line. Accepted formats: <code>user@domain.com</code> or <code>*@domain.com</code>.</p>
     <form method="post" action="/settings/filters">
       <label for="spamlist">Spam list — always deliver to Spam</label>
-      <textarea id="spamlist" name="spamlist" rows="8" placeholder="shadyrv@example.com&#10;*@marketing.example.com">${escapeHtml(spamText)}</textarea>
+      <textarea id="spamlist" name="spamlist" rows="5" placeholder="shadyrv@example.com&#10;*@marketing.example.com">${escapeHtml(spamText)}</textarea>
       <label for="blocklist">Block list — silently drop, never stored</label>
-      <textarea id="blocklist" name="blocklist" rows="8" placeholder="troll@example.com&#10;*@spam.example.com">${escapeHtml(blockText)}</textarea>
+      <textarea id="blocklist" name="blocklist" rows="5" placeholder="troll@example.com&#10;*@spam.example.com">${escapeHtml(blockText)}</textarea>
       <button type="submit">Save filters</button>
     </form>
   </section>`

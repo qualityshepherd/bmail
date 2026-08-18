@@ -104,7 +104,7 @@ export function renderComposePage (identities, contacts = [], defaults = {}, { i
                value="${escapeHtml(subject)}">
       </label>
 
-      <textarea id="body" name="body" rows="16"
+      <textarea id="body" name="body" rows="8"
                 placeholder="Write your message...">${escapeHtml(body)}</textarea>
 
       <div class="drop-zone" id="drop-zone">

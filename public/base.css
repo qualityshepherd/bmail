@@ -10,7 +10,7 @@
   --translucent: rgba(26, 26, 26, 0.84);
   --content-min-height: calc(100vh - 60px);
   /* Change this one value to scale all text sizes */
-  font-size: 18px;
+  font-size: 18.5px;
 }
 
 * { box-sizing: border-box; margin: 0; padding: 0; }
