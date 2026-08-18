@@ -67,38 +67,38 @@ export function renderComposePage (identities, contacts = [], defaults = {}, { i
     <form method="post" action="/compose" id="compose-form" enctype="multipart/form-data">
       <datalist id="addr-datalist">${contactDatalist(contacts)}</datalist>
 
-      <div class="compose-row">
+      <label class="compose-row" for="from">
         <span class="compose-label">From</span>
         <select id="from" name="from">${renderIdentityOptions(identities)}</select>
-      </div>
+      </label>
 
-      <div class="compose-row" id="to-row">
+      <label class="compose-row" for="to" id="to-row">
         <span class="compose-label">To</span>
         <input type="text" id="to" name="to" placeholder="Recipients"
-               autocomplete="off" value="${escapeHtml(to)}">
+               autocomplete="off" autofocus value="${escapeHtml(to)}">
         <div class="addr-toggles" id="addr-toggles">
           <button type="button" id="show-cc">Cc</button>
           <button type="button" id="show-bcc">Bcc</button>
         </div>
-      </div>
+      </label>
 
-      <div class="compose-row compose-hidden" id="cc-row">
+      <label class="compose-row compose-hidden" for="cc" id="cc-row">
         <span class="compose-label">Cc</span>
         <input type="text" id="cc" name="cc" placeholder="CC recipients"
                autocomplete="off">
-      </div>
+      </label>
 
-      <div class="compose-row compose-hidden" id="bcc-row">
+      <label class="compose-row compose-hidden" for="bcc" id="bcc-row">
         <span class="compose-label">Bcc</span>
         <input type="text" id="bcc" name="bcc" placeholder="BCC recipients"
                autocomplete="off">
-      </div>
+      </label>
 
-      <div class="compose-row">
+      <label class="compose-row" for="subject">
         <span class="compose-label">Subject</span>
         <input type="text" id="subject" name="subject"
                value="${escapeHtml(subject)}">
-      </div>
+      </label>
 
       <textarea id="body" name="body" rows="16"
                 placeholder="Write your message...">${escapeHtml(body)}</textarea>
