@@ -24,9 +24,26 @@ function renderIdentityOptions (identities, selectedAddress) {
 
 function renderAttachment (emailId, attachment) {
   const name = escapeHtml(attachment.filename)
+  const url = `/message/${emailId}/attachment/${attachment.id}`
+  const base = (attachment.content_type || '').split(';')[0].trim().toLowerCase()
+  const isImage = base.startsWith('image/') && base !== 'image/svg+xml'
+  const isVideo = base.startsWith('video/')
+  const isAudio = base.startsWith('audio/')
+
+  const preview = isImage
+    ? `<a href="${url}"><img class="attachment-img" src="${url}" alt="${name}" loading="lazy"></a>`
+    : isVideo
+      ? `<video class="attachment-video" src="${url}" controls></video>`
+      : isAudio
+        ? `<audio src="${url}" controls></audio>`
+        : ''
+
   return `<li class="attachment">
-    <a href="/message/${emailId}/attachment/${attachment.id}">${name}</a>
-    <span class="attachment-size">${formatBytes(attachment.size)}</span>
+    ${preview}
+    <div class="attachment-meta">
+      <a href="${url}"${preview ? '' : ` download="${name}"`}>${name}</a>
+      <span class="attachment-size">${formatBytes(attachment.size)}</span>
+    </div>
   </li>`
 }
 
