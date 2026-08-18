@@ -1,7 +1,7 @@
 const CACHE = 'bmail-v1'
 const STATIC = [
   '/base.css', '/inbox.css', '/message.css', '/compose.css',
-  '/settings.css', '/login.css', '/sent.css',
+  '/settings.css', '/login.css',
   '/inbox.js', '/message.js', '/compose.js', '/settings.js',
   '/login.js', '/sent.js', '/crypto-worker.js', '/sw-register.js',
   '/favicon.svg', '/bmail_logo2.png'
