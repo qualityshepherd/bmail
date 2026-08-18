@@ -10,7 +10,12 @@
   border-bottom: 1px solid var(--border);
   margin-bottom: 2rem;
   padding-bottom: 0;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
 }
+
+.settings-tabs::-webkit-scrollbar { display: none; }
 
 .settings-tabs a {
   color: var(--text-dim);
@@ -19,6 +24,8 @@
   padding-bottom: 0.6rem;
   border-bottom: 2px solid transparent;
   margin-bottom: -1px;
+  flex-shrink: 0;
+  white-space: nowrap;
 }
 
 .settings-tabs a:hover { color: var(--accent-bright); }

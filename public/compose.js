@@ -150,7 +150,6 @@ const MAX_FILE_BYTES = 15 * 1024 * 1024
 const MAX_TOTAL_BYTES = 40 * 1024 * 1024
 
 const attachedFiles = new Map()
-const dropZone = document.getElementById('drop-zone')
 const fileInput = document.getElementById('file-input')
 const browseBtn = document.getElementById('browse-btn')
 const fileList = document.getElementById('file-list')
@@ -202,15 +201,37 @@ function addFiles (newFiles) {
   renderFileList()
 }
 
-if (dropZone) {
-  dropZone.addEventListener('dragover', (e) => { e.preventDefault(); dropZone.classList.add('drag-over') })
-  dropZone.addEventListener('dragleave', () => dropZone.classList.remove('drag-over'))
-  dropZone.addEventListener('drop', (e) => {
+// ─── Full-page drop overlay ────────────────────────────────
+const dropOverlay = document.createElement('div')
+dropOverlay.className = 'drop-overlay'
+dropOverlay.textContent = 'Drop to attach'
+document.body.appendChild(dropOverlay)
+
+let dragDepth = 0
+
+document.addEventListener('dragenter', (e) => {
+  if (!e.dataTransfer || !e.dataTransfer.types.includes('Files')) return
+  dragDepth++
+  dropOverlay.classList.add('active')
+})
+
+document.addEventListener('dragleave', () => {
+  dragDepth = Math.max(0, dragDepth - 1)
+  if (dragDepth === 0) dropOverlay.classList.remove('active')
+})
+
+document.addEventListener('dragover', (e) => {
+  if (e.dataTransfer && e.dataTransfer.types.includes('Files')) e.preventDefault()
+})
+
+document.addEventListener('drop', (e) => {
+  dragDepth = 0
+  dropOverlay.classList.remove('active')
+  if (e.dataTransfer && e.dataTransfer.files.length) {
     e.preventDefault()
-    dropZone.classList.remove('drag-over')
-    if (e.dataTransfer.files.length) addFiles(e.dataTransfer.files)
-  })
-}
+    addFiles(e.dataTransfer.files)
+  }
+})
 
 if (browseBtn && fileInput) {
   browseBtn.addEventListener('click', () => fileInput.click())

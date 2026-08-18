@@ -13,7 +13,7 @@ Personal email system that runs on [Cloudflare's](https://www.cloudflare.com) fr
 - **Spam/block filters**: Spam list routes matched senders or recipient aliases to Spam automatically.
 - **Search**: FTS5 full-text search across subject and body.
 - **Tags**: Free-text per-message tags, filterable from the inbox.
-- **Attachments**: Inbound attachments stored in R2 and downloadable. 
+- **Attachments**: Inbound stored in R2 and downloadable. Outbound 15MB per file, 40MB total.
 - **Contacts**: Import from `.vcf`. Names and avatars appear in the inbox and message view.
 - **Sent**: Browsable sent mail history.
 - **Export**: Full `.mbox` dump.

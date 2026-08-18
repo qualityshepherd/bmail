@@ -29,7 +29,7 @@ async function sendViaResend (env, { from, to, cc, bcc, subject, text, messageId
     from: sanitizeHeaderValue(from),
     to: toList,
     subject: sanitizeHeaderValue(subject),
-    text,
+    text: text || ' ',
     headers
   }
   if (cc && cc.length) body.cc = (Array.isArray(cc) ? cc : [cc]).map(sanitizeHeaderValue)
