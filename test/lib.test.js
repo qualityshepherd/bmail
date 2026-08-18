@@ -56,21 +56,15 @@ test('shouldNotify: false by default (silent aliases)', () => {
   assert.equal(result, false)
 })
 
-test('buildSmsPayload: includes sender and subject', () => {
-  const payload = buildSmsPayload({
-    sender: 'alice@example.com',
-    subject: 'Test Subject'
-  })
+test('buildSmsPayload: includes sender and unread count', () => {
+  const payload = buildSmsPayload({ sender: 'alice@example.com', unreadCount: 3 })
   assert.match(payload, /alice@example.com/)
-  assert.match(payload, /Test Subject/)
+  assert.match(payload, /3 unread/)
 })
 
-test('buildSmsPayload: falls back on empty subject', () => {
-  const payload = buildSmsPayload({
-    sender: 'alice@example.com',
-    subject: ''
-  })
-  assert.match(payload, /\(no subject\)/)
+test('buildSmsPayload: singular unread count', () => {
+  const payload = buildSmsPayload({ sender: 'alice@example.com', unreadCount: 1 })
+  assert.match(payload, /1 unread/)
 })
 
 test('stripHtml: strips tags and collapses block elements to newlines', () => {

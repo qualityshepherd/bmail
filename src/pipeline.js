@@ -2,7 +2,7 @@ import { EmailMessage } from 'cloudflare:email'
 import { parseRawEmail } from './mime.js'
 import { anyPatternMatches } from './match.js'
 import { shouldNotify, buildSmsPayload } from './notifications.js'
-import { getBlocklistPatterns, getSpamPatterns, getAllowlistPatterns, insertEmail, insertAttachment, getEmailByMessageId, deleteEmailsByIds, isDuplicateKeyError } from './db.js'
+import { getBlocklistPatterns, getSpamPatterns, getAllowlistPatterns, insertEmail, insertAttachment, getEmailByMessageId, deleteEmailsByIds, isDuplicateKeyError, getUnreadInboxCount } from './db.js'
 
 // Runs the full inbound pipeline for one message. Returns { dropped: true }
 // if the sender was blocklisted, { duplicate: true } if this message was
@@ -103,10 +103,8 @@ export async function ingestEmail ({ message, env }) {
   }
 
   if (notify) {
-    const payload = buildSmsPayload({
-      sender: message.from,
-      subject: parsed.subject
-    })
+    const unreadCount = await getUnreadInboxCount(env.DB)
+    const payload = buildSmsPayload({ sender: message.from, unreadCount })
     await sendSms(env, payload)
   }
 
