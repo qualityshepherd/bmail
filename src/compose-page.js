@@ -31,6 +31,7 @@ export function renderComposePage (identities, contacts = [], defaults = {}, { i
 <html lang="en">
 <head>
 <meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Compose - Bmail</title>
 <link rel="icon" href="/favicon.svg" type="image/svg+xml">
 <link rel="manifest" href="/manifest.json">
@@ -59,6 +60,7 @@ export function renderComposePage (identities, contacts = [], defaults = {}, { i
 <html lang="en">
 <head>
 <meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
 <title>${pageTitle} - Bmail</title>
 <link rel="icon" href="/favicon.svg" type="image/svg+xml">
 <link rel="manifest" href="/manifest.json">

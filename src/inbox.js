@@ -171,6 +171,7 @@ function renderInboxPage ({ emails, total, effectiveQuery, tags, currentUrl, ren
 <html lang="en">
 <head>
 <meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
 <title>${unreadCount > 0 ? `(${unreadCount}) ` : ''}Bmail</title>
 <link rel="icon" href="/favicon.svg" type="image/svg+xml">
 <link rel="manifest" href="/manifest.json">
