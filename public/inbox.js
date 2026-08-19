@@ -119,3 +119,58 @@ if (list && sentinel) {
 
   observer.observe(sentinel)
 }
+
+// Long-press to reveal row action icons on touch devices
+;(function () {
+  if (!('ontouchstart' in window)) return
+
+  let timer = null
+  let activeItem = null
+  let suppressNext = false
+
+  function dismiss () {
+    if (activeItem) {
+      activeItem.classList.remove('long-press-active')
+      activeItem = null
+    }
+  }
+
+  function cancelTimer () {
+    if (timer) { clearTimeout(timer); timer = null }
+  }
+
+  document.addEventListener('touchstart', (e) => {
+    cancelTimer()
+    const item = e.target.closest('.email-item')
+    if (!item) { dismiss(); return }
+    timer = setTimeout(() => {
+      timer = null
+      dismiss()
+      activeItem = item
+      item.classList.add('long-press-active')
+      suppressNext = true
+    }, 500)
+  }, { passive: true })
+
+  document.addEventListener('touchmove', cancelTimer, { passive: true })
+  document.addEventListener('touchend', cancelTimer, { passive: true })
+  document.addEventListener('touchcancel', cancelTimer, { passive: true })
+
+  // Capture-phase click: suppress navigation on the lift after a long-press,
+  // and dismiss icons when tapping outside the active row's icon strip.
+  document.addEventListener('click', (e) => {
+    if (suppressNext) {
+      suppressNext = false
+      e.preventDefault()
+      e.stopPropagation()
+      return
+    }
+    if (activeItem) {
+      if (e.target.closest('.row-icons')) {
+        dismiss()
+      } else if (!e.target.closest('.email-item.long-press-active')) {
+        dismiss()
+      }
+    }
+  }, true)
+})()

@@ -227,8 +227,12 @@
 
 .email-item:hover .row-icons { opacity: 1; }
 
-/* Touch: always show icons */
-@media (hover: none) { .row-icons { opacity: 1; } }
+/* Touch: hidden by default, revealed on long-press via JS */
+@media (hover: none) {
+  .row-icons { opacity: 0; pointer-events: none; }
+  .email-item.long-press-active .row-icons { opacity: 1; pointer-events: auto; }
+  .email-row { padding-right: 1rem; }
+}
 
 .status-icon-form { display: inline; }
 
@@ -317,16 +321,17 @@
 @media (max-width: 600px) {
   .search-bar { padding: 0.75rem 1rem 0; }
   .folder-links, .tag-links { padding: 0.6rem 1rem 0; gap: 0.4rem 0.85rem; }
+  .folder-links a, .tag-links a { font-size: 0.95rem; }
+  .compose-btn { font-size: 0.9rem; }
 
   .bulk-menu { margin-left: 0; }
 
-  .email-row {
-    padding: 0.65rem 3.25rem 0.65rem 1rem;
-    gap: 0.6rem;
-  }
+  .email-row { padding: 0.75rem 1rem; gap: 0.6rem; }
 
-  .avatar { width: 32px; height: 32px; border-radius: 6px; }
-  .row-date { font-size: 0.75rem; }
+  .avatar { width: 34px; height: 34px; border-radius: 6px; }
+  .row-subject { font-size: 1rem; }
+  .row-sender { font-size: 0.875rem; opacity: 0.8; }
+  .row-date { font-size: 0.875rem; }
   .email-item::after { left: 1rem; }
 }
 
