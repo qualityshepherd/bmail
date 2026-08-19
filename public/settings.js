@@ -5,3 +5,13 @@ document.addEventListener('keydown', function (e) {
     })
   }
 })
+
+const clearCacheLink = document.getElementById('clear-cache-link')
+if (clearCacheLink) {
+  clearCacheLink.addEventListener('click', async function (e) {
+    e.preventDefault()
+    const keys = await caches.keys()
+    await Promise.all(keys.map((k) => caches.delete(k)))
+    location.reload()
+  })
+}

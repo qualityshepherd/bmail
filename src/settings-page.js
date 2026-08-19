@@ -41,6 +41,7 @@ function renderAppearanceTab (bgImage) {
              placeholder="https://example.com/wallpaper.jpg" autocomplete="off">
       <button type="submit">Save appearance</button>
     </form>
+    <a href="#" id="clear-cache-link" class="btn-outline">Clear cache &amp; reload</a>
   </section>`
 }
 
