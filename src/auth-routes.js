@@ -9,6 +9,7 @@ import {
   insertNonce, consumeNonce, insertSession, getSessionCreatedAt, deleteSession,
   getLoginAttempts, setLoginAttempts, deleteLoginAttempts
 } from './db.js'
+import { renderLoginPage } from './login-page.js'
 
 function json (data, status = 200) {
   return new Response(JSON.stringify(data), {
@@ -142,7 +143,7 @@ export function withAuth (handler) {
     const session = await getValidSession(req, env)
     if (!session) {
       return new Response(
-        '<!DOCTYPE html><html><body><p>Not logged in. <a href="/login">Log in</a></p></body></html>',
+        renderLoginPage(),
         { status: 401, headers: { ...SECURITY_HEADERS, 'Content-Type': 'text/html; charset=utf-8' } }
       )
     }
