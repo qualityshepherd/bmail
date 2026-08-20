@@ -184,12 +184,19 @@
   min-width: 0;
 }
 
+.row-right {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 0.25rem;
+  align-self: start;
+  padding-top: 0.2rem;
+}
+
 .row-date {
   color: var(--text-dim);
   font-size: 0.8rem;
   white-space: nowrap;
-  align-self: start;
-  padding-top: 0.2rem;
 }
 
 /* Unread: subject bold + full brightness, sender slightly brighter */

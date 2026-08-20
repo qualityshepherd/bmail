@@ -64,6 +64,9 @@ function renderRow (email, currentUrl, contacts = new Map()) {
   const displayName = (contact && contact.name) || email.sender_display || email.sender
   const senderTooltip = email.sender_display ? `${email.sender_display} <${email.sender}>` : email.sender
   const tagChips = renderTagChips(email.tags)
+  const statusChip = email.status !== 'inbox'
+    ? `<span class="status-chip status-chip-${escapeHtml(email.status)}">${escapeHtml(email.status)}</span>`
+    : ''
   const unreadClass = email.read ? '' : ' unread'
   const hue = avatarHue(email.sender)
   const initials = avatarInitials(displayName, email.sender)
@@ -79,7 +82,10 @@ function renderRow (email, currentUrl, contacts = new Map()) {
         <span class="row-subject"><span class="subject-text">${subjectText}</span>${renderPreview(email.preview)}</span>
         <span class="row-meta"><span class="row-sender" title="${escapeHtml(senderTooltip)}">${escapeHtml(displayName)}</span>${tagChips}</span>
       </span>
-      <span class="row-date" data-ts="${email.created_at}">${formatShortDate(email.created_at)}</span>
+      <span class="row-right">
+        <span class="row-date" data-ts="${email.created_at}">${formatShortDate(email.created_at)}</span>
+        ${statusChip}
+      </span>
     </a>
     <span class="row-icons">${renderStarIcon(email.id, email.starred, currentUrl)}${renderStatusIcons(email.id, email.status, currentUrl)}</span>
   </li>`
