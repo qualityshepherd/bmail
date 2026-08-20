@@ -71,7 +71,7 @@ function renderContactsTab (contactCount) {
 
 function renderFiltersTab (spamText, blockText) {
   return `<section class="settings-section">
-    <p class="settings-hint">One pattern per line. Accepted formats: <code>user@domain.com</code> or <code>*@domain.com</code>.</p>
+    <p class="settings-hint">One pattern per line.</p>
     <form method="post" action="/settings/filters">
       <label for="spamlist">Spam list — always deliver to Spam</label>
       <textarea id="spamlist" name="spamlist" rows="5" placeholder="shadyrv@example.com&#10;*@marketing.example.com">${escapeHtml(spamText)}</textarea>
@@ -79,6 +79,12 @@ function renderFiltersTab (spamText, blockText) {
       <textarea id="blocklist" name="blocklist" rows="5" placeholder="troll@example.com&#10;*@spam.example.com">${escapeHtml(blockText)}</textarea>
       <button type="submit">Save filters</button>
     </form>
+    <p class="settings-hint pattern-examples">
+      <span class="pattern-examples-heading">Patterns</span><br>
+      <code>foo@example.com</code> exact address<br>
+      <code>*@example.com</code> all addresses at that domain<br>
+      <code>example.com</code> that domain and all subdomains
+    </p>
   </section>`
 }
 
@@ -205,7 +211,8 @@ function parseFilterPatterns (raw) {
 function validateFilterPatterns (patterns) {
   const emailRe = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
   const wildcardRe = /^\*@[^\s@]+\.[^\s@]+$/
-  const bad = patterns.filter((p) => !emailRe.test(p) && !wildcardRe.test(p))
+  const domainRe = /^[^\s@*]+\.[^\s@*]+$/
+  const bad = patterns.filter((p) => !emailRe.test(p) && !wildcardRe.test(p) && !domainRe.test(p))
   return bad
 }
 

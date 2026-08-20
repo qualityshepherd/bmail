@@ -15,6 +15,12 @@ export function patternMatches (pattern, address) {
     return normalizedAddress.endsWith(domain)
   }
 
+  // Bare domain (no @): match the domain itself or any subdomain
+  if (!normalizedPattern.includes('@')) {
+    return normalizedAddress.endsWith('@' + normalizedPattern) ||
+           normalizedAddress.endsWith('.' + normalizedPattern)
+  }
+
   return normalizedPattern === normalizedAddress
 }
 

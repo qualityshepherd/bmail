@@ -57,6 +57,26 @@
   border-radius: 4px;
 }
 
+.settings-section .pattern-examples {
+  margin-top: 1.25rem;
+  font-size: 0.78rem;
+  line-height: 1.9;
+}
+
+.settings-section .pattern-examples-heading {
+  font-size: 0.7rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  font-weight: 600;
+}
+
+.settings-section .pattern-examples code {
+  background: transparent;
+  padding: 0;
+  color: var(--accent-bright);
+  font-size: 0.78rem;
+}
+
 .empty-hint {
   color: var(--text-dim);
   font-size: 0.9rem;

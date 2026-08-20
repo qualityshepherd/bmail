@@ -21,6 +21,14 @@ test('patternMatches: domain wildcard', () => {
   assert.equal(patternMatches('*@spam.com', 'anything@notspam.com'), false)
 })
 
+test('patternMatches: bare domain matches exact domain and subdomains', () => {
+  assert.equal(patternMatches('therundown.ai', 'foo@therundown.ai'), true)
+  assert.equal(patternMatches('therundown.ai', 'foo@em8370.daily.therundown.ai'), true)
+  assert.equal(patternMatches('therundown.ai', 'foo@nottherundown.ai'), false)
+  assert.equal(patternMatches('mcdlv.net', 'bounce@mail130.suw14.mcdlv.net'), true)
+  assert.equal(patternMatches('mcdlv.net', 'foo@notmcdlv.net'), false)
+})
+
 test('anyPatternMatches: matches if any pattern hits', () => {
   const patterns = ['alice@example.com', '*@spam.com']
   assert.equal(anyPatternMatches(patterns, 'bad@spam.com'), true)
