@@ -57,36 +57,15 @@ test('shouldNotify: false by default (silent aliases)', () => {
   assert.equal(result, false)
 })
 
-test('buildSmsPayload: lists display names by newest first', () => {
-  const senders = [
-    { sender: 'alice@example.com', sender_display: 'Alice' },
-    { sender: 'bob@example.com', sender_display: null }
-  ]
-  const payload = buildSmsPayload({ unreadCount: 2, senders })
-  assert.match(payload, /2 unread/)
-  assert.match(payload, /Alice/)
-  assert.match(payload, /bob@example\.com/)
+test('buildSmsPayload: plural unread', () => {
+  const payload = buildSmsPayload({ unreadCount: 3, url: 'https://bmail.example.com/inbox' })
+  assert.match(payload, /3 unread emails/)
+  assert.match(payload, /https:\/\/bmail\.example\.com\/inbox/)
 })
 
-test('buildSmsPayload: singular unread count', () => {
-  const senders = [{ sender: 'alice@example.com', sender_display: 'Alice' }]
-  const payload = buildSmsPayload({ unreadCount: 1, senders })
-  assert.match(payload, /1 unread/)
-})
-
-test('buildSmsPayload: truncates to 159 chars with ellipsis', () => {
-  const senders = Array.from({ length: 6 }, (_, i) => ({
-    sender: `very-long-address-${i}@example-domain-that-is-quite-long.com`,
-    sender_display: null
-  }))
-  const payload = buildSmsPayload({ unreadCount: 6, senders })
-  assert.ok(payload.length <= 159, `payload length ${payload.length} exceeds 159`)
-  assert.ok(payload.endsWith('…'))
-})
-
-test('buildSmsPayload: no senders returns header only', () => {
-  const payload = buildSmsPayload({ unreadCount: 3, senders: [] })
-  assert.equal(payload, 'Bmail: 3 unread')
+test('buildSmsPayload: singular unread', () => {
+  const payload = buildSmsPayload({ unreadCount: 1, url: 'https://bmail.example.com/inbox' })
+  assert.match(payload, /1 unread email\b/)
 })
 
 test('stripHtml: strips tags and collapses block elements to newlines', () => {

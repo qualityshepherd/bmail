@@ -209,11 +209,3 @@ export async function getUnreadInboxCount (db) {
   const row = await db.prepare("SELECT COUNT(*) as count FROM emails WHERE status = 'inbox' AND read = 0").first()
   return row.count
 }
-
-export async function getRecentUnreadSenders (db, limit = 6) {
-  const { results } = await db
-    .prepare("SELECT sender, sender_display FROM emails WHERE status = 'inbox' AND read = 0 ORDER BY created_at DESC, id DESC LIMIT ?")
-    .bind(limit)
-    .all()
-  return results
-}

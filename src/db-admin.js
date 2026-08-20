@@ -24,10 +24,6 @@ export async function getSpamPatterns (db) {
   return results.map((row) => row.pattern)
 }
 
-export async function addSpamPattern (db, pattern) {
-  await db.prepare('INSERT OR IGNORE INTO spamlist (pattern) VALUES (?)').bind(pattern).run()
-}
-
 export async function getSpamlistText (db) {
   const { results } = await db.prepare('SELECT pattern FROM spamlist ORDER BY pattern').all()
   return results.map((r) => r.pattern).join('\n')

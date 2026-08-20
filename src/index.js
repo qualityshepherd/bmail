@@ -9,8 +9,7 @@ import {
   deleteExpiredNonces,
   deleteExpiredSessions,
   deleteExpiredLoginAttempts,
-  getUnreadInboxCount,
-  getRecentUnreadSenders
+  getUnreadInboxCount
 } from './db.js'
 import { buildSmsPayload } from './notifications.js'
 import { handleChallenge, handleLogin, handleLogout, handleMe } from './auth-routes.js'
@@ -162,12 +161,10 @@ export default {
 
 async function runHourlyDigest (env) {
   if (!env.SMS_GATEWAY_ADDRESS) return
-  const [unreadCount, senders] = await Promise.all([
-    getUnreadInboxCount(env.DB),
-    getRecentUnreadSenders(env.DB)
-  ])
+  const unreadCount = await getUnreadInboxCount(env.DB)
   if (unreadCount === 0) return
-  await sendSms(env, buildSmsPayload({ unreadCount, senders }))
+  const url = `https://bmail.${env.EMAIL_DOMAIN}/inbox`
+  await sendSms(env, buildSmsPayload({ unreadCount, url }))
 }
 
 async function runMaintenance (env) {
