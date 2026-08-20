@@ -1,7 +1,7 @@
 import { withAuth } from './auth-routes.js'
 import { getEmailById } from './db-email.js'
 
-function parseHttpUrl (header) {
+export function parseHttpUrl (header) {
   const matches = header.match(/<(https?:\/\/[^>]+)>/gi) || []
   return matches.map((m) => m.slice(1, -1)).find((u) => /^https?:\/\//i.test(u)) || null
 }

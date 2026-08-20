@@ -5,6 +5,7 @@ import { fileURLToPath } from 'node:url'
 import { patternMatches, anyPatternMatches } from '../src/match.js'
 import { shouldNotify, buildSmsPayload } from '../src/notifications.js'
 import { stripHtml, parseRawEmail, formatSenderDisplay } from '../src/mime.js'
+import { parseHttpUrl } from '../src/unsubscribe-handler.js'
 
 test('patternMatches: exact address match', () => {
   assert.equal(patternMatches('alice@example.com', 'alice@example.com'), true)
@@ -139,4 +140,20 @@ test('parseRawEmail: fixture without a display name falls back to bare address',
   const parsed = await parseRawEmail(raw)
   // fixture From is "Alice Example <alice@example.com>" - has a name
   assert.equal(parsed.senderDisplay, 'Alice Example')
+})
+
+test('parseHttpUrl: extracts https URL from angle-bracket header', () => {
+  assert.equal(
+    parseHttpUrl('<https://example.com/unsub>, <mailto:unsub@example.com>'),
+    'https://example.com/unsub'
+  )
+})
+
+test('parseHttpUrl: returns null when no http URL present', () => {
+  assert.equal(parseHttpUrl('<mailto:unsub@example.com>'), null)
+  assert.equal(parseHttpUrl(''), null)
+})
+
+test('parseHttpUrl: ignores bare URLs without angle brackets', () => {
+  assert.equal(parseHttpUrl('https://example.com/unsub'), null)
 })
