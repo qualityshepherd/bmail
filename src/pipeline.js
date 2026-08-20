@@ -119,7 +119,6 @@ export async function sendSms (env, payload, from) {
   const mimeMessage = [
     `From: ${sender}`,
     `To: ${env.SMS_GATEWAY_ADDRESS}`,
-    'Subject: Bmail',
     'Content-Type: text/plain; charset=utf-8',
     '',
     payload
