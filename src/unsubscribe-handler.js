@@ -10,22 +10,20 @@ export const handleUnsubscribe = withAuth(async (req, env, ctx, session, emailId
   const email = await getEmailById(env.DB, emailId)
   if (!email || !email.list_unsubscribe) return new Response('Not found', { status: 404 })
 
-  const url = new URL(req.url)
-  const rawBack = url.searchParams.get('back') || ''
+  const formData = await req.formData()
+  const rawBack = (formData.get('back') || '').toString()
   const backParam = rawBack.startsWith('/') && !rawBack.startsWith('//') ? rawBack : `/message/${emailId}`
   const successUrl = `/message/${emailId}?unsubscribed=1&back=${encodeURIComponent(backParam)}`
 
   const httpUrl = parseHttpUrl(email.list_unsubscribe)
   if (httpUrl) {
-    try {
-      await fetch(httpUrl, {
+    ctx.waitUntil(
+      fetch(httpUrl, {
         method: 'POST',
         headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
         body: 'List-Unsubscribe=One-Click'
-      })
-    } catch (err) {
-      console.error('Unsubscribe POST failed:', err)
-    }
+      }).catch((err) => console.error('Unsubscribe POST failed:', err))
+    )
     return new Response(null, { status: 302, headers: { Location: successUrl } })
   }
 

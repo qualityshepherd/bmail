@@ -8,8 +8,11 @@ import {
   getAttachmentR2Keys,
   deleteExpiredNonces,
   deleteExpiredSessions,
-  deleteExpiredLoginAttempts
+  deleteExpiredLoginAttempts,
+  getUnreadInboxCount,
+  getRecentUnreadSenders
 } from './db.js'
+import { buildSmsPayload } from './notifications.js'
 import { handleChallenge, handleLogin, handleLogout, handleMe } from './auth-routes.js'
 import { handleInbox } from './inbox.js'
 import { handleMessageView } from './message-view.js'
@@ -159,12 +162,12 @@ export default {
 
 async function runHourlyDigest (env) {
   if (!env.SMS_GATEWAY_ADDRESS) return
-  const row = await env.DB.prepare(
-    "SELECT COUNT(*) as count FROM emails WHERE status = 'inbox' AND read = 0"
-  ).first()
-  const count = row ? row.count : 0
-  if (count === 0) return
-  await sendSms(env, `bmail: ${count} unread`)
+  const [unreadCount, senders] = await Promise.all([
+    getUnreadInboxCount(env.DB),
+    getRecentUnreadSenders(env.DB)
+  ])
+  if (unreadCount === 0) return
+  await sendSms(env, buildSmsPayload({ unreadCount, senders }))
 }
 
 async function runMaintenance (env) {
