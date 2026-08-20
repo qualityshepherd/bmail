@@ -104,8 +104,7 @@ export async function ingestEmail ({ message, env }) {
 
   if (notify) {
     const unreadCount = await getUnreadInboxCount(env.DB)
-    const url = `https://bmail.${env.EMAIL_DOMAIN}/inbox`
-    await sendSms(env, buildSmsPayload({ unreadCount, url }))
+    await sendSms(env, buildSmsPayload({ unreadCount }))
   }
 
   return { dropped: false, emailId, notified: notify }

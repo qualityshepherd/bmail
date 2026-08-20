@@ -163,8 +163,7 @@ async function runHourlyDigest (env) {
   if (!env.SMS_GATEWAY_ADDRESS) return
   const unreadCount = await getUnreadInboxCount(env.DB)
   if (unreadCount === 0) return
-  const url = `https://bmail.${env.EMAIL_DOMAIN}/inbox`
-  await sendSms(env, buildSmsPayload({ unreadCount, url }))
+  await sendSms(env, buildSmsPayload({ unreadCount }))
 }
 
 async function runMaintenance (env) {

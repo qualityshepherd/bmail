@@ -58,14 +58,13 @@ test('shouldNotify: false by default (silent aliases)', () => {
 })
 
 test('buildSmsPayload: plural unread', () => {
-  const payload = buildSmsPayload({ unreadCount: 3, url: 'https://bmail.example.com/inbox' })
-  assert.match(payload, /3 unread emails/)
-  assert.match(payload, /https:\/\/bmail\.example\.com\/inbox/)
+  const payload = buildSmsPayload({ unreadCount: 3 })
+  assert.equal(payload, 'Bmail: you have 3 unread emails')
 })
 
 test('buildSmsPayload: singular unread', () => {
-  const payload = buildSmsPayload({ unreadCount: 1, url: 'https://bmail.example.com/inbox' })
-  assert.match(payload, /1 unread email\b/)
+  const payload = buildSmsPayload({ unreadCount: 1 })
+  assert.equal(payload, 'Bmail: you have 1 unread email')
 })
 
 test('stripHtml: strips tags and collapses block elements to newlines', () => {

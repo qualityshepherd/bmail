@@ -8,7 +8,7 @@ export function shouldNotify ({ senderPatterns, aliasPatterns, sender, recipient
   return anyPatternMatches(senderPatterns, sender) || anyPatternMatches(aliasPatterns, recipient)
 }
 
-export function buildSmsPayload ({ unreadCount, url }) {
+export function buildSmsPayload ({ unreadCount }) {
   const noun = unreadCount === 1 ? 'email' : 'emails'
-  return `Bmail: you have ${unreadCount} unread ${noun}\n${url}`
+  return `Bmail: you have ${unreadCount} unread ${noun}`
 }
