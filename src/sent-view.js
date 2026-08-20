@@ -6,11 +6,12 @@ import { parseIdentities, getDefaultIdentity } from './identities.js'
 
 function renderSentPage (sent, backUrl, { identity = null, bgImage = '', contact = null } = {}) {
   const subject = sent.subject ? escapeHtml(sent.subject) : '(no subject)'
-  const toEmail = extractEmail(sent.to_address)
-  const toDisplay = (contact && contact.name) || extractDisplayName(sent.to_address)
-  const hasDisplayName = toDisplay !== toEmail
-  const hue = avatarHue(toEmail)
-  const initials = avatarInitials(toDisplay, toEmail)
+  const toAddresses = sent.to_address.split(',').map((s) => s.trim()).filter(Boolean)
+  const firstEmail = extractEmail(toAddresses[0])
+  const toDisplay = (contact && contact.name) || extractDisplayName(toAddresses[0])
+  const hasDisplayName = toDisplay !== firstEmail
+  const hue = avatarHue(firstEmail)
+  const initials = toAddresses.length > 1 ? `+${toAddresses.length}` : avatarInitials(toDisplay, firstEmail)
 
   const avatarHtml = (contact && contact.avatarUrl && /^https?:\/\//i.test(contact.avatarUrl))
     ? `<img class="msg-avatar msg-avatar-img" src="${escapeHtml(contact.avatarUrl)}" alt="" aria-hidden="true">`
@@ -49,10 +50,11 @@ function renderSentPage (sent, backUrl, { identity = null, bgImage = '', contact
       <div class="msg-meta">
         <div class="msg-sender-row">
           <span class="msg-from">
-            <strong>${escapeHtml(toDisplay)}</strong>${hasDisplayName ? ` <span class="msg-email">&lt;${escapeHtml(toEmail)}&gt;</span>` : ''}
+            <strong>${escapeHtml(toDisplay)}</strong>${hasDisplayName ? ` <span class="msg-email">&lt;${escapeHtml(firstEmail)}&gt;</span>` : ''}
           </span>
           <span class="msg-date">${escapeHtml(formatDate(sent.created_at))}</span>
         </div>
+        <div class="msg-to">to ${escapeHtml(toAddresses.join(', '))}</div>
         <div class="msg-to">from ${escapeHtml(sent.from_address)}</div>
         ${sent.cc_address ? `<div class="msg-to">cc ${escapeHtml(sent.cc_address)}</div>` : ''}
         ${sent.bcc_address ? `<div class="msg-to">bcc ${escapeHtml(sent.bcc_address)}</div>` : ''}
@@ -83,10 +85,10 @@ export const handleSentView = withAuth(async (req, env, ctx, session, sentId) =>
   const [identitiesRaw, bgImage, contacts] = await Promise.all([
     getSetting(env.DB, 'identities'),
     getSetting(env.DB, 'bg_image'),
-    getContactsByEmails(env.DB, [extractEmail(sent.to_address)])
+    getContactsByEmails(env.DB, sent.to_address.split(',').map((s) => extractEmail(s.trim())).filter(Boolean))
   ])
   const identity = getDefaultIdentity(parseIdentities(identitiesRaw || ''))
-  const contact = contacts.get(extractEmail(sent.to_address)) || null
+  const contact = contacts.get(extractEmail(sent.to_address.split(',')[0].trim())) || null
 
   return new Response(renderSentPage(sent, backUrl, { identity, bgImage: bgImage || '', contact }), {
     headers: { 'Content-Type': 'text/html; charset=utf-8', 'Cache-Control': 'no-store' }
