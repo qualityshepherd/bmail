@@ -136,7 +136,7 @@ function renderSettingsPage (tab, identitiesRaw, bgImage, contactCount = 0, spam
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Settings – Bmail</title>
-<link rel="icon" href="/favicon.svg" type="image/svg+xml">
+
 <link rel="icon" href="/bmail_36px.png" type="image/png" sizes="36x36">
 <link rel="manifest" href="/manifest.json">
 <meta name="theme-color" content="#BF5520">
