@@ -59,11 +59,18 @@ if (list && list.dataset.newest && !list.dataset.query.startsWith('sent:')) {
   let newest = list.dataset.newest
   let newestId = list.dataset.newestId
   const query = list.dataset.query
+  let polling = false
 
-  setInterval(async () => {
-    if (document.hidden) return
+  async function poll () {
+    if (document.hidden || polling) return
+    polling = true
     try {
-      const res = await fetch(`/inbox?q=${encodeURIComponent(query)}&after=${newest}&afterId=${newestId}`)
+      const res = await fetch(
+        `/inbox?q=${encodeURIComponent(query)}&after=${newest}&afterId=${newestId}`,
+        { redirect: 'manual' }
+      )
+      // opaqueredirect = session expired, send to login
+      if (res.type === 'opaqueredirect') { window.location.href = '/login'; return }
       if (!res.ok) return
       const html = await res.text()
       const newNewest = res.headers.get('X-Newest-Created-At')
@@ -78,8 +85,13 @@ if (list && list.dataset.newest && !list.dataset.query.startsWith('sent:')) {
       if (newUnread !== null) updateUnreadBadge(Number(newUnread))
     } catch (err) {
       console.error('inbox poll failed:', err)
+    } finally {
+      polling = false
     }
-  }, 60000)
+  }
+
+  setInterval(poll, 60000)
+  document.addEventListener('visibilitychange', () => { if (!document.hidden) poll() })
 }
 
 if (list && sentinel) {

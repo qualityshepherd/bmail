@@ -268,6 +268,10 @@ const sendBtn = document.getElementById('send-btn')
 
 async function doSubmit () {
   showSendError('')
+  const subjectVal = (document.getElementById('subject')?.value || '').trim()
+  const bodyVal = (document.getElementById('body')?.value || '').trim()
+  if (!subjectVal && !confirm('No subject — this may look like spam. Send anyway?')) return
+  if (!bodyVal && !confirm('Body is empty. Send anyway?')) return
   const formData = new FormData(composeForm)
   // Replace the file input's entries with our tracked Map
   formData.delete('attachments')

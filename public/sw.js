@@ -6,6 +6,7 @@ const STATIC = [
   '/login.js', '/sent.js', '/crypto-worker.js', '/sw-register.js',
   '/favicon.svg', '/bmail_logo2.png'
 ]
+const STATIC_PATHS = new Set(STATIC)
 
 self.addEventListener('install', (e) => {
   e.waitUntil(caches.open(CACHE).then((c) => c.addAll(STATIC)))
@@ -26,9 +27,8 @@ self.addEventListener('fetch', (e) => {
   if (request.method !== 'GET') return
   const url = new URL(request.url)
   if (url.origin !== self.location.origin) return
-  // Network-first for HTML and API — always want fresh email content
-  if (request.headers.get('Accept')?.includes('text/html') || url.pathname.startsWith('/api/')) return
-  // Cache-first for static assets
+  // Only cache-first for known static assets — everything else (pages, polls) goes to network
+  if (!STATIC_PATHS.has(url.pathname)) return
   e.respondWith(
     caches.match(request).then((cached) => {
       if (cached) return cached

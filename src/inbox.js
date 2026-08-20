@@ -228,6 +228,52 @@ export const handleInbox = withAuth(async (req, env, ctx, session) => {
 
   const noStoreHeaders = { 'Cache-Control': 'no-store' }
 
+  // Poll: new emails since cursor — skip all settings/identity fetches
+  if (after !== null) {
+    const [newEmails, pollUnread] = await Promise.all([
+      searchEmails(env.DB, filters, {
+        limit: 50,
+        after: Number(after),
+        afterId: afterId ? Number(afterId) : null
+      }),
+      getUnreadInboxCount(env.DB)
+    ])
+    const contacts = newEmails.length > 0 ? await getContactsByEmails(env.DB, newEmails.map((e) => e.sender)) : new Map()
+    const rows = newEmails.length > 0 ? newEmails.map((e) => renderRow(e, currentUrl, contacts)).join('\n') : ''
+    const newest = newEmails.length > 0 ? newEmails[0] : null
+    return new Response(rows, {
+      headers: {
+        'Content-Type': 'text/html; charset=utf-8',
+        'X-Newest-Created-At': newest ? String(newest.created_at) : '',
+        'X-Newest-Id': newest ? String(newest.id) : '',
+        'X-Unread-Count': String(pollUnread),
+        ...noStoreHeaders
+      }
+    })
+  }
+
+  // Infinite scroll: older page — skip settings/identity fetches
+  if (before !== null && !filters.sent) {
+    const emails = await searchEmails(env.DB, filters, {
+      limit: 50,
+      before: Number(before),
+      beforeId: beforeId ? Number(beforeId) : null
+    })
+    const contacts = emails.length > 0 ? await getContactsByEmails(env.DB, emails.map((e) => e.sender)) : new Map()
+    const rows = emails.length > 0 ? emails.map((e) => renderRow(e, currentUrl, contacts)).join('\n') : ''
+    const oldest = emails.length > 0 ? emails[emails.length - 1] : null
+    return new Response(rows, {
+      headers: {
+        'Content-Type': 'text/html; charset=utf-8',
+        'X-Oldest-Created-At': oldest ? String(oldest.created_at) : '',
+        'X-Oldest-Id': oldest ? String(oldest.id) : '',
+        'X-Has-More': String(emails.length === 50),
+        ...noStoreHeaders
+      }
+    })
+  }
+
+  // Full page load — fetch settings/identity once here
   const [identitiesRaw, bgImage] = await Promise.all([
     getSetting(env.DB, 'identities'),
     getSetting(env.DB, 'bg_image')
@@ -255,50 +301,7 @@ export const handleInbox = withAuth(async (req, env, ctx, session) => {
     })
   }
 
-  const emails = await searchEmails(env.DB, filters, {
-    limit: 50,
-    before: before ? Number(before) : null,
-    beforeId: beforeId ? Number(beforeId) : null
-  })
-
-  if (before !== null) {
-    const contacts = emails.length > 0 ? await getContactsByEmails(env.DB, emails.map((e) => e.sender)) : new Map()
-    const rows = emails.length > 0 ? emails.map((e) => renderRow(e, currentUrl, contacts)).join('\n') : ''
-    const oldest = emails.length > 0 ? emails[emails.length - 1] : null
-    return new Response(rows, {
-      headers: {
-        'Content-Type': 'text/html; charset=utf-8',
-        'X-Oldest-Created-At': oldest ? String(oldest.created_at) : '',
-        'X-Oldest-Id': oldest ? String(oldest.id) : '',
-        'X-Has-More': String(emails.length === 50),
-        ...noStoreHeaders
-      }
-    })
-  }
-
-  if (after !== null) {
-    const [newEmails, pollUnread] = await Promise.all([
-      searchEmails(env.DB, filters, {
-        limit: 50,
-        after: Number(after),
-        afterId: afterId ? Number(afterId) : null
-      }),
-      getUnreadInboxCount(env.DB)
-    ])
-    const contacts = newEmails.length > 0 ? await getContactsByEmails(env.DB, newEmails.map((e) => e.sender)) : new Map()
-    const rows = newEmails.length > 0 ? newEmails.map((e) => renderRow(e, currentUrl, contacts)).join('\n') : ''
-    const newest = newEmails.length > 0 ? newEmails[0] : null
-    return new Response(rows, {
-      headers: {
-        'Content-Type': 'text/html; charset=utf-8',
-        'X-Newest-Created-At': newest ? String(newest.created_at) : '',
-        'X-Newest-Id': newest ? String(newest.id) : '',
-        'X-Unread-Count': String(pollUnread),
-        ...noStoreHeaders
-      }
-    })
-  }
-
+  const emails = await searchEmails(env.DB, filters, { limit: 50 })
   const [total, allTagsRaw, unreadCount, contacts] = await Promise.all([
     getEmailCount(env.DB, filters),
     getAllTags(env.DB),
