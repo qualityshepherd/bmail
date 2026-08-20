@@ -1,6 +1,5 @@
 import { withAuth } from './auth-routes.js'
 import { getSetting, setSetting, getSpamlistText, setSpamlist, getBlocklistText, setBlocklist } from './db-admin.js'
-import { autoWildcard } from './filters.js'
 import { getAllContactsCount, upsertContacts, deleteAllContacts } from './db-contacts.js'
 import { parseIdentities, formatIdentities } from './identities.js'
 import { parseVCards } from './contacts.js'
@@ -212,8 +211,8 @@ function validateFilterPatterns (patterns) {
 
 export const handleSettingsSaveFilters = withAuth(async (req, env) => {
   const formData = await req.formData()
-  const spamPatterns = autoWildcard(parseFilterPatterns((formData.get('spamlist') || '').toString()))
-  const blockPatterns = autoWildcard(parseFilterPatterns((formData.get('blocklist') || '').toString()))
+  const spamPatterns = parseFilterPatterns((formData.get('spamlist') || '').toString())
+  const blockPatterns = parseFilterPatterns((formData.get('blocklist') || '').toString())
 
   const badSpam = validateFilterPatterns(spamPatterns)
   const badBlock = validateFilterPatterns(blockPatterns)

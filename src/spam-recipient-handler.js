@@ -1,6 +1,5 @@
 import { withAuth } from './auth-routes.js'
 import { getEmailById, setStatus, getSpamPatterns, setSpamlist } from './db.js'
-import { autoWildcard } from './filters.js'
 
 export const handleSpamRecipient = withAuth(async (req, env, ctx, session, emailId) => {
   const email = await getEmailById(env.DB, emailId)
@@ -9,7 +8,7 @@ export const handleSpamRecipient = withAuth(async (req, env, ctx, session, email
   const existing = await getSpamPatterns(env.DB)
   await Promise.all([
     setStatus(env.DB, emailId, 'spam', Date.now()),
-    setSpamlist(env.DB, autoWildcard([...existing, email.recipient]))
+    setSpamlist(env.DB, [...existing, email.recipient])
   ])
 
   const formData = await req.formData()
