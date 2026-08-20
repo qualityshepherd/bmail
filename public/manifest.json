@@ -9,6 +9,7 @@
   "theme_color": "#BF5520",
   "icons": [
     { "src": "/favicon.svg", "sizes": "any", "type": "image/svg+xml" },
-    { "src": "/bmail_logo2.png", "sizes": "512x512", "type": "image/png" }
+    { "src": "/bmail_36px.png", "sizes": "36x36", "type": "image/png" },
+    { "src": "/bmail_180px.png", "sizes": "180x180", "type": "image/png" }
   ]
 }

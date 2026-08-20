@@ -4,7 +4,7 @@ const STATIC = [
   '/settings.css', '/login.css',
   '/inbox.js', '/message.js', '/compose.js', '/settings.js',
   '/login.js', '/sent.js', '/crypto-worker.js', '/sw-register.js',
-  '/favicon.svg', '/bmail_logo2.png'
+  '/favicon.svg', '/bmail_logo2.png', '/bmail_36px.png', '/bmail_180px.png'
 ]
 const STATIC_PATHS = new Set(STATIC)
 
