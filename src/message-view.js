@@ -14,10 +14,9 @@ const FORWARD_ICON = '<svg viewBox="0 0 24 24" width="16" height="16" fill="none
 
 function renderIdentityOptions (identities, selectedAddress) {
   const hasMatch = identities.some((i) => i.address.toLowerCase() === selectedAddress.toLowerCase())
-  const options = hasMatch ? identities : [{ address: selectedAddress, name: '' }, ...identities]
-  return options.map((i) => {
+  return identities.map((i) => {
     const label = i.name ? `${i.name} <${i.address}>` : i.address
-    const selected = i.address.toLowerCase() === selectedAddress.toLowerCase() ? ' selected' : ''
+    const selected = hasMatch && i.address.toLowerCase() === selectedAddress.toLowerCase() ? ' selected' : ''
     return `<option value="${escapeHtml(i.address)}"${selected}>${escapeHtml(label)}</option>`
   }).join('')
 }
