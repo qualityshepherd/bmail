@@ -19,6 +19,10 @@ export async function ingestEmail ({ message, env }) {
   const isSpam = spamPatterns.length > 0 &&
     (anyPatternMatches(spamPatterns, message.from) || anyPatternMatches(spamPatterns, message.to))
 
+  const authResults = message.headers.get('authentication-results') || ''
+  const dmarcMatch = authResults.match(/\bdmarc=(\w+)/i)
+  const dmarcResult = dmarcMatch ? dmarcMatch[1].toLowerCase() : null
+
   const parsed = await parseRawEmail(message.raw)
   const messageId = parsed.messageId || message.headers.get('message-id')
 
@@ -48,6 +52,7 @@ export async function ingestEmail ({ message, env }) {
       messageId,
       inReplyTo: message.headers.get('in-reply-to'),
       listUnsubscribe: message.headers.get('list-unsubscribe'),
+      dmarcResult,
       createdAt: Date.now(),
       senderDisplay: parsed.senderDisplay,
       cc: parsed.cc,

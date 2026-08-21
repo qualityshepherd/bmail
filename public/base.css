@@ -144,6 +144,17 @@ h1 a:hover { color: var(--accent); }
   font-size: 0.85em;
 }
 
+.dmarc-badge {
+  display: inline-block;
+  padding: 0.05em 0.35em;
+  font-size: 0.65rem;
+  border-radius: 6px;
+  color: #c0392b;
+  border: 1px solid currentColor;
+  white-space: nowrap;
+  margin-left: 0.4em;
+}
+
 .status-chip {
   display: inline-block;
   padding: 0.05em 0.35em;

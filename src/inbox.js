@@ -68,6 +68,9 @@ function renderRow (email, currentUrl, contacts = new Map()) {
     ? `<span class="status-chip status-chip-${escapeHtml(email.status)}">${escapeHtml(email.status)}</span>`
     : ''
   const starPrefix = email.starred ? '<span class="subject-star" aria-label="starred">★</span>' : ''
+  const dmarcBadge = email.dmarc_result === 'fail'
+    ? '<span class="dmarc-badge" title="Sender authentication failed (DMARC)">⚠ unverified</span>'
+    : ''
   const unreadClass = email.read ? '' : ' unread'
   const hue = avatarHue(email.sender)
   const initials = avatarInitials(displayName, email.sender)
@@ -81,7 +84,7 @@ function renderRow (email, currentUrl, contacts = new Map()) {
       ${avatarHtml}
       <span class="row-body">
         <span class="row-subject">${starPrefix}<span class="subject-text">${subjectText}</span>${renderPreview(email.preview)}</span>
-        <span class="row-meta"><span class="row-sender" title="${escapeHtml(senderTooltip)}">${escapeHtml(displayName)}</span>${tagChips}</span>
+        <span class="row-meta"><span class="row-sender" title="${escapeHtml(senderTooltip)}">${escapeHtml(displayName)}</span>${tagChips}${dmarcBadge}</span>
       </span>
       <span class="row-right">
         <span class="row-date" data-ts="${email.created_at}">${formatShortDate(email.created_at)}</span>

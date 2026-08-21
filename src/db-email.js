@@ -13,8 +13,8 @@ export function isDuplicateKeyError (err) {
 export async function insertEmail (db, email) {
   const result = await db
     .prepare(
-      `INSERT INTO emails (sender, recipient, subject, body, message_id, in_reply_to, created_at, sender_display, cc, status, status_changed_at, list_unsubscribe)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+      `INSERT INTO emails (sender, recipient, subject, body, message_id, in_reply_to, created_at, sender_display, cc, status, status_changed_at, list_unsubscribe, dmarc_result)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
     )
     .bind(
       email.sender,
@@ -28,7 +28,8 @@ export async function insertEmail (db, email) {
       email.cc || null,
       email.status || 'inbox',
       email.createdAt,
-      email.listUnsubscribe || null
+      email.listUnsubscribe || null,
+      email.dmarcResult || null
     )
     .run()
 
@@ -83,9 +84,9 @@ export async function searchEmails (db, filters, { limit = 50, before = null, be
   const whereClause = conditions.length > 0 ? `WHERE ${conditions.join(' AND ')}` : ''
   const { results } = await db
     .prepare(
-      `SELECT emails.id, emails.sender, emails.sender_display, emails.subject, 
+      `SELECT emails.id, emails.sender, emails.sender_display, emails.subject,
               emails.starred, emails.status, emails.read, emails.tags, emails.created_at,
-              SUBSTR(emails.body, 1, 150) as preview
+              emails.dmarc_result, SUBSTR(emails.body, 1, 150) as preview
        ${fromClause} ${whereClause}
        ORDER BY emails.created_at DESC, emails.id DESC LIMIT ?`
     )
@@ -107,7 +108,7 @@ export async function getEmailCount (db, filters) {
 
 export async function getEmailById (db, id) {
   return db
-    .prepare('SELECT id, sender, sender_display, recipient, subject, body, message_id, in_reply_to, starred, status, read, tags, cc, created_at, list_unsubscribe FROM emails WHERE id = ?')
+    .prepare('SELECT id, sender, sender_display, recipient, subject, body, message_id, in_reply_to, starred, status, read, tags, cc, created_at, list_unsubscribe, dmarc_result FROM emails WHERE id = ?')
     .bind(id)
     .first()
 }

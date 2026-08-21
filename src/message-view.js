@@ -163,6 +163,7 @@ function renderMessagePage (email, attachments, { sent, backParam, prevId, nextI
           </span>
           <span class="msg-date">${escapeHtml(formatDate(email.created_at))}</span>
           ${email.status !== 'inbox' ? `<span class="status-chip status-chip-${escapeHtml(email.status)}">${escapeHtml(email.status)}</span>` : ''}
+          ${email.dmarc_result === 'fail' ? '<span class="dmarc-badge" title="Sender authentication failed (DMARC)">⚠ unverified</span>' : ''}
         </div>
           <div class="msg-to">to ${escapeHtml(email.recipient)}</div>
         ${email.cc ? `<div class="msg-cc">cc ${escapeHtml(email.cc)}</div>` : ''}

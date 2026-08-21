@@ -1,8 +1,7 @@
-// Exports Bmail's D1 database to a local file. R2 (attachments) is
-// deliberately NOT backed up - the 30-day retention window already makes
-// attachments ephemeral by design (see README), so there's nothing durable
-// to protect there. If you ever need an attachment back, ask the sender to
-// resend it or download it before the 30-day window closes.
+// Exports Bmail's D1 database to a local file. R2 attachment blobs are
+// NOT included — only the metadata (filename, r2_key, size) is in D1.
+// If you need attachment blobs in your backup strategy, set up a separate
+// R2 sync job or download attachments before deleting emails.
 //
 // Usage:
 //   npm run backup            # backs up remote (production)
