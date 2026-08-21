@@ -23,6 +23,11 @@ export async function ingestEmail ({ message, env }) {
   const parsed = await parseRawEmail(message.raw)
   const messageId = parsed.messageId || message.headers.get('message-id')
 
+  const MAX_BODY_CHARS = 100 * 1024
+  let body = parsed.text || ''
+  const bodyTruncated = body.length > MAX_BODY_CHARS
+  if (bodyTruncated) body = body.slice(0, MAX_BODY_CHARS) + '\n\n[Message truncated — full email forwarded to your fallback address]'
+
   // Fast path: catches the common retry case (the earlier attempt already
   // fully completed) without touching the allowlist/notify/attachment/SMS
   // logic at all. Messages with no Message-ID at all can't be deduped this
@@ -50,7 +55,7 @@ export async function ingestEmail ({ message, env }) {
       sender: message.from,
       recipient: message.to,
       subject: parsed.subject,
-      body: parsed.text,
+      body,
       messageId,
       inReplyTo: message.headers.get('in-reply-to'),
       listUnsubscribe: message.headers.get('list-unsubscribe'),
@@ -102,6 +107,10 @@ export async function ingestEmail ({ message, env }) {
     throw err
   }
 
+  if (bodyTruncated && message.canBeForwarded) {
+    await message.forward(env.FALLBACK_EMAIL)
+  }
+
   if (notify) {
     const unreadCount = await getUnreadInboxCount(env.DB)
     await sendSms(env, buildSmsPayload({ unreadCount }))
@@ -112,6 +121,23 @@ export async function ingestEmail ({ message, env }) {
 
 export async function sendSms (env, payload, from) {
   const sender = from || (env.EMAIL_DOMAIN ? `alerts@${env.EMAIL_DOMAIN}` : env.FALLBACK_EMAIL)
+
+  if (env.RESEND_API_KEY) {
+    const res = await fetch('https://api.resend.com/emails', {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${env.RESEND_API_KEY}`,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({ from: sender, to: [env.SMS_GATEWAY_ADDRESS], subject: 'Bmail', text: payload })
+    })
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}))
+      throw new Error(err.message || `Resend SMS error ${res.status}`)
+    }
+    return
+  }
+
   const mimeMessage = [
     `From: ${sender}`,
     `To: ${env.SMS_GATEWAY_ADDRESS}`,
@@ -119,7 +145,6 @@ export async function sendSms (env, payload, from) {
     '',
     payload
   ].join('\r\n')
-
   const message = new EmailMessage(sender, env.SMS_GATEWAY_ADDRESS, mimeMessage)
   await env.SMS_GATEWAY.send(message)
 }

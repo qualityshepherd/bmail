@@ -312,7 +312,7 @@ header .settings-menu { margin-left: 0; justify-self: end; }
   font-family: var(--font);
   font-size: 1rem;
   line-height: 1.7;
-  color: var(--text);
+  color: var(--text-dim);
 }
 
 .body a {

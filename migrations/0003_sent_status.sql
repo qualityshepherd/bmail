@@ -1,2 +1,0 @@
-ALTER TABLE sent ADD COLUMN send_status TEXT NOT NULL DEFAULT 'sent';
-ALTER TABLE sent ADD COLUMN send_error TEXT;
