@@ -15,7 +15,8 @@ CREATE TABLE emails (
   read INTEGER NOT NULL DEFAULT 0,
   tags TEXT,
   cc TEXT,
-  list_unsubscribe TEXT
+  list_unsubscribe TEXT,
+  dmarc_result TEXT
 );
 
 CREATE INDEX idx_emails_recipient ON emails (recipient);
