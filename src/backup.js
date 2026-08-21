@@ -17,7 +17,7 @@ async function dumpTable (db, table, cols) {
 const TABLES = [
   ['emails', ['id', 'sender', 'recipient', 'subject', 'body', 'message_id', 'in_reply_to', 'created_at', 'sender_display', 'starred', 'status', 'status_changed_at', 'read', 'tags', 'cc']],
   ['attachments', ['id', 'email_id', 'filename', 'content_type', 'r2_key', 'size']],
-  ['sent', ['id', 'message_id', 'from_address', 'to_address', 'subject', 'body', 'in_reply_to', 'created_at', 'cc_address', 'bcc_address']],
+  ['sent', ['id', 'message_id', 'from_address', 'to_address', 'subject', 'body', 'in_reply_to', 'created_at', 'cc_address', 'bcc_address', 'send_status', 'send_error']],
   ['blocklist', ['id', 'pattern']],
 
   ['contacts', ['email', 'name', 'avatar_url']],
