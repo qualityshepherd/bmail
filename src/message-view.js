@@ -153,7 +153,7 @@ function renderMessagePage (email, attachments, { sent, backParam, prevId, nextI
     ${renderSettingsMenu(identity)}
   </header>
   <main class="message">
-    <h1>${subject}</h1>
+    <h1>${email.starred ? '<span class="subject-star" aria-label="starred">★</span>' : ''}${subject}</h1>
     <div class="msg-header">
       ${avatarHtml}
       <div class="msg-meta">
