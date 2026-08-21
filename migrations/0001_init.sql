@@ -6,7 +6,7 @@ CREATE TABLE emails (
   body TEXT NOT NULL DEFAULT '',
   message_id TEXT,
   in_reply_to TEXT,
-  notify INTEGER NOT NULL DEFAULT 0,
+
   created_at INTEGER NOT NULL,
   sender_display TEXT,
   starred INTEGER NOT NULL DEFAULT 0,
@@ -83,12 +83,6 @@ CREATE TABLE spamlist (
   pattern TEXT NOT NULL UNIQUE
 );
 
-CREATE TABLE allowed_notifications (
-  id INTEGER PRIMARY KEY AUTOINCREMENT,
-  pattern TEXT NOT NULL,
-  kind TEXT NOT NULL CHECK (kind IN ('sender', 'alias')),
-  UNIQUE (pattern, kind)
-);
 
 CREATE TABLE contacts (
   email TEXT PRIMARY KEY,

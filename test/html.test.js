@@ -1,6 +1,7 @@
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
 import { escapeHtml, formatDate, formatBytes, linkify } from '../src/html.js'
+import { renderIdentityOptions } from '../src/message-view.js'
 
 // escapeHtml - this is the actual defense against a malicious sender
 // putting markup in a subject/sender/body that later gets rendered.
@@ -167,4 +168,26 @@ test('linkify: empty string returns empty string', () => {
 
 test('linkify: no URLs or emails returns fully escaped text', () => {
   assert.equal(linkify('just plain text'), 'just plain text')
+})
+
+const IDENTITIES = [
+  { address: 'me@example.com', name: 'Me' },
+  { address: 'alias@example.com', name: '' }
+]
+
+test('renderIdentityOptions: selects matching identity', () => {
+  const html = renderIdentityOptions(IDENTITIES, 'alias@example.com')
+  assert.match(html, /value="alias@example\.com" selected/)
+  assert.doesNotMatch(html, /value="me@example\.com" selected/)
+})
+
+test('renderIdentityOptions: no match defaults to first, no synthetic option', () => {
+  const html = renderIdentityOptions(IDENTITIES, 'unknown@example.com')
+  assert.doesNotMatch(html, /unknown@example\.com/)
+  assert.doesNotMatch(html, /selected/)
+})
+
+test('renderIdentityOptions: match is case-insensitive', () => {
+  const html = renderIdentityOptions(IDENTITIES, 'ME@EXAMPLE.COM')
+  assert.match(html, /value="me@example\.com" selected/)
 })

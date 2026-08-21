@@ -3,7 +3,7 @@ import assert from 'node:assert/strict'
 import { readFile } from 'node:fs/promises'
 import { fileURLToPath } from 'node:url'
 import { patternMatches, anyPatternMatches } from '../src/match.js'
-import { shouldNotify, buildSmsPayload } from '../src/notifications.js'
+import { buildSmsPayload } from '../src/notifications.js'
 import { stripHtml, parseRawEmail, formatSenderDisplay } from '../src/mime.js'
 import { parseHttpUrl } from '../src/unsubscribe-handler.js'
 
@@ -33,36 +33,6 @@ test('anyPatternMatches: matches if any pattern hits', () => {
   const patterns = ['alice@example.com', '*@spam.com']
   assert.equal(anyPatternMatches(patterns, 'bad@spam.com'), true)
   assert.equal(anyPatternMatches(patterns, 'ok@example.com'), false)
-})
-
-test('shouldNotify: true on sender allowlist match', () => {
-  const result = shouldNotify({
-    senderPatterns: ['vip@example.com'],
-    aliasPatterns: [],
-    sender: 'vip@example.com',
-    recipient: 'random-alias@bmail.example.com'
-  })
-  assert.equal(result, true)
-})
-
-test('shouldNotify: true on alias allowlist match', () => {
-  const result = shouldNotify({
-    senderPatterns: [],
-    aliasPatterns: ['urgent@bmail.example.com'],
-    sender: 'anyone@example.com',
-    recipient: 'urgent@bmail.example.com'
-  })
-  assert.equal(result, true)
-})
-
-test('shouldNotify: false by default (silent aliases)', () => {
-  const result = shouldNotify({
-    senderPatterns: ['vip@example.com'],
-    aliasPatterns: ['urgent@bmail.example.com'],
-    sender: 'stranger@example.com',
-    recipient: 'random-alias@bmail.example.com'
-  })
-  assert.equal(result, false)
 })
 
 test('buildSmsPayload: plural unread', () => {

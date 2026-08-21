@@ -1,13 +1,12 @@
 import { EmailMessage } from 'cloudflare:email'
 import { parseRawEmail } from './mime.js'
 import { anyPatternMatches } from './match.js'
-import { shouldNotify, buildSmsPayload } from './notifications.js'
-import { getBlocklistPatterns, getSpamPatterns, getAllowlistPatterns, insertEmail, insertAttachment, getEmailByMessageId, deleteEmailsByIds, isDuplicateKeyError, getUnreadInboxCount } from './db.js'
+import { getBlocklistPatterns, getSpamPatterns, insertEmail, insertAttachment, getEmailByMessageId, deleteEmailsByIds, isDuplicateKeyError } from './db.js'
 
 // Runs the full inbound pipeline for one message. Returns { dropped: true }
 // if the sender was blocklisted, { duplicate: true } if this message was
 // already processed (Cloudflare can retry delivery on timeout/non-2xx),
-// otherwise { dropped: false, emailId, notified }.
+// otherwise { dropped: false, emailId }.
 // Callers (the email() handler) are responsible for the top-level try/catch
 // and fallback-forward behavior described in spec section 2.5.
 export async function ingestEmail ({ message, env }) {
@@ -29,25 +28,15 @@ export async function ingestEmail ({ message, env }) {
   if (bodyTruncated) body = body.slice(0, MAX_BODY_CHARS) + '\n\n[Message truncated — full email forwarded to your fallback address]'
 
   // Fast path: catches the common retry case (the earlier attempt already
-  // fully completed) without touching the allowlist/notify/attachment/SMS
-  // logic at all. Messages with no Message-ID at all can't be deduped this
-  // way and just proceed normally - there's no reliable identity to check.
+  // fully completed) without touching attachment/SMS logic at all. Messages
+  // with no Message-ID at all can't be deduped this way and just proceed
+  // normally - there's no reliable identity to check.
   if (messageId) {
     const existing = await getEmailByMessageId(env.DB, messageId)
     if (existing) {
       return { dropped: false, duplicate: true, emailId: existing.id }
     }
   }
-
-  const senderPatterns = await getAllowlistPatterns(env.DB, 'sender')
-  const aliasPatterns = await getAllowlistPatterns(env.DB, 'alias')
-  const notifyAllowed = shouldNotify({
-    senderPatterns,
-    aliasPatterns,
-    sender: message.from,
-    recipient: message.to
-  })
-  const notify = notifyAllowed && !isSpam
 
   let emailId
   try {
@@ -59,7 +48,6 @@ export async function ingestEmail ({ message, env }) {
       messageId,
       inReplyTo: message.headers.get('in-reply-to'),
       listUnsubscribe: message.headers.get('list-unsubscribe'),
-      notify,
       createdAt: Date.now(),
       senderDisplay: parsed.senderDisplay,
       cc: parsed.cc,
@@ -67,10 +55,9 @@ export async function ingestEmail ({ message, env }) {
     })
   } catch (err) {
     // Race window: two near-simultaneous retries both passed the check
-    // above before either had inserted. The unique index (migration 0005)
-    // catches what the application-level check couldn't - treat this as
-    // "already processed", not a real pipeline failure that should trigger
-    // fallback-forward.
+    // above before either had inserted. The unique index catches what the
+    // application-level check couldn't - treat this as "already processed",
+    // not a real pipeline failure that should trigger fallback-forward.
     if (isDuplicateKeyError(err) && messageId) {
       const existing = await getEmailByMessageId(env.DB, messageId)
       if (existing) return { dropped: false, duplicate: true, emailId: existing.id }
@@ -111,12 +98,7 @@ export async function ingestEmail ({ message, env }) {
     await message.forward(env.FALLBACK_EMAIL)
   }
 
-  if (notify) {
-    const unreadCount = await getUnreadInboxCount(env.DB)
-    await sendSms(env, buildSmsPayload({ unreadCount }))
-  }
-
-  return { dropped: false, emailId, notified: notify }
+  return { dropped: false, emailId }
 }
 
 export async function sendSms (env, payload, from) {

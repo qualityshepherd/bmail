@@ -36,14 +36,6 @@ export async function setSpamlist (db, patterns) {
   ])
 }
 
-export async function getAllowlistPatterns (db, kind) {
-  const { results } = await db
-    .prepare('SELECT pattern FROM allowed_notifications WHERE kind = ?')
-    .bind(kind)
-    .all()
-  return results.map((row) => row.pattern)
-}
-
 export async function getSetting (db, key) {
   const row = await db.prepare('SELECT value FROM settings WHERE key = ?').bind(key).first()
   return row ? row.value : null

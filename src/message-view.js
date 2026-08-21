@@ -12,7 +12,7 @@ const DEFAULT_BACK = '/inbox?q=' + encodeURIComponent('status:inbox')
 const TAG_ICON = '<svg viewBox="0 0 24 24" width="16" height="16"><path d="M20.59 13.41l-7.17 7.17a2 2 0 01-2.83 0L2 12V2h10l8.59 8.59a2 2 0 010 2.82z" stroke="currentColor" stroke-width="2" fill="none" stroke-linejoin="round"/><circle cx="7" cy="7" r="1.5" fill="currentColor"/></svg>'
 const FORWARD_ICON = '<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 17 20 12 15 7"/><path d="M4 18v-2a4 4 0 014-4h12"/></svg>'
 
-function renderIdentityOptions (identities, selectedAddress) {
+export function renderIdentityOptions (identities, selectedAddress) {
   const hasMatch = identities.some((i) => i.address.toLowerCase() === selectedAddress.toLowerCase())
   return identities.map((i) => {
     const label = i.name ? `${i.name} <${i.address}>` : i.address

@@ -15,11 +15,11 @@ async function dumpTable (db, table, cols) {
 
 // emails must come before attachments (FK: email_id → emails.id)
 const TABLES = [
-  ['emails', ['id', 'sender', 'recipient', 'subject', 'body', 'message_id', 'in_reply_to', 'notify', 'created_at', 'sender_display', 'starred', 'status', 'status_changed_at', 'read', 'tags', 'cc']],
+  ['emails', ['id', 'sender', 'recipient', 'subject', 'body', 'message_id', 'in_reply_to', 'created_at', 'sender_display', 'starred', 'status', 'status_changed_at', 'read', 'tags', 'cc']],
   ['attachments', ['id', 'email_id', 'filename', 'content_type', 'r2_key', 'size']],
   ['sent', ['id', 'message_id', 'from_address', 'to_address', 'subject', 'body', 'in_reply_to', 'created_at', 'cc_address', 'bcc_address']],
   ['blocklist', ['id', 'pattern']],
-  ['allowed_notifications', ['id', 'pattern', 'kind']],
+
   ['contacts', ['email', 'name', 'avatar_url']],
   ['settings', ['key', 'value']]
 ]
