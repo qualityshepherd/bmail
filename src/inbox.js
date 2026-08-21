@@ -67,6 +67,7 @@ function renderRow (email, currentUrl, contacts = new Map()) {
   const statusChip = email.status !== 'inbox'
     ? `<span class="status-chip status-chip-${escapeHtml(email.status)}">${escapeHtml(email.status)}</span>`
     : ''
+  const starPrefix = email.starred ? '<span class="subject-star" aria-label="starred">★</span>' : ''
   const unreadClass = email.read ? '' : ' unread'
   const hue = avatarHue(email.sender)
   const initials = avatarInitials(displayName, email.sender)
@@ -79,7 +80,7 @@ function renderRow (email, currentUrl, contacts = new Map()) {
     <a class="email-row" href="/message/${email.id}?back=${encodeURIComponent(currentUrl)}" data-ts="${email.created_at}">
       ${avatarHtml}
       <span class="row-body">
-        <span class="row-subject"><span class="subject-text">${subjectText}</span>${renderPreview(email.preview)}</span>
+        <span class="row-subject">${starPrefix}<span class="subject-text">${subjectText}</span>${renderPreview(email.preview)}</span>
         <span class="row-meta"><span class="row-sender" title="${escapeHtml(senderTooltip)}">${escapeHtml(displayName)}</span>${tagChips}</span>
       </span>
       <span class="row-right">

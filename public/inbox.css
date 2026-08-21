@@ -166,6 +166,12 @@
   font-size: 0.95rem;
 }
 
+.subject-star {
+  color: #c8a84b;
+  margin-right: 0.25em;
+  font-size: 0.85em;
+}
+
 .row-meta {
   display: flex;
   align-items: center;
