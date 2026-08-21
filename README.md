@@ -2,7 +2,7 @@
 
 # Bmail (Beta)
 
-Personal email system that runs on [Cloudflare's](https://www.cloudflare.com) free tier. Send, receive, and store plain-text emails on your own domain. Free forever; no stored passwords; _one_ dependency.
+Personal email that runs on [Cloudflare's](https://www.cloudflare.com) free tier. Send, receive, and store plain-text emails on your own domain. Free forever; no stored passwords; _one_ dependency.
 
 ## Features
 
@@ -34,7 +34,7 @@ Okay... this is gonna seem like a LOT. And it is but it's really not hard. If yo
 1. Install `npm install`
 1. Create the D1 database `wrangler d1 create bmail`
 1. Copy the `database_id` into `wrangler.toml` under `[[d1_databases]]`.
-1. Create the R2 bucket `wrangler r2 bucket create bmail-attachments`
+1. Create the R2 bucket `wrangler r2 bucket create bmail`
 1. Run migrations `npm run db:migrate:remote`
 1. Configure `wrangler.toml` `[vars]`
 
@@ -43,7 +43,6 @@ Okay... this is gonna seem like a LOT. And it is but it's really not hard. If yo
 | `FALLBACK_EMAIL` | yes | Where errored/undeliverable mail forwards. Must NOT route back into this Worker. |
 | `SESSION_COOKIE_NAME` | yes | Any string. |
 | `AUTH_PUBKEY` | no | Leave blank on first deploy; setup flow generates it. |
-| `DEEP_LINK_BASE_URL` | yes | Your worker's public URL. Used in SMS links. |
 | `OUTBOUND_PROVIDER` | no | `"resend"` (default). `"cf-email"` for CF Email Service (Workers paid plan, $5/mo). Blank for legacy CF binding (single To only, no attachments). |
 | `SMS_GATEWAY_ADDRESS` | no | Carrier email-to-SMS gateway. Leave empty to disable SMS. |
 
@@ -59,10 +58,10 @@ Set `SMS_GATEWAY_ADDRESS` in `[vars]`. Common gateways:
 
 ```
 Google Fi:  <number>@msg.fi.google.com
-AT&T:       <number>@txt.att.net
-Verizon:    <number>@vtext.com
 T-Mobile:   <number>@tmomail.net
 ```
+
+AT&T and Verizon discontinued their email-to-SMS gateways.
 
 ### R2 lifecycle rule
 
@@ -101,7 +100,7 @@ npm run panic   # nukes all active sessions immediately
                 # use when you suspect a session leaked
 
 npm run backup  # SQL dump of D1 to backups/ locally (gitignored)
-                # remote: Settings → Export → Back up now
+                # nightly automatic backup: Settings → Export → Back up now
 ```
 
 If your passphrase is leaked: `panic`, blank `AUTH_PUBKEY`, redeploy, run setup again.
