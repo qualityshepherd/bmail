@@ -1,3 +1,5 @@
+import { buildMbox } from './export-handler.js'
+
 export function sqlVal (v) {
   if (v === null || v === undefined) return 'NULL'
   if (typeof v === 'number') return String(v)
@@ -52,4 +54,14 @@ export async function runDailyBackup (env) {
 
 export async function runManualBackup (env) {
   await writeBackup(env)
+}
+
+export async function runMonthlyMboxBackup (env) {
+  const now = new Date()
+  if (now.getUTCDate() !== 1 || now.getUTCHours() !== 7) return
+  const month = now.toISOString().slice(0, 7) // YYYY-MM
+  const mbox = await buildMbox(env.DB)
+  await env.ATTACHMENTS.put(`backups/bmail-${month}.mbox`, mbox, {
+    httpMetadata: { contentType: 'application/mbox' }
+  })
 }

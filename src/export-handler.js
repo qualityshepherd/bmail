@@ -48,12 +48,12 @@ function sentToMbox (sent) {
   return msg
 }
 
-export const handleMboxExport = withAuth(async (req, env) => {
+export async function buildMbox (db) {
   const [{ results: inbound }, { results: outbound }] = await Promise.all([
-    env.DB.prepare(
+    db.prepare(
       'SELECT sender, sender_display, recipient, subject, body, message_id, in_reply_to, cc, created_at, read FROM emails ORDER BY created_at ASC'
     ).all(),
-    env.DB.prepare(
+    db.prepare(
       'SELECT from_address, to_address, cc_address, bcc_address, subject, body, message_id, in_reply_to, created_at FROM sent ORDER BY created_at ASC'
     ).all()
   ])
@@ -63,7 +63,11 @@ export const handleMboxExport = withAuth(async (req, env) => {
     ...outbound.map((s) => ({ ts: s.created_at, text: sentToMbox(s) }))
   ].sort((a, b) => a.ts - b.ts)
 
-  const mbox = all.map((m) => m.text).join('\n')
+  return all.map((m) => m.text).join('\n')
+}
+
+export const handleMboxExport = withAuth(async (req, env) => {
+  const mbox = await buildMbox(env.DB)
   const date = new Date().toISOString().slice(0, 10)
 
   return new Response(mbox, {

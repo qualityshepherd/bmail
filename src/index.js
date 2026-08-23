@@ -33,7 +33,7 @@ import { handleSettingsPage, handleSettingsSaveIdentities, handleSettingsSaveApp
 import { handleSentView } from './sent-view.js'
 import { handleUnsubscribe } from './unsubscribe-handler.js'
 import { handleMboxExport } from './export-handler.js'
-import { runDailyBackup } from './backup.js'
+import { runDailyBackup, runMonthlyMboxBackup } from './backup.js'
 import { handleManualBackup } from './backup-handler.js'
 import { renderSetupPage } from './setup-page.js'
 import { renderLoginPage } from './login-page.js'
@@ -129,6 +129,7 @@ export default {
     ctx.waitUntil(runMaintenance(env))
     ctx.waitUntil(runHourlyDigest(env))
     ctx.waitUntil(runDailyBackup(env))
+    ctx.waitUntil(runMonthlyMboxBackup(env))
   },
 
   async fetch (request, env, ctx) {
