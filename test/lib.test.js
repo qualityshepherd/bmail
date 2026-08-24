@@ -35,6 +35,17 @@ test('anyPatternMatches: matches if any pattern hits', () => {
   assert.equal(anyPatternMatches(patterns, 'ok@example.com'), false)
 })
 
+test('patternMatches: glob *pattern* matches full From header', () => {
+  assert.equal(patternMatches('*Good Sense RV*', 'bounces@em5143.aem-irv.com', 'Good Sense RV <bounces@em5143.aem-irv.com>'), true)
+  assert.equal(patternMatches('*Good Sense RV*', 'bounces@em5143.aem-irv.com', 'Bad Actor <bounces@em5143.aem-irv.com>'), false)
+  assert.equal(patternMatches('*brine.dev*', 'bounces+junk=brine.dev@em5143.aem-irv.com', 'Good Sense RV <bounces+junk=brine.dev@em5143.aem-irv.com>'), true)
+})
+
+test('patternMatches: glob falls back to envelope if no fullFrom', () => {
+  assert.equal(patternMatches('*brine.dev*', 'bounces+junk=brine.dev@em5143.aem-irv.com'), true)
+  assert.equal(patternMatches('*brine.dev*', 'bounces@em5143.aem-irv.com'), false)
+})
+
 test('buildSmsPayload: plural unread', () => {
   const payload = buildSmsPayload({ unreadCount: 3 })
   assert.equal(payload, 'Bmail: you have 3 unread emails')

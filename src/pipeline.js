@@ -10,14 +10,16 @@ import { getBlocklistPatterns, getSpamPatterns, insertEmail, insertAttachment, g
 // Callers (the email() handler) are responsible for the top-level try/catch
 // and fallback-forward behavior described in spec section 2.5.
 export async function ingestEmail ({ message, env }) {
+  const fullFrom = message.headers.get('from') || message.from
+
   const blocklistPatterns = await getBlocklistPatterns(env.DB)
-  if (anyPatternMatches(blocklistPatterns, message.from)) {
+  if (anyPatternMatches(blocklistPatterns, message.from, fullFrom)) {
     return { dropped: true }
   }
 
   const spamPatterns = await getSpamPatterns(env.DB)
   const isSpam = spamPatterns.length > 0 &&
-    (anyPatternMatches(spamPatterns, message.from) || anyPatternMatches(spamPatterns, message.to))
+    (anyPatternMatches(spamPatterns, message.from, fullFrom) || anyPatternMatches(spamPatterns, message.to))
 
   const authResults = message.headers.get('authentication-results') || ''
   const dmarcMatch = authResults.match(/\bdmarc=(\w+)/i)

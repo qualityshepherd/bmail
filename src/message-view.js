@@ -158,7 +158,13 @@ function renderMessagePage (email, attachments, { sent, backParam, prevId, nextI
       ${avatarHtml}
       <div class="msg-meta">
         <div class="msg-sender-row">
-          <span class="msg-from">
+          <span class="msg-from" title="${escapeHtml([
+            `From: ${email.sender_display ? `${email.sender_display} <${email.sender}>` : email.sender}`,
+            email.recipient ? `To: ${email.recipient}` : '',
+            email.cc ? `Cc: ${email.cc}` : '',
+            email.message_id ? `Message-ID: ${email.message_id}` : '',
+            email.dmarc_result ? `DMARC: ${email.dmarc_result}` : ''
+          ].filter(Boolean).join('\n'))}">
             <strong>${escapeHtml(displayName)}</strong>${hasDisplayName ? ` <span class="msg-email">&lt;${escapeHtml(email.sender)}&gt;</span>` : ''}
           </span>
           <span class="msg-date">${escapeHtml(formatDate(email.created_at))}</span>

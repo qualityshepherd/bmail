@@ -83,7 +83,8 @@ function renderFiltersTab (spamText, blockText) {
       <span class="pattern-examples-heading">Patterns</span><br>
       <code>foo@example.com</code> exact address<br>
       <code>*@example.com</code> all addresses at that domain<br>
-      <code>example.com</code> that domain and all subdomains
+      <code>example.com</code> that domain and all subdomains<br>
+      <code>*Good Sense RV*</code> substring match on full From header
     </p>
   </section>`
 }
@@ -213,7 +214,8 @@ function validateFilterPatterns (patterns) {
   const emailRe = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
   const wildcardRe = /^\*@[^\s@]+\.[^\s@]+$/
   const domainRe = /^[^\s@*]+\.[^\s@*]+$/
-  const bad = patterns.filter((p) => !emailRe.test(p) && !wildcardRe.test(p) && !domainRe.test(p))
+  const globRe = /\*/
+  const bad = patterns.filter((p) => !emailRe.test(p) && !wildcardRe.test(p) && !domainRe.test(p) && !globRe.test(p))
   return bad
 }
 

@@ -84,7 +84,7 @@ export async function handleLogin (req, env) {
   return new Response(JSON.stringify({ ok: true }), {
     headers: {
       'Content-Type': 'application/json',
-      'Set-Cookie': sessionCookie(token, env.SESSION_COOKIE_NAME, 24 * 60 * 60)
+      'Set-Cookie': sessionCookie(token, env.SESSION_COOKIE_NAME, 7 * 24 * 60 * 60)
     }
   })
 }
