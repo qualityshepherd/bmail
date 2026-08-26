@@ -1,5 +1,5 @@
 import { withAuth } from './auth-routes.js'
-import { getSetting, setSetting, getSpamlistText, setSpamlist, getBlocklistText, setBlocklist } from './db-admin.js'
+import { getSetting, setSetting, getSpamlistText, setSpamlist, getBlocklistText, setBlocklist, getKnownRecipientCount } from './db-admin.js'
 import { getAllContactsCount, upsertContacts, deleteAllContacts } from './db-contacts.js'
 import { parseIdentities, formatIdentities } from './identities.js'
 import { parseVCards } from './contacts.js'
@@ -69,7 +69,7 @@ function renderContactsTab (contactCount) {
   </section>`
 }
 
-function renderFiltersTab (spamText, blockText) {
+function renderFiltersTab (spamText, blockText, catchAllLockdown, knownRecipientCount) {
   return `<section class="settings-section">
     <p class="settings-hint">One pattern per line.</p>
     <form method="post" action="/settings/filters">
@@ -77,6 +77,15 @@ function renderFiltersTab (spamText, blockText) {
       <textarea id="spamlist" name="spamlist" rows="5" placeholder="shadyrv@example.com&#10;*@marketing.example.com">${escapeHtml(spamText)}</textarea>
       <label for="blocklist">Block list — silently drop, never stored</label>
       <textarea id="blocklist" name="blocklist" rows="5" placeholder="troll@example.com&#10;*@spam.example.com">${escapeHtml(blockText)}</textarea>
+      <h3>Catch-all lockdown</h3>
+      <p class="settings-hint">${knownRecipientCount} address${knownRecipientCount === 1 ? '' : 'es'} have received real mail
+         and are on the allow-list. Use this if the catch-all address gets bombed with mail to
+         made-up local-parts - anything not already on that list gets silently dropped, before it's
+         even parsed or stored.</p>
+      <label>
+        <input type="checkbox" name="catchAllLockdown" value="1"${catchAllLockdown ? ' checked' : ''}>
+        Only accept mail to addresses that have already received real mail
+      </label>
       <button type="submit">Save filters</button>
     </form>
     <p class="settings-hint pattern-examples">
@@ -103,7 +112,7 @@ function renderExportTab () {
   </section>`
 }
 
-function renderSettingsPage (tab, identitiesRaw, bgImage, contactCount = 0, spamText = '', blockText = '') {
+function renderSettingsPage (tab, identitiesRaw, bgImage, contactCount = 0, spamText = '', blockText = '', catchAllLockdown = false, knownRecipientCount = 0) {
   const tabs = [
     { key: 'identities', label: 'Identities' },
     { key: 'appearance', label: 'Appearance' },
@@ -122,7 +131,7 @@ function renderSettingsPage (tab, identitiesRaw, bgImage, contactCount = 0, spam
     : tab === 'contacts'
       ? renderContactsTab(contactCount)
       : tab === 'filters'
-        ? renderFiltersTab(spamText, blockText)
+        ? renderFiltersTab(spamText, blockText, catchAllLockdown, knownRecipientCount)
         : tab === 'export'
           ? renderExportTab()
           : renderIdentitiesTab(identitiesRaw)
@@ -163,14 +172,17 @@ function renderSettingsPage (tab, identitiesRaw, bgImage, contactCount = 0, spam
 export const handleSettingsPage = withAuth(async (req, env) => {
   const url = new URL(req.url)
   const tab = url.searchParams.get('tab') || 'identities'
-  const [identitiesRaw, bgImage, contactCount, spamText, blockText] = await Promise.all([
+  const [identitiesRaw, bgImage, contactCount, spamText, blockText, catchAllMode, knownRecipientCount] = await Promise.all([
     getSetting(env.DB, 'identities'),
     getSetting(env.DB, 'bg_image'),
     getAllContactsCount(env.DB),
     getSpamlistText(env.DB),
-    getBlocklistText(env.DB)
+    getBlocklistText(env.DB),
+    getSetting(env.DB, 'catchAllMode'),
+    getKnownRecipientCount(env.DB)
   ])
-  return new Response(renderSettingsPage(tab, identitiesRaw || '', bgImage || '', contactCount, spamText, blockText), {
+  const catchAllLockdown = catchAllMode === 'known-only'
+  return new Response(renderSettingsPage(tab, identitiesRaw || '', bgImage || '', contactCount, spamText, blockText, catchAllLockdown, knownRecipientCount), {
     headers: { 'Content-Type': 'text/html; charset=utf-8' }
   })
 })
@@ -231,9 +243,12 @@ export const handleSettingsSaveFilters = withAuth(async (req, env) => {
     return new Response(`Invalid pattern(s): ${all.join(', ')}`, { status: 400 })
   }
 
+  const catchAllMode = formData.get('catchAllLockdown') === '1' ? 'known-only' : 'open'
+
   await Promise.all([
     setSpamlist(env.DB, spamPatterns),
-    setBlocklist(env.DB, blockPatterns)
+    setBlocklist(env.DB, blockPatterns),
+    setSetting(env.DB, 'catchAllMode', catchAllMode)
   ])
   return new Response(null, { status: 302, headers: { Location: '/settings?tab=filters' } })
 })

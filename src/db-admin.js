@@ -36,6 +36,20 @@ export async function setSpamlist (db, patterns) {
   ])
 }
 
+export async function recordKnownRecipient (db, address, now) {
+  await db.prepare('INSERT OR IGNORE INTO known_recipients (address, first_seen) VALUES (?, ?)').bind(address, now).run()
+}
+
+export async function isKnownRecipient (db, address) {
+  const row = await db.prepare('SELECT 1 FROM known_recipients WHERE address = ?').bind(address).first()
+  return !!row
+}
+
+export async function getKnownRecipientCount (db) {
+  const row = await db.prepare('SELECT COUNT(*) as count FROM known_recipients').first()
+  return row ? row.count : 0
+}
+
 export async function getSetting (db, key) {
   const row = await db.prepare('SELECT value FROM settings WHERE key = ?').bind(key).first()
   return row ? row.value : null

@@ -12,6 +12,7 @@ import {
   getUnreadInboxCount
 } from './db.js'
 import { buildSmsPayload } from './notifications.js'
+import { SESSION_TTL_MS } from './auth.js'
 import { handleChallenge, handleLogin, handleLogout, handleMe } from './auth-routes.js'
 import { handleInbox } from './inbox.js'
 import { handleMessageView } from './message-view.js'
@@ -41,7 +42,6 @@ import { renderLoginPage } from './login-page.js'
 const ATTACHMENT_RETENTION_MS = 30 * 24 * 60 * 60 * 1000
 const TRASH_SPAM_RETENTION_MS = 30 * 24 * 60 * 60 * 1000
 const FIVE_MINUTES_MS = 5 * 60 * 1000
-const TWENTY_FOUR_HOURS_MS = 24 * 60 * 60 * 1000
 
 const PLAIN_SECURITY_HEADERS = {
   'X-Content-Type-Options': 'nosniff',
@@ -190,6 +190,6 @@ async function runMaintenance (env) {
   trashDeletes.forEach((r, i) => { if (r.status === 'rejected') console.error('R2 trash delete failed:', r2KeysToDelete[i], r.reason) })
 
   await deleteExpiredNonces(env.DB, now - FIVE_MINUTES_MS)
-  await deleteExpiredSessions(env.DB, now - TWENTY_FOUR_HOURS_MS)
+  await deleteExpiredSessions(env.DB, now - SESSION_TTL_MS)
   await deleteExpiredLoginAttempts(env.DB, now)
 }

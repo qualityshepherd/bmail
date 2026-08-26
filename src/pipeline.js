@@ -1,7 +1,10 @@
 import { EmailMessage } from 'cloudflare:email'
 import { parseRawEmail } from './mime.js'
 import { anyPatternMatches } from './match.js'
-import { getBlocklistPatterns, getSpamPatterns, insertEmail, insertAttachment, getEmailByMessageId, deleteEmailsByIds, isDuplicateKeyError } from './db.js'
+import {
+  getBlocklistPatterns, getSpamPatterns, insertEmail, insertAttachment, getEmailByMessageId,
+  deleteEmailsByIds, isDuplicateKeyError, getSetting, isKnownRecipient, recordKnownRecipient
+} from './db.js'
 
 // Runs the full inbound pipeline for one message. Returns { dropped: true }
 // if the sender was blocklisted, { duplicate: true } if this message was
@@ -17,9 +20,23 @@ export async function ingestEmail ({ message, env }) {
     return { dropped: true }
   }
 
+  // Break-glass mode for catch-all abuse: when set, only addresses that have
+  // already received real (non-spam) mail before get through. Anything else -
+  // freshly guessed/bombed local-parts included - is dropped before any
+  // parsing or D1/R2 writes happen. Off by default; see settings/filters.
+  if ((await getSetting(env.DB, 'catchAllMode')) === 'known-only') {
+    if (!(await isKnownRecipient(env.DB, message.to))) {
+      return { dropped: true }
+    }
+  }
+
   const spamPatterns = await getSpamPatterns(env.DB)
   const isSpam = spamPatterns.length > 0 &&
     (anyPatternMatches(spamPatterns, message.from, fullFrom) || anyPatternMatches(spamPatterns, message.to))
+
+  // Only addresses seen receiving genuine mail get remembered - an alias that
+  // shows up exclusively via spam never earns a spot on the allow-list above.
+  if (!isSpam) await recordKnownRecipient(env.DB, message.to, Date.now())
 
   const authResults = message.headers.get('authentication-results') || ''
   const dmarcMatch = authResults.match(/\bdmarc=(\w+)/i)
@@ -73,11 +90,17 @@ export async function ingestEmail ({ message, env }) {
   }
 
   const MAX_ATTACHMENT_BYTES = 25 * 1024 * 1024
+  const MAX_TOTAL_ATTACHMENT_BYTES = 100 * 1024 * 1024
 
   const uploadedR2Keys = []
+  let totalAttachmentBytes = 0
   try {
     for (const attachment of parsed.attachments) {
       if (attachment.content.byteLength > MAX_ATTACHMENT_BYTES) continue
+      // Per-attachment cap bounds one file; this bounds the sum across all of
+      // them, so one message can't carry e.g. a dozen 20MB files past it.
+      if (totalAttachmentBytes + attachment.content.byteLength > MAX_TOTAL_ATTACHMENT_BYTES) continue
+      totalAttachmentBytes += attachment.content.byteLength
       const r2Key = `attachments/${emailId}/${crypto.randomUUID()}-${attachment.filename}`
       await env.ATTACHMENTS.put(r2Key, attachment.content, {
         httpMetadata: { contentType: attachment.contentType }
