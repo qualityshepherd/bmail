@@ -1,4 +1,3 @@
-import { EmailMessage } from 'cloudflare:email'
 import { buildReplyMimeMessage, sanitizeHeaderValue } from './reply.js'
 
 // Sends via Resend, CF Email Service, or the legacy CF send_email binding.
@@ -56,13 +55,13 @@ async function sendViaCFEmail (env, { from, to, cc, bcc, subject, text, messageI
     throw new Error('CF Email binding not configured — add [[send_email]] name="EMAIL" to wrangler.toml (Workers paid plan required)')
   }
   const body = {
-    from,
-    to: Array.isArray(to) ? to : [to],
-    subject,
+    from: sanitizeHeaderValue(from),
+    to: (Array.isArray(to) ? to : [to]).map(sanitizeHeaderValue),
+    subject: sanitizeHeaderValue(subject),
     text
   }
-  if (cc && cc.length) body.cc = Array.isArray(cc) ? cc : [cc]
-  if (bcc && bcc.length) body.bcc = Array.isArray(bcc) ? bcc : [bcc]
+  if (cc && cc.length) body.cc = (Array.isArray(cc) ? cc : [cc]).map(sanitizeHeaderValue)
+  if (bcc && bcc.length) body.bcc = (Array.isArray(bcc) ? bcc : [bcc]).map(sanitizeHeaderValue)
   if (attachments && attachments.length) {
     body.attachments = attachments.map((a) => ({
       filename: a.filename,
@@ -80,6 +79,9 @@ async function sendViaCFEmail (env, { from, to, cc, bcc, subject, text, messageI
 }
 
 async function sendViaCF (env, { from, to, subject, text, messageId, inReplyTo, references }) {
+  // Dynamic import (not a static top-level one) so this file loads under plain
+  // Node for unit tests - 'cloudflare:' is a Workers-runtime-only URL scheme.
+  const { EmailMessage } = await import('cloudflare:email')
   const mime = buildReplyMimeMessage({ from, to, subject, messageId, inReplyTo, references, body: text })
   const message = new EmailMessage(sanitizeHeaderValue(from), sanitizeHeaderValue(to), mime)
   await env.OUTBOUND.send(message)
