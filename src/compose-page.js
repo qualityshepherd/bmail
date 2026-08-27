@@ -119,7 +119,7 @@ export function renderComposePage (identities, contacts = [], defaults = {}, { i
                 placeholder="Write your message...">${escapeHtml(body)}</textarea>
 
       <div class="drop-zone" id="drop-zone">
-        <span class="drop-hint">Drag &amp; drop files, or <button type="button" id="browse-btn">browse</button></span>
+        <span class="drop-hint">Drop files, paste, or <button type="button" id="browse-btn">browse</button></span>
         <input type="file" multiple id="file-input" name="attachments" class="compose-hidden" aria-hidden="true">
         <ul class="file-list" id="file-list"></ul>
       </div>
@@ -130,7 +130,7 @@ export function renderComposePage (identities, contacts = [], defaults = {}, { i
       </div>
     </form>
   </div>
-  <script src="/compose.js"></script>
+  <script type="module" src="/compose.js"></script>
 <script src="/sw-register.js" defer></script>
 </body>
 </html>`

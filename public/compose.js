@@ -1,3 +1,5 @@
+import { extractPastedImages, ensureFilename } from './paste-attach.js'
+
 // ─── CC / BCC toggles ─────────────────────────────────────
 const showCcBtn = document.getElementById('show-cc')
 const showBccBtn = document.getElementById('show-bcc')
@@ -179,11 +181,16 @@ function renderFileList () {
     if (isImage && !previewUrls.has(name)) previewUrls.set(name, URL.createObjectURL(file))
     const li = document.createElement('li')
     if (isImage) {
+      const link = document.createElement('a')
+      link.href = previewUrls.get(name)
+      link.target = '_blank'
+      link.rel = 'noopener noreferrer'
       const img = document.createElement('img')
       img.src = previewUrls.get(name)
       img.className = 'attach-thumb'
       img.alt = ''
-      li.appendChild(img)
+      link.appendChild(img)
+      li.appendChild(link)
     }
     const meta = document.createElement('span')
     meta.className = 'attach-meta'
@@ -261,6 +268,13 @@ if (browseBtn && fileInput) {
     fileInput.value = ''
   })
 }
+
+// ─── Paste to attach ───────────────────────────────────────
+document.addEventListener('paste', (e) => {
+  const images = extractPastedImages(e.clipboardData?.items || [])
+  if (!images.length) return
+  addFiles(images.map(ensureFilename))
+})
 
 // ─── Fetch-based submit (required for File objects) ────────
 const composeForm = document.getElementById('compose-form')
