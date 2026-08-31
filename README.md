@@ -1,6 +1,6 @@
 <img src="public/bmail_logo2.png" alt="Bmail wax seal logo" width="80">
 
-# Bmail (Beta)
+# Bmail
 
 Personal email that runs on [Cloudflare's](https://www.cloudflare.com) free tier. Send, receive, and store plain-text emails on your own domain. Free forever; no stored passwords; _one_ dependency.
 

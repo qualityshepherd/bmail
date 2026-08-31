@@ -67,6 +67,7 @@
 .tag-links a:hover { color: var(--accent-bright); }
 
 .folder-links a.active { color: var(--accent-bright); font-weight: 600; border-bottom-color: var(--accent-bright); }
+.folder-links a.has-unread { font-weight: 600; }
 
 .compose-btn {
   background: transparent;

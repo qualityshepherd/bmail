@@ -97,10 +97,17 @@ function renderRow (email, currentUrl, contacts = new Map()) {
 
 function renderFolderLinks (activeQuery, unreadCount = 0, unreadSpamCount = 0) {
   return FOLDER_LINKS.map((f) => {
-    const active = activeQuery === f.query ? ' class="active"' : ''
-    const count = f.label === 'Inbox' ? unreadCount : f.label === 'Spam' ? unreadSpamCount : 0
-    const badge = count > 0 ? ` <span class="folder-count">${count}</span>` : ''
-    return `<a href="/inbox?q=${encodeURIComponent(f.query)}"${active}>${f.label}${badge}</a>`
+    // Spam gets bolded (like the active tab) when it has unreads, but no
+    // count - a misclassified email is worth noticing, not counting.
+    const classes = [
+      activeQuery === f.query ? 'active' : '',
+      f.label === 'Spam' && unreadSpamCount > 0 ? 'has-unread' : ''
+    ].filter(Boolean).join(' ')
+    const classAttr = classes ? ` class="${classes}"` : ''
+    const badge = f.label === 'Inbox' && unreadCount > 0
+      ? ` <span class="folder-count">${unreadCount}</span>`
+      : ''
+    return `<a href="/inbox?q=${encodeURIComponent(f.query)}"${classAttr}>${f.label}${badge}</a>`
   }).join('')
 }
 
