@@ -209,3 +209,11 @@ export async function getUnreadInboxCount (db) {
   const row = await db.prepare("SELECT COUNT(*) as count FROM emails WHERE status = 'inbox' AND read = 0").first()
   return row.count
 }
+
+// Spam's the one folder where an unread badge earns its keep - a
+// misclassified important email could sit there silently until the 30-day
+// purge. Trash/Archive/Sent/All don't have that "you'd want to know" case.
+export async function getUnreadSpamCount (db) {
+  const row = await db.prepare("SELECT COUNT(*) as count FROM emails WHERE status = 'spam' AND read = 0").first()
+  return row.count
+}

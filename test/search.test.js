@@ -79,6 +79,11 @@ test('parseSearchQuery: extra whitespace is ignored', () => {
   assert.deepEqual(filters.tags, ['x'])
 })
 
+test('parseSearchQuery: pathologically long input is truncated before tokenizing', () => {
+  const filters = parseSearchQuery('a'.repeat(10000))
+  assert.ok(filters.text.length <= 500)
+})
+
 // stringifySearchFilters - round-trip with parseSearchQuery
 test('stringifySearchFilters: round-trips a full filter set', () => {
   // stringify emits short-form tokens (archive: not status:archive), but

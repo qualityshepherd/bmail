@@ -101,7 +101,9 @@ export async function ingestEmail ({ message, env }) {
       // them, so one message can't carry e.g. a dozen 20MB files past it.
       if (totalAttachmentBytes + attachment.content.byteLength > MAX_TOTAL_ATTACHMENT_BYTES) continue
       totalAttachmentBytes += attachment.content.byteLength
-      const r2Key = `attachments/${emailId}/${crypto.randomUUID()}-${attachment.filename}`
+      // R2 keys are internal identifiers, never user data - the filename
+      // (attacker-controlled MIME content) lives only in D1.
+      const r2Key = `attachments/${emailId}/${crypto.randomUUID()}`
       await env.ATTACHMENTS.put(r2Key, attachment.content, {
         httpMetadata: { contentType: attachment.contentType }
       })

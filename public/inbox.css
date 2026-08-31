@@ -10,10 +10,12 @@
   display: flex;
   gap: 0.5rem;
   flex: 1;
+  min-width: 0;
 }
 
 .search-form input {
   flex: 1;
+  min-width: 0;
   background: var(--panel);
   border: 1px solid var(--border);
   color: var(--text);
@@ -56,10 +58,15 @@
   font-size: 0.875rem;
 }
 
+.folder-links a {
+  padding-bottom: 0.4rem;
+  border-bottom: 2px solid transparent;
+}
+
 .folder-links a:hover,
 .tag-links a:hover { color: var(--accent-bright); }
 
-.folder-links a.active { color: var(--accent-bright); font-weight: 600; }
+.folder-links a.active { color: var(--accent-bright); font-weight: 600; border-bottom-color: var(--accent-bright); }
 
 .compose-btn {
   background: transparent;
@@ -88,7 +95,7 @@
 .sent-status-failed { background: rgba(176,96,96,0.18); color: #c07070; }
 .sent-status-pending { background: rgba(160,160,100,0.15); color: #aaa860; }
 
-.inbox-count {
+.folder-count {
   display: inline-flex;
   align-items: center;
   justify-content: center;

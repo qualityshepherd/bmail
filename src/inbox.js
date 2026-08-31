@@ -1,5 +1,5 @@
 import { withAuth } from './auth-routes.js'
-import { searchEmails, getEmailCount, getAllTags, getUnreadInboxCount } from './db-email.js'
+import { searchEmails, getEmailCount, getAllTags, getUnreadInboxCount, getUnreadSpamCount } from './db-email.js'
 import { searchSent, getSentCount } from './db-sent.js'
 import { getSetting } from './db-admin.js'
 import { getContactsByEmails } from './db-contacts.js'
@@ -95,12 +95,11 @@ function renderRow (email, currentUrl, contacts = new Map()) {
   </li>`
 }
 
-function renderFolderLinks (activeQuery, unreadCount = 0) {
+function renderFolderLinks (activeQuery, unreadCount = 0, unreadSpamCount = 0) {
   return FOLDER_LINKS.map((f) => {
     const active = activeQuery === f.query ? ' class="active"' : ''
-    const badge = f.label === 'Inbox' && unreadCount > 0
-      ? ` <span class="inbox-count">${unreadCount}</span>`
-      : ''
+    const count = f.label === 'Inbox' ? unreadCount : f.label === 'Spam' ? unreadSpamCount : 0
+    const badge = count > 0 ? ` <span class="folder-count">${count}</span>` : ''
     return `<a href="/inbox?q=${encodeURIComponent(f.query)}"${active}>${f.label}${badge}</a>`
   }).join('')
 }
@@ -161,7 +160,7 @@ function renderBulkMenu (effectiveQuery, currentUrl, hasEmails) {
     </details>`
 }
 
-function renderInboxPage ({ emails, total, effectiveQuery, tags, currentUrl, renderRowFn = renderRow, unreadCount = 0, identity = null, bgImage = '', contacts = new Map() }) {
+function renderInboxPage ({ emails, total, effectiveQuery, tags, currentUrl, renderRowFn = renderRow, unreadCount = 0, unreadSpamCount = 0, identity = null, bgImage = '', contacts = new Map() }) {
   const rows = emails.length > 0
     ? emails.map((e) => renderRowFn(e, currentUrl, contacts)).join('\n')
     : '<li class="empty">No mail here.</li>'
@@ -211,7 +210,7 @@ function renderInboxPage ({ emails, total, effectiveQuery, tags, currentUrl, ren
       </form>
     </div>
     <nav class="folder-links">
-      ${renderFolderLinks(effectiveQuery, unreadCount)}
+      ${renderFolderLinks(effectiveQuery, unreadCount, unreadSpamCount)}
       ${renderBulkMenu(effectiveQuery, currentUrl, emails.length > 0)}
     </nav>
     ${renderTagLinks(tags)}
@@ -306,22 +305,23 @@ export const handleInbox = withAuth(async (req, env, ctx, session) => {
         }
       })
     }
-    const [total, unreadCount] = await Promise.all([getSentCount(env.DB), getUnreadInboxCount(env.DB)])
-    return new Response(renderInboxPage({ emails: sent, total, effectiveQuery, tags: [], currentUrl, renderRowFn: renderSentRow, unreadCount, identity, bgImage: bgImage || '', contacts: sentContacts }), {
+    const [total, unreadCount, unreadSpamCount] = await Promise.all([getSentCount(env.DB), getUnreadInboxCount(env.DB), getUnreadSpamCount(env.DB)])
+    return new Response(renderInboxPage({ emails: sent, total, effectiveQuery, tags: [], currentUrl, renderRowFn: renderSentRow, unreadCount, unreadSpamCount, identity, bgImage: bgImage || '', contacts: sentContacts }), {
       headers: { 'Content-Type': 'text/html; charset=utf-8', ...noStoreHeaders }
     })
   }
 
   const emails = await searchEmails(env.DB, filters, { limit: 50 })
-  const [total, allTagsRaw, unreadCount, contacts] = await Promise.all([
+  const [total, allTagsRaw, unreadCount, unreadSpamCount, contacts] = await Promise.all([
     getEmailCount(env.DB, filters),
     getAllTags(env.DB),
     getUnreadInboxCount(env.DB),
+    getUnreadSpamCount(env.DB),
     getContactsByEmails(env.DB, emails.map((e) => e.sender))
   ])
   const tags = topTags(allTagsRaw, 8)
 
-  return new Response(renderInboxPage({ emails, total, effectiveQuery, tags, currentUrl, unreadCount, identity, bgImage: bgImage || '', contacts }), {
+  return new Response(renderInboxPage({ emails, total, effectiveQuery, tags, currentUrl, unreadCount, unreadSpamCount, identity, bgImage: bgImage || '', contacts }), {
     headers: { 'Content-Type': 'text/html; charset=utf-8', ...noStoreHeaders }
   })
 })

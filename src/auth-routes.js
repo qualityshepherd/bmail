@@ -1,13 +1,14 @@
 import {
-  isAuthorizedPubkey, isRateLimited, incrementAttempt,
+  isAuthorizedPubkey, isRateLimited,
   LOGIN_RATE_LIMIT_MAX_ATTEMPTS, LOGIN_RATE_LIMIT_WINDOW_MS,
+  CHALLENGE_RATE_LIMIT_MAX_ATTEMPTS, CHALLENGE_RATE_LIMIT_WINDOW_MS,
   generateNonce, generateSessionToken, isNonceExpired, isSessionExpired,
   verifySignature, hexToBytes, sessionCookie, clearedSessionCookie, parseCookies,
   hashToken
 } from './auth.js'
 import {
   insertNonce, consumeNonce, insertSession, getSessionCreatedAt, deleteSession,
-  getLoginAttempts, setLoginAttempts, deleteLoginAttempts
+  getRateLimit, incrementRateLimit, deleteLoginAttempts
 } from './db.js'
 import { renderLoginPage } from './login-page.js'
 
@@ -31,12 +32,20 @@ async function parseJsonBody (req) {
 // whether to show the login form or the first-run setup form).
 export async function handleChallenge (req, env) {
   const ip = req.headers.get('CF-Connecting-IP') || 'unknown'
-  const rlRecord = await getLoginAttempts(env.DB, ip)
-  if (isRateLimited(rlRecord, Date.now(), LOGIN_RATE_LIMIT_MAX_ATTEMPTS)) {
+  const now = Date.now()
+
+  // Independent from login_attempts - issuing a challenge never used to cost
+  // anything, so a client could hit this endpoint indefinitely without ever
+  // failing a login, generating unbounded nonce rows. This counts issuance
+  // itself, not just failed logins.
+  const challengeRecord = await getRateLimit(env.DB, 'challenge_attempts', ip)
+  if (isRateLimited(challengeRecord, now, CHALLENGE_RATE_LIMIT_MAX_ATTEMPTS)) {
     return json({ error: 'too many attempts' }, 429)
   }
+  await incrementRateLimit(env.DB, 'challenge_attempts', ip, now, CHALLENGE_RATE_LIMIT_WINDOW_MS)
+
   const nonce = generateNonce()
-  await insertNonce(env.DB, nonce, Date.now())
+  await insertNonce(env.DB, nonce, now)
   return json({ challenge: nonce, configured: !!env.AUTH_PUBKEY })
 }
 
@@ -49,7 +58,7 @@ export async function handleLogin (req, env) {
 
   if (!env.AUTH_PUBKEY) return json({ error: 'not configured' }, 503)
 
-  const rlRecord = await getLoginAttempts(env.DB, ip)
+  const rlRecord = await getRateLimit(env.DB, 'login_attempts', ip)
   if (isRateLimited(rlRecord, now, LOGIN_RATE_LIMIT_MAX_ATTEMPTS)) {
     return json({ error: 'too many attempts' }, 429)
   }
@@ -60,7 +69,7 @@ export async function handleLogin (req, env) {
   if (!pubkey || !challenge || !sig) return json({ error: 'missing fields' }, 400)
 
   const fail = async () => {
-    await setLoginAttempts(env.DB, ip, incrementAttempt(rlRecord, now, LOGIN_RATE_LIMIT_WINDOW_MS))
+    await incrementRateLimit(env.DB, 'login_attempts', ip, now, LOGIN_RATE_LIMIT_WINDOW_MS)
     return json({ error: 'unauthorized' }, 401)
   }
 

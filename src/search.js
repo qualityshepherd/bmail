@@ -12,6 +12,12 @@
 //   tag:<value>        repeatable - all given tags must be present (AND)
 //   is:starred        starred emails only
 // Anything else is treated as free-text joined for FTS5 MATCH (subject/body).
+// Bounds the work the tokenizer below does per request - an authenticated
+// user pasting a pathological multi-megabyte string is a self-inflicted
+// Workers CPU/memory hit otherwise, since regex exec + split scale with
+// input length.
+const MAX_QUERY_LENGTH = 500
+
 export function parseSearchQuery (query) {
   const filters = { all: false, sent: false, status: null, tags: [], starred: false, text: '' }
   const textParts = []
@@ -19,7 +25,7 @@ export function parseSearchQuery (query) {
   // Tokenize respecting quoted tag values: tag:"multi word" or tag:'multi word'
   const re = /tag:"([^"]*)"|tag:'([^']*)'|tag:(\S+)|(\S+)/g
   let m
-  while ((m = re.exec((query || '').trim())) !== null) {
+  while ((m = re.exec((query || '').trim().slice(0, MAX_QUERY_LENGTH))) !== null) {
     const tagVal = m[1] !== undefined ? m[1] : m[2] !== undefined ? m[2] : m[3]
     if (tagVal !== undefined) {
       if (tagVal) filters.tags.push(tagVal)

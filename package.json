@@ -11,7 +11,6 @@
     "dev": "wrangler dev",
     "deploy": "wrangler deploy",
     "test": "node --test test/*.test.js && npx standard .",
-    "test:e2e": "node --test test/e2e.*.test.js",
     "db:migrate:local": "wrangler d1 migrations apply bmail --local",
     "db:migrate:remote": "wrangler d1 migrations apply bmail --remote",
     "pretty": "npx standard --fix .",

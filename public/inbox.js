@@ -18,11 +18,11 @@ function updateUnreadBadge (count) {
   if (!folderLinks) return
   const inboxLink = folderLinks.querySelector('a[href*="inbox%3A"]')
   if (!inboxLink) return
-  let badge = inboxLink.querySelector('.inbox-count')
+  let badge = inboxLink.querySelector('.folder-count')
   if (count > 0) {
     if (!badge) {
       badge = document.createElement('span')
-      badge.className = 'inbox-count'
+      badge.className = 'folder-count'
       inboxLink.appendChild(badge)
     }
     badge.textContent = count
@@ -186,3 +186,10 @@ if (list && sentinel) {
     }
   }, true)
 })()
+
+// Close any open <details> on Escape
+document.addEventListener('keydown', (e) => {
+  if (e.key === 'Escape') {
+    document.querySelectorAll('details[open]').forEach((d) => d.removeAttribute('open'))
+  }
+})

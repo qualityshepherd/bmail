@@ -2,7 +2,7 @@ import { buildMbox } from './export-handler.js'
 
 export function sqlVal (v) {
   if (v === null || v === undefined) return 'NULL'
-  if (typeof v === 'number') return String(v)
+  if (typeof v === 'number' || typeof v === 'boolean') return String(Number(v))
   return `'${String(v).replace(/'/g, "''")}'`
 }
 

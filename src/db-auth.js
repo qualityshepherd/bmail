@@ -31,18 +31,30 @@ export async function deleteSession (db, token) {
   await db.prepare('DELETE FROM sessions WHERE token = ?').bind(token).run()
 }
 
-export async function getLoginAttempts (db, ip) {
-  const row = await db.prepare('SELECT count, reset_at FROM login_attempts WHERE ip = ?').bind(ip).first()
+// table is interpolated into SQL below - restricted to a known set so this
+// can't become an injection vector if a future callsite passes it dynamically.
+const RATE_LIMIT_TABLES = new Set(['login_attempts', 'challenge_attempts'])
+
+export async function getRateLimit (db, table, ip) {
+  if (!RATE_LIMIT_TABLES.has(table)) throw new Error('invalid rate limit table')
+  const row = await db.prepare(`SELECT count, reset_at FROM ${table} WHERE ip = ?`).bind(ip).first()
   return row ? { count: row.count, resetAt: row.reset_at } : null
 }
 
-export async function setLoginAttempts (db, ip, record) {
+// Atomic: the count/reset_at transition happens inside the UPSERT itself,
+// so two concurrent requests from the same IP can't both read the same
+// stale count and each write count+1, silently losing an attempt.
+export async function incrementRateLimit (db, table, ip, now, windowMs) {
+  if (!RATE_LIMIT_TABLES.has(table)) throw new Error('invalid rate limit table')
+  const resetAt = now + windowMs
   await db
     .prepare(
-      `INSERT INTO login_attempts (ip, count, reset_at) VALUES (?, ?, ?)
-       ON CONFLICT (ip) DO UPDATE SET count = excluded.count, reset_at = excluded.reset_at`
+      `INSERT INTO ${table} (ip, count, reset_at) VALUES (?, 1, ?)
+       ON CONFLICT (ip) DO UPDATE SET
+         count = CASE WHEN reset_at <= ? THEN 1 ELSE count + 1 END,
+         reset_at = CASE WHEN reset_at <= ? THEN ? ELSE reset_at END`
     )
-    .bind(ip, record.count, record.resetAt)
+    .bind(ip, resetAt, now, now, resetAt)
     .run()
 }
 
@@ -52,4 +64,5 @@ export async function deleteLoginAttempts (db, ip) {
 
 export async function deleteExpiredLoginAttempts (db, now) {
   await db.prepare('DELETE FROM login_attempts WHERE reset_at < ?').bind(now).run()
+  await db.prepare('DELETE FROM challenge_attempts WHERE reset_at < ?').bind(now).run()
 }

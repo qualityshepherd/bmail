@@ -48,7 +48,20 @@ function sentToMbox (sent) {
   return msg
 }
 
+// Workers cap memory at 128MB. Every row gets pulled into memory at once
+// below (no streaming), so a mailbox with enough history could OOM rather
+// than fail cleanly - this catches that before the expensive query runs,
+// not after.
+const MAX_EXPORTABLE_MESSAGES = 5000
+
 export async function buildMbox (db) {
+  const { count } = await db.prepare(
+    'SELECT (SELECT COUNT(*) FROM emails) + (SELECT COUNT(*) FROM sent) AS count'
+  ).first()
+  if (count > MAX_EXPORTABLE_MESSAGES) {
+    throw new Error(`Mailbox has ${count} messages, too large for a single .mbox export (limit ${MAX_EXPORTABLE_MESSAGES}). Use the R2 SQL backup instead.`)
+  }
+
   const [{ results: inbound }, { results: outbound }] = await Promise.all([
     db.prepare(
       'SELECT sender, sender_display, recipient, subject, body, message_id, in_reply_to, cc, created_at, read FROM emails ORDER BY created_at ASC'
@@ -67,7 +80,12 @@ export async function buildMbox (db) {
 }
 
 export const handleMboxExport = withAuth(async (req, env) => {
-  const mbox = await buildMbox(env.DB)
+  let mbox
+  try {
+    mbox = await buildMbox(env.DB)
+  } catch (err) {
+    return new Response(err.message, { status: 413, headers: { 'Content-Type': 'text/plain' } })
+  }
   const date = new Date().toISOString().slice(0, 10)
 
   return new Response(mbox, {

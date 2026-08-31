@@ -9,6 +9,23 @@ export function sanitizeFilename (filename) {
   return String(filename || '').replace(/[\r\n"]/g, '')
 }
 
+// RFC 5987 percent-encoding for the filename* parameter - encodeURIComponent
+// alone leaves ' ( ) * unescaped, which RFC 5987's attr-char grammar forbids.
+function encodeRfc5987 (str) {
+  return encodeURIComponent(str)
+    .replace(/['()*]/g, (c) => '%' + c.charCodeAt(0).toString(16).toUpperCase())
+}
+
+// Builds an RFC 6266 Content-Disposition value: an ASCII-only fallback for
+// older clients, plus a UTF-8 filename* for everyone else. A MIME filename
+// full of non-ASCII or unusual Unicode shouldn't have to survive intact
+// through the plain quoted-string form, which many parsers handle poorly.
+export function contentDispositionValue (disposition, rawFilename) {
+  const safe = sanitizeFilename(rawFilename)
+  const ascii = safe.replace(/[^\x20-\x7E]/g, '_').trim() || 'attachment'
+  return `${disposition}; filename="${ascii}"; filename*=UTF-8''${encodeRfc5987(safe)}`
+}
+
 // Types safe to render inline (passive media - no script execution risk).
 // Everything else is forced to download rather than open in the browser,
 // where an unknown file type could otherwise get MIME-sniffed and
@@ -41,13 +58,12 @@ export const handleAttachmentDownload = withAuth(async (req, env, ctx, session, 
   const object = await env.ATTACHMENTS.get(attachment.r2_key)
   if (!object) return new Response('Not found', { status: 404 })
 
-  const safeFilename = sanitizeFilename(attachment.filename)
   const inline = isInlineSafe(attachment.content_type)
 
   return new Response(object.body, {
     headers: {
       'Content-Type': inline ? attachment.content_type : 'application/octet-stream',
-      'Content-Disposition': `${inline ? 'inline' : 'attachment'}; filename="${safeFilename}"`,
+      'Content-Disposition': contentDispositionValue(inline ? 'inline' : 'attachment', attachment.filename),
       'Content-Length': String(attachment.size)
     }
   })

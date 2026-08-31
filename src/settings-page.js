@@ -205,9 +205,14 @@ export const handleSettingsSaveAppearance = withAuth(async (req, env) => {
   return new Response(null, { status: 302, headers: { Location: '/settings?tab=appearance' } })
 })
 
+const MAX_VCF_LENGTH = 5 * 1024 * 1024
+
 export const handleSettingsImportContacts = withAuth(async (req, env) => {
   const formData = await req.formData()
   const vcf = (formData.get('vcf') || '').toString()
+  if (vcf.length > MAX_VCF_LENGTH) {
+    return new Response('VCard import too large (max 5MB)', { status: 413 })
+  }
   const contacts = parseVCards(vcf)
   await upsertContacts(env.DB, contacts)
   return new Response(null, { status: 302, headers: { Location: '/settings?tab=contacts' } })

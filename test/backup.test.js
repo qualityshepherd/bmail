@@ -22,6 +22,14 @@ test('sqlVal: float → bare number', () => {
   assert.equal(sqlVal(3.14), '3.14')
 })
 
+test('sqlVal: true → 1', () => {
+  assert.equal(sqlVal(true), '1')
+})
+
+test('sqlVal: false → 0', () => {
+  assert.equal(sqlVal(false), '0')
+})
+
 test('sqlVal: plain string → single-quoted', () => {
   assert.equal(sqlVal('hello'), "'hello'")
 })

@@ -28,15 +28,12 @@ export const isAuthorizedPubkey = (pubkey, env) => {
 export const isRateLimited = (record, now, maxAttempts) =>
   !!record && now < record.resetAt && record.count >= maxAttempts
 
-export const incrementAttempt = (record, now, windowMs) => {
-  if (!record || now >= record.resetAt) return { count: 1, resetAt: now + windowMs }
-  return { count: record.count + 1, resetAt: record.resetAt }
-}
-
 export const NONCE_TTL_MS = 5 * 60 * 1000
 export const SESSION_TTL_MS = 7 * 24 * 60 * 60 * 1000
 export const LOGIN_RATE_LIMIT_MAX_ATTEMPTS = 6
 export const LOGIN_RATE_LIMIT_WINDOW_MS = 12 * 60 * 1000
+export const CHALLENGE_RATE_LIMIT_MAX_ATTEMPTS = 20
+export const CHALLENGE_RATE_LIMIT_WINDOW_MS = 60 * 1000
 
 export function generateNonce () {
   const buf = new Uint8Array(16)

@@ -1,7 +1,7 @@
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
 import {
-  timingSafeEqual, isAuthorizedPubkey, isRateLimited, incrementAttempt,
+  timingSafeEqual, isAuthorizedPubkey, isRateLimited,
   generateNonce, generateSessionToken, isNonceExpired, isSessionExpired,
   hexToBytes, sessionCookie, clearedSessionCookie, parseCookies,
   hashToken, NONCE_TTL_MS, SESSION_TTL_MS
@@ -66,31 +66,6 @@ test('isRateLimited: at max attempts is limited', () => {
 
 test('isRateLimited: expired window is not limited even at max', () => {
   assert.equal(isRateLimited({ count: 6, resetAt: Date.now() - 1 }, Date.now(), 6), false)
-})
-
-// incrementAttempt
-test('incrementAttempt: first attempt returns count 1', () => {
-  const r = incrementAttempt(null, Date.now(), 60000)
-  assert.equal(r.count, 1)
-})
-
-test('incrementAttempt: subsequent attempt increments count', () => {
-  const now = Date.now()
-  const r = incrementAttempt({ count: 2, resetAt: now + 60000 }, now, 60000)
-  assert.equal(r.count, 3)
-})
-
-test('incrementAttempt: expired window resets count to 1', () => {
-  const now = Date.now()
-  const r = incrementAttempt({ count: 5, resetAt: now - 1 }, now, 60000)
-  assert.equal(r.count, 1)
-})
-
-test('incrementAttempt: existing window preserves resetAt', () => {
-  const now = Date.now()
-  const resetAt = now + 50000
-  const r = incrementAttempt({ count: 1, resetAt }, now, 60000)
-  assert.equal(r.resetAt, resetAt)
 })
 
 // nonce / session generation and expiry

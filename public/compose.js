@@ -317,3 +317,10 @@ if (composeForm) {
     if ((e.metaKey || e.ctrlKey) && e.key === 'Enter') { e.preventDefault(); doSubmit() }
   })
 }
+
+// Close any open <details> on Escape
+document.addEventListener('keydown', (e) => {
+  if (e.key === 'Escape') {
+    document.querySelectorAll('details[open]').forEach((d) => d.removeAttribute('open'))
+  }
+})
