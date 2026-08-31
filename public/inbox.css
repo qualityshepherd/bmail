@@ -58,16 +58,11 @@
   font-size: 0.875rem;
 }
 
-.folder-links a {
-  padding-bottom: 0.4rem;
-  border-bottom: 2px solid transparent;
-}
-
 .folder-links a:hover,
 .tag-links a:hover { color: var(--accent-bright); }
 
-.folder-links a.active { color: var(--accent-bright); font-weight: 600; border-bottom-color: var(--accent-bright); }
-.folder-links a.has-unread { font-weight: 600; }
+.folder-links a.active { color: var(--accent-bright); font-weight: 800; }
+.folder-links a.has-unread { font-weight: 800; }
 
 .compose-btn {
   background: transparent;
