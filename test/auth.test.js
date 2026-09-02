@@ -7,7 +7,6 @@ import {
   hashToken, NONCE_TTL_MS, SESSION_TTL_MS
 } from '../src/auth.js'
 
-// isAuthorizedPubkey
 test('isAuthorizedPubkey: matching pubkey returns true', () => {
   assert.equal(isAuthorizedPubkey('abc123', { AUTH_PUBKEY: 'abc123' }), true)
 })
@@ -34,7 +33,6 @@ test('isAuthorizedPubkey: missing env.AUTH_PUBKEY returns false', () => {
   assert.equal(isAuthorizedPubkey('abc123', { AUTH_PUBKEY: '' }), false)
 })
 
-// timingSafeEqual
 test('timingSafeEqual: equal strings return true', () => {
   assert.equal(timingSafeEqual('hello', 'hello'), true)
 })
@@ -51,7 +49,6 @@ test('timingSafeEqual: empty strings return false', () => {
   assert.equal(timingSafeEqual('', ''), false)
 })
 
-// isRateLimited
 test('isRateLimited: null record is not limited', () => {
   assert.equal(isRateLimited(null, Date.now(), 6), false)
 })
@@ -111,7 +108,6 @@ test('hexToBytes: converts hex string to byte array', () => {
   assert.deepEqual(Array.from(bytes), [0xde, 0xad, 0xbe, 0xef])
 })
 
-// cookies
 test('sessionCookie: includes HttpOnly, Secure, SameSite=Lax', () => {
   const cookie = sessionCookie('abc123', 'bmail_session', 86400)
   assert.match(cookie, /HttpOnly/)
@@ -136,7 +132,6 @@ test('parseCookies: handles empty/missing header', () => {
   assert.deepEqual(parseCookies(''), {})
 })
 
-// hashToken
 test('hashToken: returns 64-char hex SHA-256', async () => {
   const h = await hashToken('sometoken')
   assert.equal(h.length, 64)

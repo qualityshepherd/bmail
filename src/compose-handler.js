@@ -61,17 +61,30 @@ export const handleCompose = withAuth(async (req, env, ctx, session) => {
 
   const messageId = generateMessageId(extractDomain(from))
 
-  const sentId = await insertSent(env.DB, {
-    messageId,
-    fromAddress: from,
-    toAddress: toList.join(', '),
-    ccAddress: ccList.length ? ccList.join(', ') : null,
-    bccAddress: bccList.length ? bccList.join(', ') : null,
-    subject,
-    body,
-    inReplyTo: null,
-    createdAt: Date.now()
-  })
+  let sentId
+  try {
+    sentId = await insertSent(env.DB, {
+      messageId,
+      fromAddress: from,
+      toAddress: toList.join(', '),
+      ccAddress: ccList.length ? ccList.join(', ') : null,
+      bccAddress: bccList.length ? bccList.join(', ') : null,
+      subject,
+      body,
+      inReplyTo: null,
+      createdAt: Date.now()
+    })
+  } catch (err) {
+    console.error('Bmail compose failed to record sent row:', err)
+    return new Response(
+      `<!DOCTYPE html><html><body style="font-family:sans-serif;max-width:500px;margin:3rem auto;">
+        <p><strong>Couldn't send:</strong> ${escapeHtml(err.message || 'unknown error')}</p>
+        <p>Common cause: today's Cloudflare D1 write quota is exhausted - this resets at 00:00 UTC.</p>
+        <p><a href="/compose">&larr; Back to compose</a></p>
+      </body></html>`,
+      { status: 500, headers: { 'Content-Type': 'text/html; charset=utf-8' } }
+    )
+  }
 
   try {
     await sendEmail(env, {
