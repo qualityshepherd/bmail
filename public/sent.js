@@ -11,3 +11,10 @@ document.addEventListener('keydown', (e) => {
     document.querySelectorAll('details[open]').forEach((d) => d.removeAttribute('open'))
   }
 })
+
+// Close any open <details> when clicking outside it
+document.addEventListener('click', (e) => {
+  document.querySelectorAll('details[open]').forEach((d) => {
+    if (!d.contains(e.target)) d.removeAttribute('open')
+  })
+})

@@ -6,6 +6,12 @@ document.addEventListener('keydown', function (e) {
   }
 })
 
+document.addEventListener('click', function (e) {
+  document.querySelectorAll('details[open]').forEach(function (d) {
+    if (!d.contains(e.target)) d.removeAttribute('open')
+  })
+})
+
 const clearCacheLink = document.getElementById('clear-cache-link')
 if (clearCacheLink) {
   clearCacheLink.addEventListener('click', async function (e) {

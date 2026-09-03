@@ -17,13 +17,26 @@ export const handleUnsubscribe = withAuth(async (req, env, ctx, session, emailId
 
   const httpUrl = parseHttpUrl(email.list_unsubscribe)
   if (httpUrl) {
-    ctx.waitUntil(
-      fetch(httpUrl, {
+    try {
+      const res = await fetch(httpUrl, {
         method: 'POST',
         headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-        body: 'List-Unsubscribe=One-Click'
-      }).catch((err) => console.error('Unsubscribe POST failed:', err))
-    )
+        body: 'List-Unsubscribe=One-Click',
+        signal: AbortSignal.timeout(8000)
+      })
+      if (!res.ok) {
+        return new Response(
+          `Unsubscribe request failed (sender returned ${res.status}) - you're probably still subscribed. Try blocking ${email.sender} instead.`,
+          { status: 502, headers: { 'Content-Type': 'text/plain; charset=utf-8' } }
+        )
+      }
+    } catch (err) {
+      console.error('Unsubscribe POST failed:', err)
+      return new Response(
+        `Unsubscribe request failed to reach the sender - you're probably still subscribed. Try blocking ${email.sender} instead.`,
+        { status: 502, headers: { 'Content-Type': 'text/plain; charset=utf-8' } }
+      )
+    }
     return new Response(null, { status: 302, headers: { Location: successUrl } })
   }
 

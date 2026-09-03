@@ -52,6 +52,13 @@ document.addEventListener('keydown', (e) => {
   }
 })
 
+// Close any open <details> when clicking outside it
+document.addEventListener('click', (e) => {
+  document.querySelectorAll('details[open]').forEach((d) => {
+    if (!d.contains(e.target)) d.removeAttribute('open')
+  })
+})
+
 // Traffic menu — confirm destructive actions before submitting
 const trafficPanel = document.querySelector('.traffic-panel')
 if (trafficPanel) {
