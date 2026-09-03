@@ -68,6 +68,8 @@ if (trafficPanel) {
       e.preventDefault()
     } else if (action.includes('/spam-recipient') && !confirm('Always spam messages to this address?')) {
       e.preventDefault()
+    } else if (action.includes('/delete') && !confirm('Permanently delete this message? This can\'t be undone.')) {
+      e.preventDefault()
     }
   })
 }

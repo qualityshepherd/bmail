@@ -100,6 +100,9 @@ header .settings-menu { margin-left: 0; justify-self: end; }
   color: var(--text);
 }
 
+.traffic-panel .danger-btn { color: #b06060; }
+.traffic-panel .danger-btn:hover { color: #d07070; background: rgba(176,96,96,0.08); }
+
 /* ─── Tag icon dropdown ───────────────────────────────────── */
 .tag-details {
   position: relative;

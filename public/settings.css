@@ -152,6 +152,11 @@
   border-color: var(--accent);
 }
 
+.settings-section label {
+  display: block;
+  margin: 0.75rem 0;
+}
+
 .settings-section button,
 .settings-section .btn-outline {
   display: inline-block;
