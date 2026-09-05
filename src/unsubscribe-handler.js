@@ -80,8 +80,17 @@ export const handleUnsubscribe = withAuth(async (req, env, ctx, session, emailId
       await sendEmail(env, { from: email.recipient, to, subject, text: '' })
     } catch (err) {
       console.error('Unsubscribe email send failed:', err)
+      // Mailman-style list unsubscribes match the *sending* address against
+      // the subscriber list, so this has to be sent as email.recipient
+      // specifically - falling back to a different verified identity
+      // wouldn't actually unsubscribe anything, just send mail from an
+      // address the list doesn't recognize. Surface the real fix instead.
+      const notVerified = /domain is not verified/i.test(err.message || '')
+      const detail = notVerified
+        ? `${email.recipient.split('@')[1]} isn't verified for sending in Resend yet (resend.com/domains) - this has to be sent as ${email.recipient} specifically for the list to recognize it.`
+        : `Couldn't send as ${email.recipient}.`
       return new Response(
-        `Couldn't send the unsubscribe request - you're probably still subscribed. Try blocking ${email.sender} instead.`,
+        `${detail} You're probably still subscribed. Try blocking ${email.sender} instead.`,
         { status: 502, headers: { 'Content-Type': 'text/plain; charset=utf-8' } }
       )
     }
