@@ -146,12 +146,6 @@ function renderMessagePage (email, attachments, { sent, backParam, prevId, nextI
               <input type="hidden" name="back" value="${escapeHtml(backParam)}">
               <button type="submit">Spam recipient</button>
             </form>
-            ${email.status === 'trash'
-? `<form method="post" action="/message/${email.id}/delete">
-              <input type="hidden" name="back" value="${escapeHtml(backParam)}">
-              <button type="submit" class="danger-btn">Delete forever</button>
-            </form>`
-: ''}
           </div>
         </details>
       </span>

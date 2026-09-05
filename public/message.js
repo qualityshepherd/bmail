@@ -68,8 +68,14 @@ if (trafficPanel) {
       e.preventDefault()
     } else if (action.includes('/spam-recipient') && !confirm('Always spam messages to this address?')) {
       e.preventDefault()
-    } else if (action.includes('/delete') && !confirm('Permanently delete this message? This can\'t be undone.')) {
-      e.preventDefault()
     }
   })
 }
+
+// Delete-forever icon (trash icon, repurposed, only shown while already in
+// Trash) - confirm before submitting since there's no undo.
+document.addEventListener('submit', (e) => {
+  if (e.target.querySelector('.danger-icon') && !confirm('Permanently delete this message? This can\'t be undone.')) {
+    e.preventDefault()
+  }
+})

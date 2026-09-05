@@ -13,8 +13,8 @@ export function isDuplicateKeyError (err) {
 export async function insertEmail (db, email) {
   const result = await db
     .prepare(
-      `INSERT INTO emails (sender, recipient, subject, body, message_id, in_reply_to, created_at, sender_display, cc, status, status_changed_at, list_unsubscribe, dmarc_result)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+      `INSERT INTO emails (sender, recipient, subject, body, message_id, in_reply_to, created_at, sender_display, cc, status, status_changed_at, list_unsubscribe, list_unsubscribe_post, dmarc_result)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
     )
     .bind(
       email.sender,
@@ -29,6 +29,7 @@ export async function insertEmail (db, email) {
       email.status || 'inbox',
       email.createdAt,
       email.listUnsubscribe || null,
+      email.listUnsubscribePost || null,
       email.dmarcResult || null
     )
     .run()
@@ -108,7 +109,7 @@ export async function getEmailCount (db, filters) {
 
 export async function getEmailById (db, id) {
   return db
-    .prepare('SELECT id, sender, sender_display, recipient, subject, body, message_id, in_reply_to, starred, status, read, tags, cc, created_at, list_unsubscribe, dmarc_result FROM emails WHERE id = ?')
+    .prepare('SELECT id, sender, sender_display, recipient, subject, body, message_id, in_reply_to, starred, status, read, tags, cc, created_at, list_unsubscribe, list_unsubscribe_post, dmarc_result FROM emails WHERE id = ?')
     .bind(id)
     .first()
 }

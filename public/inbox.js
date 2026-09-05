@@ -49,6 +49,8 @@ document.addEventListener('submit', (e) => {
     if (!confirm('Permanently delete all trashed messages?')) e.preventDefault()
   } else if (form.id === 'empty-spam-form') {
     if (!confirm('Permanently delete all spam?')) e.preventDefault()
+  } else if (form.querySelector('.danger-icon') && !confirm('Permanently delete this message? This can\'t be undone.')) {
+    e.preventDefault()
   }
 })
 

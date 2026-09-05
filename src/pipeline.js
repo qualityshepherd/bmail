@@ -71,6 +71,7 @@ export async function ingestEmail ({ message, env }) {
       messageId,
       inReplyTo: message.headers.get('in-reply-to'),
       listUnsubscribe: message.headers.get('list-unsubscribe'),
+      listUnsubscribePost: message.headers.get('list-unsubscribe-post'),
       dmarcResult,
       createdAt: Date.now(),
       senderDisplay: parsed.senderDisplay,

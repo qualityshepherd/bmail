@@ -23,12 +23,29 @@ export function renderStarIcon (emailId, starred, backUrl = '') {
 
 // Renders inbox/archive/spam/trash actions, hiding whichever matches currentStatus.
 // backUrl is round-tripped so the action returns to the same filtered view.
+// Already in trash, the trash icon has nothing left to mean as a move-to
+// action, so it's repurposed as permanent delete instead of just hidden.
 export function renderStatusIcons (emailId, currentStatus, backUrl) {
   const actions = ['inbox', 'archive', 'spam', 'trash'].filter((s) => s !== currentStatus)
-  return actions.map((action) => `
+  const moveIcons = actions.map((action) => {
+    // Trash gets a clearer label than its terse siblings since it now sits
+    // right next to the red permanent-delete version - worth disambiguating.
+    const label = action === 'trash' ? 'Move to trash' : action
+    return `
     <form method="post" action="/message/${emailId}/status" class="status-icon-form">
       <input type="hidden" name="status" value="${action}">
       <input type="hidden" name="back" value="${escapeHtml(backUrl)}">
-      <button type="submit" title="${action}" aria-label="${action}">${ICONS[action]}</button>
-    </form>`).join('')
+      <button type="submit" title="${label}" aria-label="${label}">${ICONS[action]}</button>
+    </form>`
+  }).join('')
+
+  const deleteForeverIcon = currentStatus === 'trash'
+    ? `
+    <form method="post" action="/message/${emailId}/delete" class="status-icon-form">
+      <input type="hidden" name="back" value="${escapeHtml(backUrl)}">
+      <button type="submit" title="Delete forever" aria-label="Delete forever" class="danger-icon">${ICONS.trash}</button>
+    </form>`
+    : ''
+
+  return moveIcons + deleteForeverIcon
 }

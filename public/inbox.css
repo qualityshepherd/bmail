@@ -259,6 +259,9 @@
 
 .status-icon-form button:hover { border-color: var(--accent); color: var(--accent-bright); }
 
+.status-icon-form button.danger-icon { color: #b06060; }
+.status-icon-form button.danger-icon:hover { border-color: #b06060; color: #d07070; }
+
 /* ─── Bulk action menu ───────────────────────────────────── */
 .bulk-menu {
   position: relative;

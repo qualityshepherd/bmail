@@ -37,6 +37,9 @@ header .settings-menu { margin-left: 0; justify-self: end; }
   color: var(--accent-bright);
 }
 
+.header-actions .status-icon-form button.danger-icon { color: #b06060; }
+.header-actions .status-icon-form button.danger-icon:hover { border-color: #b06060; color: #d07070; }
+
 /* ─── ··· Traffic menu ────────────────────────────────────── */
 .traffic-menu {
   position: relative;
@@ -99,9 +102,6 @@ header .settings-menu { margin-left: 0; justify-self: end; }
   background: var(--bg);
   color: var(--text);
 }
-
-.traffic-panel .danger-btn { color: #b06060; }
-.traffic-panel .danger-btn:hover { color: #d07070; background: rgba(176,96,96,0.08); }
 
 /* ─── Tag icon dropdown ───────────────────────────────────── */
 .tag-details {
