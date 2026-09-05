@@ -1,6 +1,6 @@
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
-import { parseHttpUrl, chooseUnsubscribeMethod } from '../src/unsubscribe-handler.js'
+import { parseHttpUrl, parseMailto, chooseUnsubscribeMethod } from '../src/unsubscribe-handler.js'
 
 // parseHttpUrl
 test('parseHttpUrl: extracts an https URL', () => {
@@ -68,4 +68,20 @@ test('chooseUnsubscribeMethod: an HTTP link with an unrelated List-Unsubscribe-P
 test('chooseUnsubscribeMethod: none when there is nothing usable', () => {
   const email = { list_unsubscribe: '', list_unsubscribe_post: null }
   assert.deepEqual(chooseUnsubscribeMethod(email), { method: 'none', target: null })
+})
+
+// parseMailto
+test('parseMailto: extracts address and subject', () => {
+  assert.deepEqual(
+    parseMailto('mailto:plura-list-request@pluralistic.net?subject=unsubscribe'),
+    { to: 'plura-list-request@pluralistic.net', subject: 'unsubscribe' }
+  )
+})
+
+test('parseMailto: defaults subject to "unsubscribe" when absent', () => {
+  assert.deepEqual(parseMailto('mailto:unsub@example.com'), { to: 'unsub@example.com', subject: 'unsubscribe' })
+})
+
+test('parseMailto: decodes a URL-encoded subject', () => {
+  assert.equal(parseMailto('mailto:unsub@example.com?subject=unsubscribe%20me').subject, 'unsubscribe me')
 })

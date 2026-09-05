@@ -63,7 +63,9 @@ function renderMessagePage (email, attachments, { sent, backParam, prevId, nextI
     : ''
 
   const sentBanner = sent ? '<p class="sent-banner">Reply sent.</p>' : ''
-  const unsubscribedBanner = email.unsubscribed ? '<p class="sent-banner">Unsubscribed.</p>' : ''
+  const unsubscribedBanner = email.unsubscribed === '2'
+    ? '<p class="sent-banner">Unsubscribe request sent - this sender hasn\'t confirmed automatic unsubscribe support, so it may not have taken effect.</p>'
+    : email.unsubscribed === '1' ? '<p class="sent-banner">Unsubscribed.</p>' : ''
   const tagsValue = escapeHtml(formatTags(parseTags(email.tags)))
 
   // backParam is already a full, valid path (e.g. "/inbox?q=status%3Ainbox")
@@ -203,7 +205,7 @@ export const handleMessageView = withAuth(async (req, env, ctx, session, emailId
 
   const url = new URL(req.url)
   const sent = url.searchParams.get('sent') === '1'
-  const unsubscribed = url.searchParams.get('unsubscribed') === '1'
+  const unsubscribed = url.searchParams.get('unsubscribed') || ''
   const rawBack = url.searchParams.get('back') || ''
   const backParam = (rawBack.startsWith('/') && !rawBack.startsWith('//')) ? rawBack : DEFAULT_BACK
 

@@ -1,18 +1,28 @@
 import { withAuth } from './auth-routes.js'
 import { getEmailById } from './db-email.js'
+import { sendEmail } from './mailer.js'
 
 export function parseHttpUrl (header) {
   const matches = header.match(/<(https?:\/\/[^>]+)>/gi) || []
   return matches.map((m) => m.slice(1, -1)).find((u) => /^https?:\/\//i.test(u)) || null
 }
 
-// RFC 8058 one-click is only safe to automate when the sender explicitly
-// confirms support via List-Unsubscribe-Post. Without it, POSTing to the
-// URL can return 200 without unsubscribing anything - e.g. a Mailman
-// options page just re-renders the form for any POST, one-click or not.
-// mailto is preferred over a non-one-click HTTP link since actually sending
-// the unsubscribe email is far more likely to be honored by legacy list
-// software than POSTing to a page that never confirmed it'd process one.
+export function parseMailto (mailtoUrl) {
+  const [rawTo, query] = mailtoUrl.replace(/^mailto:/i, '').split('?')
+  const params = new URLSearchParams(query || '')
+  return { to: decodeURIComponent(rawTo), subject: params.get('subject') || 'unsubscribe' }
+}
+
+// RFC 8058 one-click is only safe to treat as a confirmed action when the
+// sender explicitly advertises support via List-Unsubscribe-Post. Without
+// it, POSTing (or GETing) the URL can return 200/405 without the sender
+// having done anything - e.g. a Mailman options page just re-renders the
+// form for any POST, one-click or not, and some senders' unsubscribe
+// endpoints are POST-only and 405 a plain GET (this is exactly what
+// redirecting the browser there used to do). mailto is treated as
+// equally confident as one-click since it's the sender's own explicitly
+// documented method, not a guess - the browser handing off to a mailto:
+// link was the actual bug there, not the choice of method.
 export function chooseUnsubscribeMethod (email) {
   const header = email.list_unsubscribe || ''
   const httpUrl = parseHttpUrl(header)
@@ -25,6 +35,16 @@ export function chooseUnsubscribeMethod (email) {
   return { method: 'none', target: null }
 }
 
+const postFailure = (sender, status) => new Response(
+  `Unsubscribe request failed (sender returned ${status}) - you're probably still subscribed. Try blocking ${sender} instead.`,
+  { status: 502, headers: { 'Content-Type': 'text/plain; charset=utf-8' } }
+)
+
+const networkFailure = (sender) => new Response(
+  `Unsubscribe request failed to reach the sender - you're probably still subscribed. Try blocking ${sender} instead.`,
+  { status: 502, headers: { 'Content-Type': 'text/plain; charset=utf-8' } }
+)
+
 export const handleUnsubscribe = withAuth(async (req, env, ctx, session, emailId) => {
   const email = await getEmailById(env.DB, emailId)
   if (!email || !email.list_unsubscribe) return new Response('Not found', { status: 404 })
@@ -32,11 +52,11 @@ export const handleUnsubscribe = withAuth(async (req, env, ctx, session, emailId
   const formData = await req.formData()
   const rawBack = (formData.get('back') || '').toString()
   const backParam = rawBack.startsWith('/') && !rawBack.startsWith('//') ? rawBack : `/message/${emailId}`
-  const successUrl = `/message/${emailId}?unsubscribed=1&back=${encodeURIComponent(backParam)}`
+  const successUrl = (confidence) => `/message/${emailId}?unsubscribed=${confidence}&back=${encodeURIComponent(backParam)}`
 
   const { method, target } = chooseUnsubscribeMethod(email)
 
-  if (method === 'one-click') {
+  if (method === 'one-click' || method === 'manual') {
     try {
       const res = await fetch(target, {
         method: 'POST',
@@ -44,26 +64,28 @@ export const handleUnsubscribe = withAuth(async (req, env, ctx, session, emailId
         body: 'List-Unsubscribe=One-Click',
         signal: AbortSignal.timeout(8000)
       })
-      if (!res.ok) {
-        return new Response(
-          `Unsubscribe request failed (sender returned ${res.status}) - you're probably still subscribed. Try blocking ${email.sender} instead.`,
-          { status: 502, headers: { 'Content-Type': 'text/plain; charset=utf-8' } }
-        )
-      }
+      if (!res.ok) return postFailure(email.sender, res.status)
     } catch (err) {
       console.error('Unsubscribe POST failed:', err)
+      return networkFailure(email.sender)
+    }
+    // 'manual' means the sender never confirmed one-click support, so a
+    // 2xx here is a good sign, not a guarantee - say so.
+    return new Response(null, { status: 302, headers: { Location: successUrl(method === 'one-click' ? '1' : '2') } })
+  }
+
+  if (method === 'mailto') {
+    const { to, subject } = parseMailto(target)
+    try {
+      await sendEmail(env, { from: email.recipient, to, subject, text: '' })
+    } catch (err) {
+      console.error('Unsubscribe email send failed:', err)
       return new Response(
-        `Unsubscribe request failed to reach the sender - you're probably still subscribed. Try blocking ${email.sender} instead.`,
+        `Couldn't send the unsubscribe request - you're probably still subscribed. Try blocking ${email.sender} instead.`,
         { status: 502, headers: { 'Content-Type': 'text/plain; charset=utf-8' } }
       )
     }
-    return new Response(null, { status: 302, headers: { Location: successUrl } })
-  }
-
-  // mailto and manual both hand off to the client rather than claiming a
-  // success bmail can't actually confirm.
-  if (method === 'mailto' || method === 'manual') {
-    return new Response(null, { status: 302, headers: { Location: target } })
+    return new Response(null, { status: 302, headers: { Location: successUrl('1') } })
   }
 
   return new Response('No unsubscribe method available', { status: 400, headers: { 'Content-Type': 'text/plain; charset=utf-8' } })
