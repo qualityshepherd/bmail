@@ -34,6 +34,8 @@ export const LOGIN_RATE_LIMIT_MAX_ATTEMPTS = 6
 export const LOGIN_RATE_LIMIT_WINDOW_MS = 12 * 60 * 1000
 export const CHALLENGE_RATE_LIMIT_MAX_ATTEMPTS = 20
 export const CHALLENGE_RATE_LIMIT_WINDOW_MS = 60 * 1000
+export const SEND_RATE_LIMIT_MAX_ATTEMPTS = 20
+export const SEND_RATE_LIMIT_WINDOW_MS = 10 * 60 * 1000
 
 export function generateNonce () {
   const buf = new Uint8Array(16)

@@ -13,6 +13,63 @@ export function parseMailto (mailtoUrl) {
   return { to: decodeURIComponent(rawTo), subject: params.get('subject') || 'unsubscribe' }
 }
 
+const isPrivateOrReservedHost = (hostname) => {
+  const h = hostname.toLowerCase()
+  if (h === 'localhost') return true
+  const ipv4 = h.match(/^(\d{1,3})\.(\d{1,3})\.(\d{1,3})\.(\d{1,3})$/)
+  if (ipv4) {
+    const [a, b] = ipv4.slice(1).map(Number)
+    if (a === 127 || a === 10 || a === 0) return true
+    if (a === 172 && b >= 16 && b <= 31) return true
+    if (a === 192 && b === 168) return true
+    if (a === 169 && b === 254) return true // link-local, includes cloud metadata endpoints
+    if (a === 100 && b >= 64 && b <= 127) return true // CGNAT
+  }
+  if (h === '::1' || h.startsWith('fc') || h.startsWith('fd') || h.startsWith('fe80:')) return true
+  return false
+}
+
+// A List-Unsubscribe URL is attacker-controlled (it comes from an email),
+// so it gets the same untrusted-URL treatment as any other outbound-fetch
+// surface: http(s) only, never a literal private/reserved-IP destination.
+// This only catches literal IP-address payloads, not DNS-rebinding-style
+// attacks where a hostname resolves to a private IP at request time -
+// Workers' network model already limits how much that matters here, but
+// it's not a complete guarantee.
+export const isFetchableUnsubscribeUrl = (url) => {
+  let parsed
+  try { parsed = new URL(url) } catch { return false }
+  if (parsed.protocol !== 'http:' && parsed.protocol !== 'https:') return false
+  return !isPrivateOrReservedHost(parsed.hostname)
+}
+
+const MAX_UNSUBSCRIBE_REDIRECTS = 3
+
+// Manual redirect following so every hop - not just the original URL - gets
+// re-validated. A sender could return a safe-looking URL that redirects
+// somewhere hostile.
+const fetchUnsubscribeTarget = async (url) => {
+  let currentUrl = url
+  for (let hop = 0; hop <= MAX_UNSUBSCRIBE_REDIRECTS; hop++) {
+    if (!isFetchableUnsubscribeUrl(currentUrl)) throw new Error('unsafe unsubscribe target')
+    const res = await fetch(currentUrl, {
+      method: 'POST',
+      redirect: 'manual',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: 'List-Unsubscribe=One-Click',
+      signal: AbortSignal.timeout(8000)
+    })
+    if (res.status >= 300 && res.status < 400) {
+      const loc = res.headers.get('location')
+      if (!loc) return res
+      currentUrl = loc.startsWith('http') ? loc : new URL(loc, currentUrl).href
+      continue
+    }
+    return res
+  }
+  throw new Error('too many redirects')
+}
+
 // RFC 8058 one-click is only safe to treat as a confirmed action when the
 // sender explicitly advertises support via List-Unsubscribe-Post. Without
 // it, POSTing (or GETing) the URL can return 200/405 without the sender
@@ -58,12 +115,7 @@ export const handleUnsubscribe = withAuth(async (req, env, ctx, session, emailId
 
   if (method === 'one-click' || method === 'manual') {
     try {
-      const res = await fetch(target, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-        body: 'List-Unsubscribe=One-Click',
-        signal: AbortSignal.timeout(8000)
-      })
+      const res = await fetchUnsubscribeTarget(target)
       if (!res.ok) return postFailure(email.sender, res.status)
     } catch (err) {
       console.error('Unsubscribe POST failed:', err)

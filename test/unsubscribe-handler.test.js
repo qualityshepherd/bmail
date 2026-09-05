@@ -1,6 +1,6 @@
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
-import { parseHttpUrl, parseMailto, chooseUnsubscribeMethod } from '../src/unsubscribe-handler.js'
+import { parseHttpUrl, parseMailto, chooseUnsubscribeMethod, isFetchableUnsubscribeUrl } from '../src/unsubscribe-handler.js'
 
 // parseHttpUrl
 test('parseHttpUrl: extracts an https URL', () => {
@@ -16,6 +16,35 @@ test('parseHttpUrl: picks the http(s) entry out of a mixed list', () => {
     parseHttpUrl('<mailto:unsub@example.com>, <https://example.com/unsub>'),
     'https://example.com/unsub'
   )
+})
+
+// isFetchableUnsubscribeUrl
+test('isFetchableUnsubscribeUrl: allows an ordinary https URL', () => {
+  assert.equal(isFetchableUnsubscribeUrl('https://example.com/unsub'), true)
+})
+
+test('isFetchableUnsubscribeUrl: rejects non-http(s) protocols', () => {
+  assert.equal(isFetchableUnsubscribeUrl('file:///etc/passwd'), false)
+  assert.equal(isFetchableUnsubscribeUrl('ftp://example.com/unsub'), false)
+})
+
+test('isFetchableUnsubscribeUrl: rejects localhost', () => {
+  assert.equal(isFetchableUnsubscribeUrl('http://localhost/unsub'), false)
+})
+
+test('isFetchableUnsubscribeUrl: rejects loopback and private IPv4 literals', () => {
+  assert.equal(isFetchableUnsubscribeUrl('http://127.0.0.1/unsub'), false)
+  assert.equal(isFetchableUnsubscribeUrl('http://10.0.0.5/unsub'), false)
+  assert.equal(isFetchableUnsubscribeUrl('http://192.168.1.1/unsub'), false)
+  assert.equal(isFetchableUnsubscribeUrl('http://172.16.0.1/unsub'), false)
+})
+
+test('isFetchableUnsubscribeUrl: rejects the cloud metadata address', () => {
+  assert.equal(isFetchableUnsubscribeUrl('http://169.254.169.254/latest/meta-data'), false)
+})
+
+test('isFetchableUnsubscribeUrl: rejects an invalid URL', () => {
+  assert.equal(isFetchableUnsubscribeUrl('not a url'), false)
 })
 
 // chooseUnsubscribeMethod

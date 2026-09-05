@@ -51,15 +51,21 @@ function sentToMbox (sent) {
 // Workers cap memory at 128MB. Every row gets pulled into memory at once
 // below (no streaming), so a mailbox with enough history could OOM rather
 // than fail cleanly - this catches that before the expensive query runs,
-// not after.
-const MAX_EXPORTABLE_MESSAGES = 5000
+// not after. Measured in bytes, not message count: inbound bodies are
+// separately capped at 100KB each (pipeline.js), so a count-based limit
+// alone doesn't actually bound memory - 5000 maxed-out messages would be
+// ~500MB, well past the 128MB ceiling this exists to protect.
+const MAX_EXPORTABLE_BYTES = 80 * 1024 * 1024
 
 export async function buildMbox (db) {
-  const { count } = await db.prepare(
-    'SELECT (SELECT COUNT(*) FROM emails) + (SELECT COUNT(*) FROM sent) AS count'
+  const { totalBytes } = await db.prepare(
+    `SELECT (SELECT COALESCE(SUM(LENGTH(body)), 0) FROM emails) +
+            (SELECT COALESCE(SUM(LENGTH(body)), 0) FROM sent) AS totalBytes`
   ).first()
-  if (count > MAX_EXPORTABLE_MESSAGES) {
-    throw new Error(`Mailbox has ${count} messages, too large for a single .mbox export (limit ${MAX_EXPORTABLE_MESSAGES}). Use the R2 SQL backup instead.`)
+  if (totalBytes > MAX_EXPORTABLE_BYTES) {
+    const mb = (totalBytes / (1024 * 1024)).toFixed(1)
+    const limitMb = MAX_EXPORTABLE_BYTES / (1024 * 1024)
+    throw new Error(`Mailbox body content is ${mb}MB, too large for a single .mbox export (limit ${limitMb}MB). Use the R2 SQL backup instead.`)
   }
 
   const [{ results: inbound }, { results: outbound }] = await Promise.all([

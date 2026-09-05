@@ -33,7 +33,7 @@ export async function deleteSession (db, token) {
 
 // table is interpolated into SQL below - restricted to a known set so this
 // can't become an injection vector if a future callsite passes it dynamically.
-const RATE_LIMIT_TABLES = new Set(['login_attempts', 'challenge_attempts'])
+const RATE_LIMIT_TABLES = new Set(['login_attempts', 'challenge_attempts', 'send_attempts'])
 
 export async function getRateLimit (db, table, ip) {
   if (!RATE_LIMIT_TABLES.has(table)) throw new Error('invalid rate limit table')
@@ -65,4 +65,5 @@ export async function deleteLoginAttempts (db, ip) {
 export async function deleteExpiredLoginAttempts (db, now) {
   await db.prepare('DELETE FROM login_attempts WHERE reset_at < ?').bind(now).run()
   await db.prepare('DELETE FROM challenge_attempts WHERE reset_at < ?').bind(now).run()
+  await db.prepare('DELETE FROM send_attempts WHERE reset_at < ?').bind(now).run()
 }

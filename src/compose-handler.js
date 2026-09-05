@@ -4,6 +4,8 @@ import { parseIdentities, findIdentityByAddress } from './identities.js'
 import { generateMessageId, extractDomain } from './reply.js'
 import { sendEmail } from './mailer.js'
 import { escapeHtml, parseAddressList, looksLikeAddress } from './html.js'
+import { isRateLimited, SEND_RATE_LIMIT_MAX_ATTEMPTS, SEND_RATE_LIMIT_WINDOW_MS } from './auth.js'
+import { getRateLimit, incrementRateLimit } from './db-auth.js'
 
 const MAX_ATTACHMENT_BYTES = 15 * 1024 * 1024
 const MAX_TOTAL_BYTES = 40 * 1024 * 1024
@@ -17,6 +19,16 @@ async function fileToBase64 (file) {
 }
 
 export const handleCompose = withAuth(async (req, env, ctx, session) => {
+  // A stolen session is still a bearer credential - bound how much mail it
+  // can send through this identity regardless of whether individual sends
+  // succeed, same rate-limit shape as login/challenge.
+  const ip = req.headers.get('CF-Connecting-IP') || 'unknown'
+  const rlRecord = await getRateLimit(env.DB, 'send_attempts', ip)
+  if (isRateLimited(rlRecord, Date.now(), SEND_RATE_LIMIT_MAX_ATTEMPTS)) {
+    return new Response('Too many messages sent recently - try again shortly.', { status: 429, headers: { 'Content-Type': 'text/plain; charset=utf-8' } })
+  }
+  await incrementRateLimit(env.DB, 'send_attempts', ip, Date.now(), SEND_RATE_LIMIT_WINDOW_MS)
+
   const identities = parseIdentities(await getSetting(env.DB, 'identities'))
   if (identities.length === 0) {
     return new Response('No sending identities configured - add one at /identities', { status: 400 })

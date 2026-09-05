@@ -44,7 +44,7 @@ function renderAppearanceTab (bgImage) {
   </section>`
 }
 
-function renderContactsTab (contactCount) {
+function renderContactsTab (contactCount, showRemoteAvatars) {
   const countLine = contactCount === 0
     ? '<p class="empty-hint">No contacts imported yet.</p>'
     : `<p class="settings-hint">${contactCount} contact${contactCount === 1 ? '' : 's'} stored.</p>`
@@ -66,6 +66,17 @@ function renderContactsTab (contactCount) {
            </form>
          </details>`
       : ''}
+    <h3>Remote avatars</h3>
+    <p class="settings-hint">Off by default: a contact's avatar URL is remote content, and just viewing
+       a message from them would otherwise make your browser fetch it - a passive way for someone to
+       know when their mail gets opened.</p>
+    <form method="post" action="/settings/contacts/avatars">
+      <label>
+        <input type="checkbox" name="showRemoteAvatars" value="1"${showRemoteAvatars ? ' checked' : ''}>
+        Load contact avatar images from remote URLs
+      </label>
+      <button type="submit">Save</button>
+    </form>
   </section>`
 }
 
@@ -112,7 +123,7 @@ function renderExportTab () {
   </section>`
 }
 
-function renderSettingsPage (tab, identitiesRaw, bgImage, contactCount = 0, spamText = '', blockText = '', catchAllLockdown = false, knownRecipientCount = 0) {
+function renderSettingsPage (tab, identitiesRaw, bgImage, contactCount = 0, spamText = '', blockText = '', catchAllLockdown = false, knownRecipientCount = 0, showRemoteAvatars = false) {
   const tabs = [
     { key: 'identities', label: 'Identities' },
     { key: 'appearance', label: 'Appearance' },
@@ -129,7 +140,7 @@ function renderSettingsPage (tab, identitiesRaw, bgImage, contactCount = 0, spam
   const content = tab === 'appearance'
     ? renderAppearanceTab(bgImage)
     : tab === 'contacts'
-      ? renderContactsTab(contactCount)
+      ? renderContactsTab(contactCount, showRemoteAvatars)
       : tab === 'filters'
         ? renderFiltersTab(spamText, blockText, catchAllLockdown, knownRecipientCount)
         : tab === 'export'
@@ -172,17 +183,19 @@ function renderSettingsPage (tab, identitiesRaw, bgImage, contactCount = 0, spam
 export const handleSettingsPage = withAuth(async (req, env) => {
   const url = new URL(req.url)
   const tab = url.searchParams.get('tab') || 'identities'
-  const [identitiesRaw, bgImage, contactCount, spamText, blockText, catchAllMode, knownRecipientCount] = await Promise.all([
+  const [identitiesRaw, bgImage, contactCount, spamText, blockText, catchAllMode, knownRecipientCount, avatarPref] = await Promise.all([
     getSetting(env.DB, 'identities'),
     getSetting(env.DB, 'bg_image'),
     getAllContactsCount(env.DB),
     getSpamlistText(env.DB),
     getBlocklistText(env.DB),
     getSetting(env.DB, 'catchAllMode'),
-    getKnownRecipientCount(env.DB)
+    getKnownRecipientCount(env.DB),
+    getSetting(env.DB, 'showRemoteAvatars')
   ])
   const catchAllLockdown = catchAllMode === 'known-only'
-  return new Response(renderSettingsPage(tab, identitiesRaw || '', bgImage || '', contactCount, spamText, blockText, catchAllLockdown, knownRecipientCount), {
+  const showRemoteAvatars = avatarPref === 'on'
+  return new Response(renderSettingsPage(tab, identitiesRaw || '', bgImage || '', contactCount, spamText, blockText, catchAllLockdown, knownRecipientCount, showRemoteAvatars), {
     headers: { 'Content-Type': 'text/html; charset=utf-8' }
   })
 })
@@ -220,6 +233,13 @@ export const handleSettingsImportContacts = withAuth(async (req, env) => {
 
 export const handleSettingsClearContacts = withAuth(async (req, env) => {
   await deleteAllContacts(env.DB)
+  return new Response(null, { status: 302, headers: { Location: '/settings?tab=contacts' } })
+})
+
+export const handleSettingsSaveAvatarPref = withAuth(async (req, env) => {
+  const formData = await req.formData()
+  const showRemoteAvatars = formData.get('showRemoteAvatars') === '1' ? 'on' : 'off'
+  await setSetting(env.DB, 'showRemoteAvatars', showRemoteAvatars)
   return new Response(null, { status: 302, headers: { Location: '/settings?tab=contacts' } })
 })
 

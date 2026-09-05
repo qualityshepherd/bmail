@@ -30,7 +30,7 @@ import { handleEmptyTrash } from './empty-trash-handler.js'
 import { handleEmptySpam } from './empty-spam-handler.js'
 import { handleMarkAllRead } from './mark-read-handler.js'
 import { handleArchiveAll } from './archive-all-handler.js'
-import { handleSettingsPage, handleSettingsSaveIdentities, handleSettingsSaveAppearance, handleSettingsImportContacts, handleSettingsClearContacts, handleSettingsSaveFilters } from './settings-page.js'
+import { handleSettingsPage, handleSettingsSaveIdentities, handleSettingsSaveAppearance, handleSettingsImportContacts, handleSettingsClearContacts, handleSettingsSaveFilters, handleSettingsSaveAvatarPref } from './settings-page.js'
 import { handleSentView } from './sent-view.js'
 import { handleUnsubscribe } from './unsubscribe-handler.js'
 import { handleDeleteMessage } from './delete-message-handler.js'
@@ -76,6 +76,7 @@ const ROUTES = [
   ['POST', '/settings/appearance', (req, env, ctx) => handleSettingsSaveAppearance(req, env, ctx)],
   ['POST', '/settings/contacts', (req, env, ctx) => handleSettingsImportContacts(req, env, ctx)],
   ['POST', '/settings/contacts/clear', (req, env, ctx) => handleSettingsClearContacts(req, env, ctx)],
+  ['POST', '/settings/contacts/avatars', (req, env, ctx) => handleSettingsSaveAvatarPref(req, env, ctx)],
   ['POST', '/settings/filters', (req, env, ctx) => handleSettingsSaveFilters(req, env, ctx)],
   ['POST', '/trash/empty', (req, env, ctx) => handleEmptyTrash(req, env, ctx)],
   ['POST', '/spam/empty', (req, env, ctx) => handleEmptySpam(req, env, ctx)],

@@ -4,8 +4,19 @@ import { buildReplySubject, generateMessageId, extractDomain } from './reply.js'
 import { sendEmail } from './mailer.js'
 import { escapeHtml, parseAddressList, extractEmail } from './html.js'
 import { parseIdentities, findIdentityByAddress } from './identities.js'
+import { isRateLimited, SEND_RATE_LIMIT_MAX_ATTEMPTS, SEND_RATE_LIMIT_WINDOW_MS } from './auth.js'
+import { getRateLimit, incrementRateLimit } from './db-auth.js'
 
 export const handleReply = withAuth(async (req, env, ctx, session, emailId) => {
+  // Shares the send_attempts bucket with /compose - the thing being bounded
+  // is total outbound volume through this identity, not a specific feature.
+  const ip = req.headers.get('CF-Connecting-IP') || 'unknown'
+  const rlRecord = await getRateLimit(env.DB, 'send_attempts', ip)
+  if (isRateLimited(rlRecord, Date.now(), SEND_RATE_LIMIT_MAX_ATTEMPTS)) {
+    return new Response('Too many messages sent recently - try again shortly.', { status: 429, headers: { 'Content-Type': 'text/plain; charset=utf-8' } })
+  }
+  await incrementRateLimit(env.DB, 'send_attempts', ip, Date.now(), SEND_RATE_LIMIT_WINDOW_MS)
+
   const email = await getEmailById(env.DB, emailId)
   if (!email) return new Response('Not found', { status: 404 })
 
