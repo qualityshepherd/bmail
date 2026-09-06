@@ -44,11 +44,8 @@ export async function ingestEmail ({ message, env }) {
   const dmarcMatch = authResults.match(/\bdmarc=(\w+)/i)
   const dmarcResult = dmarcMatch ? dmarcMatch[1].toLowerCase() : null
 
-  // rawSize is available without reading the .raw stream - reject before
-  // postal-mime does any parsing (including materializing every attachment
-  // into an ArrayBuffer) rather than paying full parse cost first and only
-  // discovering the message was too large afterward. Throwing here hits the
-  // same fallback-forward path as any other ingestion failure (index.js).
+  // rawSize is free (no stream read needed) - reject before postal-mime
+  // parses the whole thing. Throwing hits the normal fallback-forward path.
   const MAX_RAW_MESSAGE_BYTES = 150 * 1024 * 1024
   if (message.rawSize > MAX_RAW_MESSAGE_BYTES) {
     throw new Error(`Message too large to parse (${message.rawSize} bytes)`)

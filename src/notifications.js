@@ -13,14 +13,9 @@ export function classifySmsNotification (count) {
 
 const MAX_SMS_FIELD_LENGTH = 60
 
-// Strips URLs, folds to plain ASCII, and trims to a short length - the
-// same lesson as the original hourly digest: arbitrary inbound content
-// (sender name, subject line) reaching the SMS gateway verbatim is what
-// got it flagged as spam once already. ASCII-folding isn't about spam
-// filtering specifically - it's so a stray accented character or emoji in
-// a sender name can't silently flip the whole message from GSM-7 to UCS-2
-// encoding, which halves the per-segment length (160 -> 70) and could
-// split one short text into two.
+// Strips URLs (got the gateway flagged as spam once already) and folds to
+// ASCII so a stray emoji can't flip the encoding to UCS-2 and double the
+// segment count.
 const sanitizeSmsField = (value) =>
   (value || '')
     .replace(/https?:\/\/\S+/gi, '')

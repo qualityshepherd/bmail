@@ -11,11 +11,9 @@ export async function upsertContacts (db, contacts) {
 }
 
 // Returns a Map<lowerCaseEmail, { name, avatarUrl }> for efficient per-row lookup.
-// Remote avatar URLs are opt-in (off by default) - just viewing a message
-// from a contact would otherwise cause the browser to fetch whatever host
-// they put in their avatar field. Checked here, once, rather than at every
-// one of the many render call sites, so callers get correct behavior with
-// no changes needed on their end.
+// Remote avatars are opt-in (off by default) - viewing a message shouldn't
+// ping whatever host a contact put in their avatar field. Checked once
+// here rather than at every render call site.
 export async function getContactsByEmails (db, emails) {
   const map = new Map()
   if (emails.length === 0) return map

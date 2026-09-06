@@ -29,13 +29,9 @@ const isPrivateOrReservedHost = (hostname) => {
   return false
 }
 
-// A List-Unsubscribe URL is attacker-controlled (it comes from an email),
-// so it gets the same untrusted-URL treatment as any other outbound-fetch
-// surface: http(s) only, never a literal private/reserved-IP destination.
-// This only catches literal IP-address payloads, not DNS-rebinding-style
-// attacks where a hostname resolves to a private IP at request time -
-// Workers' network model already limits how much that matters here, but
-// it's not a complete guarantee.
+// The URL comes from an email, so treat it as hostile: http(s) only, never
+// a literal private/reserved IP. Doesn't catch DNS rebinding, just the
+// obvious literal-IP payloads.
 export const isFetchableUnsubscribeUrl = (url) => {
   let parsed
   try { parsed = new URL(url) } catch { return false }
@@ -70,16 +66,11 @@ const fetchUnsubscribeTarget = async (url) => {
   throw new Error('too many redirects')
 }
 
-// RFC 8058 one-click is only safe to treat as a confirmed action when the
-// sender explicitly advertises support via List-Unsubscribe-Post. Without
-// it, POSTing (or GETing) the URL can return 200/405 without the sender
-// having done anything - e.g. a Mailman options page just re-renders the
-// form for any POST, one-click or not, and some senders' unsubscribe
-// endpoints are POST-only and 405 a plain GET (this is exactly what
-// redirecting the browser there used to do). mailto is treated as
-// equally confident as one-click since it's the sender's own explicitly
-// documented method, not a guess - the browser handing off to a mailto:
-// link was the actual bug there, not the choice of method.
+// One-click is only trustworthy if the sender confirms it via
+// List-Unsubscribe-Post - otherwise a POST/GET can 200/405 without doing
+// anything (e.g. Mailman just re-renders its options form either way).
+// mailto counts as equally confident since it's the sender's own
+// documented method, not a guess.
 export function chooseUnsubscribeMethod (email) {
   const header = email.list_unsubscribe || ''
   const httpUrl = parseHttpUrl(header)

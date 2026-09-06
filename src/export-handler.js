@@ -48,13 +48,9 @@ function sentToMbox (sent) {
   return msg
 }
 
-// Workers cap memory at 128MB. Every row gets pulled into memory at once
-// below (no streaming), so a mailbox with enough history could OOM rather
-// than fail cleanly - this catches that before the expensive query runs,
-// not after. Measured in bytes, not message count: inbound bodies are
-// separately capped at 100KB each (pipeline.js), so a count-based limit
-// alone doesn't actually bound memory - 5000 maxed-out messages would be
-// ~500MB, well past the 128MB ceiling this exists to protect.
+// Workers cap memory at 128MB and everything below loads at once (no
+// streaming). Measured in bytes, not message count - 5000 maxed-out 100KB
+// messages would be ~500MB, so a count cap alone wouldn't actually bound it.
 const MAX_EXPORTABLE_BYTES = 80 * 1024 * 1024
 
 export async function buildMbox (db) {
