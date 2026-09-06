@@ -1,5 +1,5 @@
 /* global URLPattern */
-import { ingestEmail, sendSms } from './pipeline.js'
+import { ingestEmail } from './pipeline.js'
 import {
   getStaleAttachments,
   deleteAttachmentsByIds,
@@ -8,10 +8,8 @@ import {
   getAttachmentR2Keys,
   deleteExpiredNonces,
   deleteExpiredSessions,
-  deleteExpiredLoginAttempts,
-  getUnreadInboxCount
+  deleteExpiredLoginAttempts
 } from './db.js'
-import { buildSmsPayload } from './notifications.js'
 import { SESSION_TTL_MS } from './auth.js'
 import { handleChallenge, handleLogin, handleLogout, handleMe } from './auth-routes.js'
 import { handleInbox } from './inbox.js'
@@ -131,7 +129,6 @@ export default {
 
   async scheduled (event, env, ctx) {
     ctx.waitUntil(runMaintenance(env))
-    ctx.waitUntil(runHourlyDigest(env))
     ctx.waitUntil(runDailyBackup(env))
     ctx.waitUntil(runMonthlyMboxBackup(env))
   },
@@ -162,13 +159,6 @@ export default {
     }
     return response
   }
-}
-
-async function runHourlyDigest (env) {
-  if (!env.SMS_GATEWAY_ADDRESS) return
-  const unreadCount = await getUnreadInboxCount(env.DB)
-  if (unreadCount === 0) return
-  await sendSms(env, buildSmsPayload({ unreadCount }))
 }
 
 async function runMaintenance (env) {

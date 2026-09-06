@@ -67,3 +67,25 @@ export async function deleteExpiredLoginAttempts (db, now) {
   await db.prepare('DELETE FROM challenge_attempts WHERE reset_at < ?').bind(now).run()
   await db.prepare('DELETE FROM send_attempts WHERE reset_at < ?').bind(now).run()
 }
+
+// Single-row global counter (not per-IP - there's only one mailbox) for the
+// per-new-email SMS notification. Atomic UPSERT-with-RETURNING gives back
+// the post-increment count in one round trip, which is enough on its own
+// to decide "send normally" vs "send the one-time pause warning" vs
+// "suppress" - no separate "have we warned yet" column needed, since the
+// warning fires exactly once, on the specific call that first exceeds the
+// cap, and every call after that returns a strictly larger count.
+export async function incrementSmsNotificationCount (db, now, windowMs) {
+  const resetAt = now + windowMs
+  const row = await db
+    .prepare(
+      `INSERT INTO sms_notification_state (id, count, reset_at) VALUES (1, 1, ?)
+       ON CONFLICT (id) DO UPDATE SET
+         count = CASE WHEN reset_at <= ? THEN 1 ELSE count + 1 END,
+         reset_at = CASE WHEN reset_at <= ? THEN ? ELSE reset_at END
+       RETURNING count`
+    )
+    .bind(resetAt, now, now, resetAt)
+    .first()
+  return row.count
+}

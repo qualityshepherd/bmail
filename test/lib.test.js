@@ -3,7 +3,7 @@ import assert from 'node:assert/strict'
 import { readFile } from 'node:fs/promises'
 import { fileURLToPath } from 'node:url'
 import { patternMatches, anyPatternMatches } from '../src/match.js'
-import { buildSmsPayload } from '../src/notifications.js'
+import { classifySmsNotification, buildNewMailSmsPayload, buildSmsPauseWarning, SMS_NOTIFICATION_MAX_PER_WINDOW } from '../src/notifications.js'
 import { stripHtml, parseRawEmail, formatSenderDisplay } from '../src/mime.js'
 import { parseHttpUrl } from '../src/unsubscribe-handler.js'
 
@@ -46,14 +46,57 @@ test('patternMatches: glob falls back to envelope if no fullFrom', () => {
   assert.equal(patternMatches('*brine.dev*', 'bounces@em5143.aem-irv.com'), false)
 })
 
-test('buildSmsPayload: plural unread', () => {
-  const payload = buildSmsPayload({ unreadCount: 3 })
-  assert.equal(payload, 'Bmail: you have 3 unread emails')
+// classifySmsNotification
+test('classifySmsNotification: sends normally at and under the cap', () => {
+  for (let count = 1; count <= SMS_NOTIFICATION_MAX_PER_WINDOW; count++) {
+    assert.equal(classifySmsNotification(count), 'send')
+  }
 })
 
-test('buildSmsPayload: singular unread', () => {
-  const payload = buildSmsPayload({ unreadCount: 1 })
-  assert.equal(payload, 'Bmail: you have 1 unread email')
+test('classifySmsNotification: warns exactly once, on the first count past the cap', () => {
+  assert.equal(classifySmsNotification(SMS_NOTIFICATION_MAX_PER_WINDOW + 1), 'warn')
+})
+
+test('classifySmsNotification: suppresses everything after the warning', () => {
+  assert.equal(classifySmsNotification(SMS_NOTIFICATION_MAX_PER_WINDOW + 2), 'suppress')
+  assert.equal(classifySmsNotification(SMS_NOTIFICATION_MAX_PER_WINDOW + 10), 'suppress')
+})
+
+// buildNewMailSmsPayload
+test('buildNewMailSmsPayload: includes sender and subject', () => {
+  const payload = buildNewMailSmsPayload({ sender: 'alice@example.com', subject: 'Hello' })
+  assert.equal(payload, 'Bmail: alice@example.com - Hello')
+})
+
+test('buildNewMailSmsPayload: strips URLs from sender/subject', () => {
+  const payload = buildNewMailSmsPayload({ sender: 'spam@example.com', subject: 'Click https://evil.example/x now' })
+  assert.equal(payload, 'Bmail: spam@example.com - Click now')
+})
+
+test('buildNewMailSmsPayload: folds accented characters to plain ASCII', () => {
+  const payload = buildNewMailSmsPayload({ sender: 'José García', subject: 'café meetup' })
+  assert.equal(payload, 'Bmail: Jose Garcia - cafe meetup')
+})
+
+test('buildNewMailSmsPayload: strips characters with no ASCII equivalent (emoji)', () => {
+  const payload = buildNewMailSmsPayload({ sender: 'friend@example.com', subject: '🎉 party time' })
+  assert.equal(payload, 'Bmail: friend@example.com - party time')
+})
+
+test('buildNewMailSmsPayload: truncates long fields', () => {
+  const longSubject = 'x'.repeat(200)
+  const payload = buildNewMailSmsPayload({ sender: 'a@example.com', subject: longSubject })
+  assert.equal(payload, `Bmail: a@example.com - ${'x'.repeat(60)}`)
+})
+
+test('buildNewMailSmsPayload: falls back for missing fields', () => {
+  const payload = buildNewMailSmsPayload({ sender: '', subject: '' })
+  assert.equal(payload, 'Bmail: unknown sender - (no subject)')
+})
+
+// buildSmsPauseWarning
+test('buildSmsPauseWarning: mentions the window length', () => {
+  assert.equal(buildSmsPauseWarning(), 'Bmail: high volume of new mail - pausing notifications for 60 min')
 })
 
 test('stripHtml: strips tags and collapses block elements to newlines', () => {

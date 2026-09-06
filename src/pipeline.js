@@ -3,8 +3,10 @@ import { parseRawEmail } from './mime.js'
 import { anyPatternMatches } from './match.js'
 import {
   getBlocklistPatterns, getSpamPatterns, insertEmail, insertAttachment, getEmailByMessageId,
-  deleteEmailsByIds, isDuplicateKeyError, getSetting, isKnownRecipient, recordKnownRecipient
+  deleteEmailsByIds, isDuplicateKeyError, getSetting, isKnownRecipient, recordKnownRecipient,
+  incrementSmsNotificationCount
 } from './db.js'
+import { classifySmsNotification, buildNewMailSmsPayload, buildSmsPauseWarning, SMS_NOTIFICATION_WINDOW_MS } from './notifications.js'
 
 // Runs the full inbound pipeline for one message. Returns { dropped: true }
 // if the sender was blocklisted, { duplicate: true } if this message was
@@ -139,6 +141,25 @@ export async function ingestEmail ({ message, env }) {
 
   if (bodyTruncated && message.canBeForwarded) {
     await message.forward(env.FALLBACK_EMAIL)
+  }
+
+  // Real-time per-email ping instead of an hourly digest - only for mail
+  // that actually reaches the inbox, gated by a hard volume cap (see
+  // notifications.js) so a spam blast can't turn into an SMS flood on top
+  // of everything else. Never let a notification failure undo a
+  // successfully ingested email.
+  if (!isSpam && env.SMS_GATEWAY_ADDRESS) {
+    try {
+      const count = await incrementSmsNotificationCount(env.DB, Date.now(), SMS_NOTIFICATION_WINDOW_MS)
+      const action = classifySmsNotification(count)
+      if (action === 'send') {
+        await sendSms(env, buildNewMailSmsPayload({ sender: parsed.senderDisplay || message.from, subject: parsed.subject }))
+      } else if (action === 'warn') {
+        await sendSms(env, buildSmsPauseWarning())
+      }
+    } catch (err) {
+      console.error('Bmail SMS notification failed:', err)
+    }
   }
 
   return { dropped: false, emailId }
