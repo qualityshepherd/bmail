@@ -18,6 +18,34 @@ export function stripHtml (html) {
     .trim()
 }
 
+// Pulls <a href> targets out of the HTML that never made it into the plain
+// text - catches ESPs whose auto-generated text/plain alternative drops a
+// button-only CTA (the confirm/reset link only exists in the HTML part).
+// Returns "label: href" (or bare href for an image-only link) - marketing
+// mail routes every link through the same click-tracking domain, so the
+// bare URLs are otherwise indistinguishable from each other.
+export function extractMissingLinks (html, text) {
+  if (!html) return []
+  const seen = new Set()
+  const missing = []
+  const re = /<a\s+[^>]*href\s*=\s*["']([^"']+)["'][^>]*>([\s\S]*?)<\/a>/gi
+  let m
+  while ((m = re.exec(html)) !== null) {
+    const href = m[1].trim()
+    if (!href || href.startsWith('#') || /^javascript:/i.test(href)) continue
+    if (seen.has(href) || text.includes(href)) continue
+    seen.add(href)
+    const label = m[2]
+      .replace(/<[^>]+>/g, ' ')
+      .replace(/&amp;/gi, '&')
+      .replace(/&nbsp;/gi, ' ')
+      .replace(/\s+/g, ' ')
+      .trim()
+    missing.push(label ? `${label}: ${href}` : href)
+  }
+  return missing
+}
+
 // Formats a parsed From header for display: "Name <address>" if a display
 // name was given, otherwise just the bare address. Pure and separate from
 // anything security-relevant - this is ONLY for what a human reads in the
@@ -47,9 +75,14 @@ export async function parseRawEmail (raw) {
     ? parsed.text
     : stripHtml(parsed.html)
 
+  const missingLinks = extractMissingLinks(parsed.html, plainText)
+  const finalText = missingLinks.length > 0
+    ? `${plainText}\n\nLinks:\n${missingLinks.join('\n')}`
+    : plainText
+
   return {
     subject: parsed.subject || '',
-    text: plainText,
+    text: finalText,
     html: parsed.html || null,
     messageId: parsed.messageId || null,
     inReplyTo: parsed.inReplyTo || null,

@@ -4,7 +4,7 @@ import { readFile } from 'node:fs/promises'
 import { fileURLToPath } from 'node:url'
 import { patternMatches, anyPatternMatches } from '../src/match.js'
 import { classifySmsNotification, buildNewMailSmsPayload, buildSmsPauseWarning, SMS_NOTIFICATION_MAX_PER_WINDOW } from '../src/notifications.js'
-import { stripHtml, parseRawEmail, formatSenderDisplay } from '../src/mime.js'
+import { stripHtml, parseRawEmail, formatSenderDisplay, extractMissingLinks } from '../src/mime.js'
 import { parseHttpUrl } from '../src/unsubscribe-handler.js'
 
 test('patternMatches: exact address match', () => {
@@ -105,6 +105,35 @@ test('stripHtml: strips tags and collapses block elements to newlines', () => {
   assert.equal(text.includes('<'), false)
   assert.match(text, /Hi there,/)
   assert.match(text, /This is bold\./)
+})
+
+test('extractMissingLinks: finds an href missing from the plain text, labeled with its link text', () => {
+  const html = '<a href="https://reverb.com/confirm?t=abc">Confirm New Email</a>'
+  assert.deepEqual(extractMissingLinks(html, 'Hi, please confirm.'), ['Confirm New Email: https://reverb.com/confirm?t=abc'])
+})
+
+test('extractMissingLinks: skips a link already present in the plain text', () => {
+  const html = '<a href="https://example.com/x">click</a>'
+  assert.deepEqual(extractMissingLinks(html, 'Go here: https://example.com/x'), [])
+})
+
+test('extractMissingLinks: ignores anchors, javascript: hrefs, and dupes', () => {
+  const html = `
+    <a href="#section">jump</a>
+    <a href="javascript:void(0)">nope</a>
+    <a href="https://example.com/a">one</a>
+    <a href="https://example.com/a">one again</a>
+  `
+  assert.deepEqual(extractMissingLinks(html, ''), ['one: https://example.com/a'])
+})
+
+test('extractMissingLinks: image-only link with no text falls back to bare href', () => {
+  const html = '<a href="https://example.com/logo"><img src="logo.png" alt="Logo"></a>'
+  assert.deepEqual(extractMissingLinks(html, ''), ['https://example.com/logo'])
+})
+
+test('extractMissingLinks: no html returns empty', () => {
+  assert.deepEqual(extractMissingLinks(null, 'some text'), [])
 })
 
 test('parseRawEmail: parses fixture multipart/alternative message', async () => {
