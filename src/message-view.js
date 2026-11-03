@@ -1,8 +1,8 @@
 import { withAuth } from './auth-routes.js'
 import { getEmailById, getAttachmentsByEmailId, markRead, getAdjacentEmailId, getSetting, getAllTags } from './db.js'
 import { getContactsByEmails } from './db-contacts.js'
-import { escapeHtml, linkify, formatDate, formatBytes, avatarHue, avatarInitials, renderSettingsMenu } from './html.js'
-import { buildQuotedReplyText } from './reply.js'
+import { escapeHtml, linkify, formatDate, formatBytes, avatarHue, avatarInitials, renderSettingsMenu, parseAddressList, extractEmail } from './html.js'
+import { buildQuotedReplyText, resolveReplyTo, replyToDiffers } from './reply.js'
 import { resolveEffectiveQuery, parseTags, formatTags } from './search.js'
 import { parseIdentities, getDefaultIdentity } from './identities.js'
 import { renderStarIcon, renderStatusIcons } from './status-icons.js'
@@ -10,7 +10,6 @@ import { renderStarIcon, renderStatusIcons } from './status-icons.js'
 const DEFAULT_BACK = '/inbox?q=' + encodeURIComponent('status:inbox')
 
 const TAG_ICON = '<svg viewBox="0 0 24 24" width="16" height="16"><path d="M20.59 13.41l-7.17 7.17a2 2 0 01-2.83 0L2 12V2h10l8.59 8.59a2 2 0 010 2.82z" stroke="currentColor" stroke-width="2" fill="none" stroke-linejoin="round"/><circle cx="7" cy="7" r="1.5" fill="currentColor"/></svg>'
-const FORWARD_ICON = '<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 17 20 12 15 7"/><path d="M4 18v-2a4 4 0 014-4h12"/></svg>'
 
 export function renderIdentityOptions (identities, selectedAddress) {
   const hasMatch = identities.some((i) => i.address.toLowerCase() === selectedAddress.toLowerCase())
@@ -81,13 +80,24 @@ function renderMessagePage (email, attachments, { sent, backParam, prevId, nextI
   // sending - not appended invisibly at send time. escapeHtml here matters:
   // the quoted body is attacker-controlled (the original email's own text),
   // and a literal "</textarea>" in it would otherwise break out of the field.
+  // Date is a placeholder, not the real date - this renders on the Worker
+  // (UTC), so the actual local time gets swapped in client-side (message.js)
+  // using data-quote-ts, same as msg-date above.
   const quote = buildQuotedReplyText({
     senderDisplay: email.sender_display,
     sender: email.sender,
-    date: formatDate(email.created_at),
+    date: '__QUOTE_DATE__',
     body: email.body
   })
   const quotedTextareaContent = escapeHtml(quote)
+
+  // Original CC minus ourselves. The From address stays out of it - if
+  // Reply-To was set, From is a bounce box nobody reads.
+  const selfBare = extractEmail(email.recipient)
+  const replyAllCc = parseAddressList(email.cc)
+    .filter((addr) => extractEmail(addr) !== selfBare)
+    .join(', ')
+  const replyTo = resolveReplyTo(email)
 
   const bodyAttr = bgImage && /^https?:\/\//i.test(bgImage)
     ? ` style="background-image: linear-gradient(rgba(0,0,0,0.55),rgba(0,0,0,0.55)),url('${escapeHtml(bgImage)}')"`
@@ -106,6 +116,7 @@ function renderMessagePage (email, attachments, { sent, backParam, prevId, nextI
 <meta name="mobile-web-app-capable" content="yes">
 <link rel="apple-touch-icon" href="/bmail_180px.png">
 <link rel="stylesheet" href="/base.css">
+<link rel="stylesheet" href="/compose.css">
 <link rel="stylesheet" href="/message.css">
 </head>
 <body${bodyAttr} data-prev-href="${prevHref || ''}" data-next-href="${nextHref || ''}">
@@ -116,7 +127,6 @@ function renderMessagePage (email, attachments, { sent, backParam, prevId, nextI
       <span class="header-actions">
         ${renderStarIcon(email.id, email.starred)}
         ${renderStatusIcons(email.id, email.status, backParam)}
-        <a href="/message/${email.id}/forward" class="icon-link" title="Forward" aria-label="Forward">${FORWARD_ICON}</a>
         <details class="tag-details" id="tag-details">
           <summary title="Tags" aria-label="Tags">${TAG_ICON}</summary>
           <div class="tag-panel">
@@ -162,19 +172,22 @@ function renderMessagePage (email, attachments, { sent, backParam, prevId, nextI
         <div class="msg-sender-row">
           <span class="msg-from" title="${escapeHtml([
             `From: ${email.sender_display ? `${email.sender_display} <${email.sender}>` : email.sender}`,
+            (email.from_address && email.from_address.toLowerCase() !== email.sender.toLowerCase()) ? `From header: ${email.from_address}` : '',
             email.recipient ? `To: ${email.recipient}` : '',
             email.cc ? `Cc: ${email.cc}` : '',
+            email.reply_to ? `Reply-To: ${email.reply_to}` : '',
             email.message_id ? `Message-ID: ${email.message_id}` : '',
             email.dmarc_result ? `DMARC: ${email.dmarc_result}` : ''
           ].filter(Boolean).join('\n'))}">
             <strong>${escapeHtml(displayName)}</strong>${hasDisplayName ? ` <span class="msg-email">&lt;${escapeHtml(email.sender)}&gt;</span>` : ''}
           </span>
-          <span class="msg-date">${escapeHtml(formatDate(email.created_at))}</span>
+          <span class="msg-date" data-ts="${email.created_at}">${escapeHtml(formatDate(email.created_at))}</span>
           ${email.status !== 'inbox' ? `<span class="status-chip status-chip-${escapeHtml(email.status)}">${escapeHtml(email.status)}</span>` : ''}
           ${email.dmarc_result === 'fail' ? '<span class="dmarc-badge" title="Sender authentication failed (DMARC)">⚠ unverified</span>' : ''}
         </div>
           <div class="msg-to">to ${escapeHtml(email.recipient)}</div>
         ${email.cc ? `<div class="msg-cc">cc ${escapeHtml(email.cc)}</div>` : ''}
+        ${replyToDiffers(email) ? `<div class="msg-reply-to">replies go to ${escapeHtml(replyTo)}</div>` : ''}
       </div>
     </div>
 
@@ -182,16 +195,51 @@ function renderMessagePage (email, attachments, { sent, backParam, prevId, nextI
     ${unsubscribedBanner}
     ${attachmentsHtml}
     <pre class="body">${body}</pre>
-    <form method="post" action="/message/${email.id}/reply" class="reply-form">
-      <select name="from">${renderIdentityOptions(identities, email.recipient)}</select>
-      <textarea id="body" name="body" rows="12" placeholder="Reply...">${quotedTextareaContent}</textarea>
+    <div class="reply-open" id="reply-open">
+      <button type="button" id="reply-btn" class="btn-outline" data-cc="">Reply</button>
+      ${replyAllCc ? `<button type="button" id="reply-all-btn" class="btn-outline" data-cc="${escapeHtml(replyAllCc)}">Reply all</button>` : ''}
+      <a href="/message/${email.id}/forward" class="btn-outline">Forward</a>
+    </div>
+    <form method="post" action="/message/${email.id}/reply" class="reply-form" id="reply-form" enctype="multipart/form-data" hidden>
+      <label class="reply-row" for="reply-from">
+        <span class="reply-label">From</span>
+        <select id="reply-from" name="from">${renderIdentityOptions(identities, email.recipient)}</select>
+      </label>
+
+      <label class="reply-row" for="reply-to">
+        <span class="reply-label">To</span>
+        <input type="text" id="reply-to" name="to" autocomplete="off" value="${escapeHtml(replyTo)}">
+        <div class="addr-toggles" id="reply-addr-toggles">
+          <button type="button" id="reply-show-cc">Cc</button>
+          <button type="button" id="reply-show-bcc">Bcc</button>
+        </div>
+      </label>
+
+      <label class="reply-row reply-hidden" for="reply-cc" id="reply-cc-row">
+        <span class="reply-label">Cc</span>
+        <input type="text" id="reply-cc" name="cc" autocomplete="off">
+      </label>
+
+      <label class="reply-row reply-hidden" for="reply-bcc" id="reply-bcc-row">
+        <span class="reply-label">Bcc</span>
+        <input type="text" id="reply-bcc" name="bcc" autocomplete="off">
+      </label>
+
+      <textarea id="body" name="body" rows="12" placeholder="Reply..." data-quote-ts="${email.created_at}">${quotedTextareaContent}</textarea>
+
+      <div class="drop-zone" id="drop-zone">
+        <span class="drop-hint">Drop files, paste, or <button type="button" id="browse-btn">browse</button></span>
+        <input type="file" multiple id="file-input" name="attachments" class="compose-hidden" aria-hidden="true">
+        <ul class="file-list" id="file-list"></ul>
+      </div>
+
       <div class="reply-actions">
-        <button type="submit" name="replyAll" value="0">Send reply</button>
-        ${email.cc ? '<button type="submit" name="replyAll" value="1">Reply all</button>' : ''}
+        <button type="submit" class="btn-outline">Send reply</button>
+        <button type="button" id="reply-cancel" class="btn-text">Cancel</button>
       </div>
     </form>
   </main>
-  <script src="/message.js"></script>
+  <script type="module" src="/message.js"></script>
 <script src="/sw-register.js" defer></script>
 </body>
 </html>`

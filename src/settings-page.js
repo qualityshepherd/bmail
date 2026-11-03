@@ -27,7 +27,7 @@ function renderIdentitiesTab (rawValue) {
     <form method="post" action="/settings/identities">
       <textarea name="identities" rows="5" placeholder="you@example.com,Your Name,https://...
 alias@example.com">${escapeHtml(rawValue)}</textarea>
-      <button type="submit">Save identities</button>
+      <button type="submit" class="btn-outline">Save identities</button>
     </form>
   </section>`
 }
@@ -38,7 +38,7 @@ function renderAppearanceTab (bgImage) {
     <form method="post" action="/settings/appearance">
       <input type="url" name="bg_image" value="${escapeHtml(bgImage)}"
              placeholder="https://example.com/wallpaper.jpg" autocomplete="off">
-      <button type="submit">Save appearance</button>
+      <button type="submit" class="btn-outline">Save appearance</button>
     </form>
     <a href="#" id="clear-cache-link" class="btn-outline">Clear cache &amp; reload</a>
   </section>`
@@ -55,7 +55,7 @@ function renderContactsTab (contactCount, showRemoteAvatars) {
     ${countLine}
     <form method="post" action="/settings/contacts">
       <textarea name="vcf" rows="5" placeholder="BEGIN:VCARD&#10;VERSION:3.0&#10;FN:Jane Smith&#10;EMAIL:jane@example.com&#10;PHOTO;VALUE=URI:https://example.com/jane.jpg&#10;END:VCARD"></textarea>
-      <button type="submit">Import contacts</button>
+      <button type="submit" class="btn-outline">Import contacts</button>
     </form>
     ${contactCount > 0
       ? `<details class="clear-contacts">
@@ -75,7 +75,7 @@ function renderContactsTab (contactCount, showRemoteAvatars) {
         <input type="checkbox" name="showRemoteAvatars" value="1"${showRemoteAvatars ? ' checked' : ''}>
         Load contact avatar images from remote URLs
       </label>
-      <button type="submit">Save</button>
+      <button type="submit" class="btn-outline">Save</button>
     </form>
   </section>`
 }
@@ -97,7 +97,7 @@ function renderFiltersTab (spamText, blockText, catchAllLockdown, knownRecipient
         <input type="checkbox" name="catchAllLockdown" value="1"${catchAllLockdown ? ' checked' : ''}>
         Only accept mail to addresses that have already received real mail
       </label>
-      <button type="submit">Save filters</button>
+      <button type="submit" class="btn-outline">Save filters</button>
     </form>
     <p class="settings-hint pattern-examples">
       <span class="pattern-examples-heading">Patterns</span><br>
@@ -118,7 +118,7 @@ function renderExportTab () {
     <p class="settings-hint">Saves a SQL dump to R2 (<code>backups/bmail-YYYY-MM-DD.sql</code>).
        Runs automatically at 00:42 MDT. Run manually before migrations or anything risky.</p>
     <form method="post" action="/backup/run">
-      <button type="submit">Back up now</button>
+      <button type="submit" class="btn-outline">Back up now</button>
     </form>
   </section>`
 }

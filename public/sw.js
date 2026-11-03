@@ -1,9 +1,10 @@
-const CACHE = 'bmail-v1'
+const CACHE = 'bmail-32dc03dd'
 const STATIC = [
   '/base.css', '/inbox.css', '/message.css', '/compose.css',
   '/settings.css', '/login.css',
   '/inbox.js', '/message.js', '/compose.js', '/settings.js',
   '/login.js', '/sent.js', '/crypto-worker.js', '/sw-register.js',
+  '/attachments.js', '/paste-attach.js',
   '/bmail_logo2.png', '/bmail_36px.png', '/bmail_180px.png'
 ]
 const STATIC_PATHS = new Set(STATIC)

@@ -18,7 +18,7 @@ function contactDatalist (contacts) {
 }
 
 export function renderComposePage (identities, contacts = [], defaults = {}, { identity = null, bgImage = '' } = {}) {
-  const { to = '', subject = '', body = '', isForward = false } = defaults
+  const { to = '', subject = '', body = '', isForward = false, cancelHref = '/inbox' } = defaults
   const pageTitle = isForward ? 'Forward' : 'Compose'
   const heading = isForward ? 'Forward message' : 'New message'
 
@@ -125,7 +125,8 @@ export function renderComposePage (identities, contacts = [], defaults = {}, { i
       </div>
 
       <div class="compose-actions">
-        <button type="submit" id="send-btn">Send</button>
+        <button type="submit" id="send-btn" class="btn-outline">Send</button>
+        <a href="${escapeHtml(cancelHref)}" class="btn-text">Cancel</a>
         <span class="compose-send-error" id="compose-send-error" role="alert"></span>
       </div>
     </form>
@@ -166,7 +167,7 @@ export const handleForwardPage = withAuth(async (req, env, ctx, session, emailId
   const from = email.sender_display ? `${email.sender_display} <${email.sender}>` : email.sender
   const fwdBody = `\n\n---------- Forwarded message ----------\nFrom: ${from}\nDate: ${formatDate(email.created_at)}\nSubject: ${rawSubject}\n\n${email.body || ''}`
 
-  return new Response(renderComposePage(identities, contacts, { subject: fwdSubject, body: fwdBody, isForward: true }, { identity, bgImage: bgImage || '' }), {
+  return new Response(renderComposePage(identities, contacts, { subject: fwdSubject, body: fwdBody, isForward: true, cancelHref: `/message/${emailId}` }, { identity, bgImage: bgImage || '' }), {
     headers: { 'Content-Type': 'text/html; charset=utf-8' }
   })
 })

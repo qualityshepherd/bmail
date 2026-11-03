@@ -4,7 +4,7 @@ import { readFile } from 'node:fs/promises'
 import { fileURLToPath } from 'node:url'
 import { patternMatches, anyPatternMatches } from '../src/match.js'
 import { classifySmsNotification, buildNewMailSmsPayload, buildSmsPauseWarning, SMS_NOTIFICATION_MAX_PER_WINDOW } from '../src/notifications.js'
-import { stripHtml, parseRawEmail, formatSenderDisplay, extractMissingLinks } from '../src/mime.js'
+import { stripHtml, parseRawEmail, formatSenderDisplay, extractMissingLinks, formatAddressList } from '../src/mime.js'
 import { parseHttpUrl } from '../src/unsubscribe-handler.js'
 
 test('patternMatches: exact address match', () => {
@@ -146,6 +146,42 @@ test('parseRawEmail: parses fixture multipart/alternative message', async () => 
   assert.match(parsed.text, /plain text part/)
   assert.match(parsed.html, /<b>HTML<\/b>/)
   assert.equal(parsed.attachments.length, 0)
+})
+
+// Reply-To capture - the whole reason craigslist replies used to vanish.
+test('parseRawEmail: pulls Reply-To off a craigslist-shaped message', async () => {
+  const fixturePath = fileURLToPath(new URL('./fixtures/craigslist-reply.eml', import.meta.url))
+  const raw = await readFile(fixturePath)
+  const parsed = await parseRawEmail(raw)
+
+  assert.equal(parsed.replyTo, '7a3f91c20e4d3b8a9f1e@reply.craigslist.org')
+  assert.equal(parsed.cc, 'Watcher <watcher@example.net>, inbox@bmail.example.com')
+  assert.match(parsed.subject, /Vintage Tascam/)
+})
+
+// fromAddress - the header's own From address, separate from the envelope
+// sender (which the pipeline gets from Cloudflare, not from parsing).
+test('parseRawEmail: fromAddress is the header From, not just the display name', async () => {
+  const fixturePath = fileURLToPath(new URL('./fixtures/simple-alternative.eml', import.meta.url))
+  const raw = await readFile(fixturePath)
+  const parsed = await parseRawEmail(raw)
+  assert.equal(parsed.fromAddress, 'alice@example.com')
+})
+
+test('parseRawEmail: no Reply-To header gives null, not an empty string', async () => {
+  const fixturePath = fileURLToPath(new URL('./fixtures/simple-alternative.eml', import.meta.url))
+  const raw = await readFile(fixturePath)
+  const parsed = await parseRawEmail(raw)
+  assert.equal(parsed.replyTo, null)
+})
+
+test('formatAddressList: name + address pairs, bare addresses, and empty', () => {
+  assert.equal(
+    formatAddressList([{ name: 'Jane Doe', address: 'jane@example.com' }, { name: '', address: 'bob@example.com' }]),
+    'Jane Doe <jane@example.com>, bob@example.com'
+  )
+  assert.equal(formatAddressList([]), null)
+  assert.equal(formatAddressList(undefined), null)
 })
 
 // formatSenderDisplay - display-only, never used for security decisions

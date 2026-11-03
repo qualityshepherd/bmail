@@ -65,6 +65,23 @@ export function formatSenderDisplay (from) {
   return from.name
 }
 
+// postal-mime Address[] → the comma-separated TEXT that D1 stores.
+export function formatAddressList (addresses) {
+  return (addresses || [])
+    .map((a) => a.name ? `${a.name} <${a.address}>` : a.address)
+    .filter(Boolean)
+    .join(', ') || null
+}
+
+// postal-mime drops Reply-To entirely if its address-grammar parser can't
+// make sense of the value (no error, just absent from parsed.replyTo) - seen
+// with some real-world relay addresses. Grab the raw header text as a
+// fallback so a parser miss doesn't mean we silently lose the address.
+function rawHeader (headers, key) {
+  const match = (headers || []).find((h) => h.key === key)
+  return match ? match.value.trim() || null : null
+}
+
 // Parses a raw MIME stream into the shape the ingestion pipeline expects.
 // message.raw is a ReadableStream; postal-mime accepts a stream, ArrayBuffer,
 // or Blob directly.
@@ -87,7 +104,14 @@ export async function parseRawEmail (raw) {
     messageId: parsed.messageId || null,
     inReplyTo: parsed.inReplyTo || null,
     senderDisplay: formatSenderDisplay(parsed.from),
-    cc: (parsed.cc || []).map((a) => a.name ? `${a.name} <${a.address}>` : a.address).join(', ') || null,
+    // The header From address, not the envelope. `sender` elsewhere in the
+    // app IS the envelope (message.from) - right for spoofing-resistant
+    // blocklist checks, wrong for replies. Bounce-safe senders (craigslist
+    // included) use a different envelope than header From on purpose.
+    fromAddress: (parsed.from && parsed.from.address) ? parsed.from.address.trim() : null,
+    cc: formatAddressList(parsed.cc),
+    // Craigslist & co. put a bounce address in From, the real one here.
+    replyTo: formatAddressList(parsed.replyTo) || rawHeader(parsed.headers, 'reply-to'),
     attachments: (parsed.attachments || []).map((attachment) => ({
       filename: attachment.filename || 'attachment',
       contentType: attachment.mimeType || 'application/octet-stream',

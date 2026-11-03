@@ -84,7 +84,9 @@ export async function ingestEmail ({ message, env }) {
       dmarcResult,
       createdAt: Date.now(),
       senderDisplay: parsed.senderDisplay,
+      fromAddress: parsed.fromAddress,
       cc: parsed.cc,
+      replyTo: parsed.replyTo,
       status: isSpam ? 'spam' : 'inbox'
     })
   } catch (err) {

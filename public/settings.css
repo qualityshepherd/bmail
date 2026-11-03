@@ -157,27 +157,9 @@
   margin: 0.75rem 0;
 }
 
-.settings-section button,
-.settings-section .btn-outline {
-  display: inline-block;
-  margin-top: 1rem;
-  background: transparent;
-  border: 1px solid var(--accent);
-  color: var(--accent-bright);
-  font-family: inherit;
-  font-size: 1rem;
-  font-weight: 600;
-  padding: 0.6rem 1.5rem;
-  border-radius: 6px;
-  cursor: pointer;
-  text-decoration: none;
-}
-
-.settings-section button:hover,
-.settings-section .btn-outline:hover {
-  border-color: var(--accent-bright);
-  color: var(--text);
-}
+/* .btn-outline itself now lives in base.css - this just adds the
+   settings-specific top margin every button in a section needs. */
+.settings-section .btn-outline { margin-top: 1rem; }
 
 .clear-contacts { margin-top: 2rem; }
 
@@ -208,9 +190,17 @@
   flex: 1;
 }
 
+/* Destructive variant - deliberately not .btn-outline (filled, no border,
+   never used elsewhere), so it needs its own full button reset rather than
+   leaning on a base .settings-section button rule. */
 .clear-contacts form button {
-  margin-top: 0;
   background: #7a2020;
+  border: none;
+  color: var(--accent-bright);
+  font-family: inherit;
+  font-weight: 600;
+  border-radius: 6px;
+  cursor: pointer;
   flex-shrink: 0;
   font-size: 0.85rem;
   padding: 0.4rem 1rem;

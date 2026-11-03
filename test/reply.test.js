@@ -1,9 +1,123 @@
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
+import { readFile } from 'node:fs/promises'
+import { fileURLToPath } from 'node:url'
 import {
   sanitizeHeaderValue, buildReplySubject, buildReplyMimeMessage,
-  generateMessageId, extractDomain, buildQuotedReplyText
+  generateMessageId, extractDomain, buildQuotedReplyText,
+  resolveReplyTo, replyToDiffers
 } from '../src/reply.js'
+import { parseRawEmail } from '../src/mime.js'
+
+// Builds the same row shape insertEmail/getEmailById deal in, but from a
+// real .eml through the real parser - no hand-written reply_to values.
+async function rowFromFixture (name, recipient = 'inbox@bmail.example.com') {
+  const raw = await readFile(fileURLToPath(new URL(`./fixtures/${name}`, import.meta.url)))
+  const parsed = await parseRawEmail(raw)
+  return {
+    sender: name === 'craigslist-reply.eml' ? 'no-reply@craigslist.org' : 'alice@example.com',
+    recipient,
+    subject: parsed.subject,
+    body: parsed.text,
+    message_id: parsed.messageId,
+    cc: parsed.cc,
+    reply_to: parsed.replyTo,
+    from_address: parsed.fromAddress
+  }
+}
+
+// resolveReplyTo - the craigslist bug
+test('resolveReplyTo: craigslist fixture resolves to the anonymized address, not the From', async () => {
+  const email = await rowFromFixture('craigslist-reply.eml')
+  assert.equal(resolveReplyTo(email), '7a3f91c20e4d3b8a9f1e@reply.craigslist.org')
+  assert.notEqual(resolveReplyTo(email), email.sender)
+})
+
+test('resolveReplyTo: no Reply-To falls back to the sender', async () => {
+  const email = await rowFromFixture('simple-alternative.eml')
+  assert.equal(email.reply_to, null)
+  assert.equal(resolveReplyTo(email), 'alice@example.com')
+})
+
+test('resolveReplyTo: keeps a multi-address Reply-To list intact', () => {
+  const email = { sender: 'bounce@list.example', reply_to: 'A <a@example.com>, b@example.com' }
+  assert.equal(resolveReplyTo(email), 'A <a@example.com>, b@example.com')
+})
+
+test('resolveReplyTo: garbage Reply-To falls back to the sender', () => {
+  assert.equal(resolveReplyTo({ sender: 'real@example.com', reply_to: 'not-an-address' }), 'real@example.com')
+  assert.equal(resolveReplyTo({ sender: 'real@example.com', reply_to: '' }), 'real@example.com')
+})
+
+test('resolveReplyTo: never returns undefined', () => {
+  assert.equal(resolveReplyTo(null), '')
+  assert.equal(resolveReplyTo({}), '')
+})
+
+// The real bug: no Reply-To header at all, but the envelope sender (used
+// for blocklist matching) isn't the same address as the header From (the
+// one a human should actually reply to). Bounce-safe senders do this on
+// purpose - craigslist included.
+test('resolveReplyTo: no Reply-To, envelope and header From differ - uses header From', () => {
+  const email = {
+    sender: 'bounce-anon-me=brine.dev@reply.craigslist.org', // envelope
+    from_address: 'rcc9la26d7534400a6a03514c34f9200@reply.craigslist.org', // header From
+    reply_to: null
+  }
+  assert.equal(resolveReplyTo(email), 'rcc9la26d7534400a6a03514c34f9200@reply.craigslist.org')
+})
+
+test('resolveReplyTo: Reply-To still beats header From when both are present', () => {
+  const email = {
+    sender: 'bounce@example.org',
+    from_address: 'from-header@example.org',
+    reply_to: 'actual-human@example.org'
+  }
+  assert.equal(resolveReplyTo(email), 'actual-human@example.org')
+})
+
+test('resolveReplyTo: garbage header From falls through to the envelope sender', () => {
+  assert.equal(resolveReplyTo({ sender: 'real@example.com', from_address: 'not-an-address' }), 'real@example.com')
+  assert.equal(resolveReplyTo({ sender: 'real@example.com', from_address: null }), 'real@example.com')
+})
+
+// replyToDiffers - drives the "replies go to ..." line in the message view
+test('replyToDiffers: true for the craigslist fixture', async () => {
+  assert.equal(replyToDiffers(await rowFromFixture('craigslist-reply.eml')), true)
+})
+
+test('replyToDiffers: false with no Reply-To', async () => {
+  assert.equal(replyToDiffers(await rowFromFixture('simple-alternative.eml')), false)
+})
+
+test('replyToDiffers: false when Reply-To just restates the From', () => {
+  assert.equal(replyToDiffers({ sender: 'alice@example.com', reply_to: 'Alice <alice@example.com>' }), false)
+  assert.equal(replyToDiffers({ sender: 'alice@example.com', reply_to: 'ALICE@EXAMPLE.COM' }), false)
+})
+
+test('replyToDiffers: true when Reply-To adds a second address alongside the From', () => {
+  assert.equal(replyToDiffers({ sender: 'alice@example.com', reply_to: 'alice@example.com, list@example.net' }), true)
+})
+
+test('replyToDiffers: unparseable Reply-To is not announced', () => {
+  assert.equal(replyToDiffers({ sender: 'alice@example.com', reply_to: 'junk' }), false)
+})
+
+test('replyToDiffers: true when only the header From differs from the envelope (no Reply-To at all)', () => {
+  const email = {
+    sender: 'bounce-anon-me=brine.dev@reply.craigslist.org',
+    from_address: 'rcc9la26d7534400a6a03514c34f9200@reply.craigslist.org',
+    reply_to: null
+  }
+  assert.equal(replyToDiffers(email), true)
+})
+
+// Reply-To is attacker-controlled - it must not survive into a header line.
+test('resolveReplyTo + buildReplyMimeMessage: a CRLF in Reply-To cannot inject a header', () => {
+  const to = resolveReplyTo({ sender: 'x@example.com', reply_to: 'evil@example.com\r\nBcc: attacker@evil.com' })
+  const msg = buildReplyMimeMessage({ from: 'me@bmail.example.com', to, subject: 'Re: Hi', body: 'no' })
+  assert.equal(msg.includes('Bcc:'), false)
+})
 
 // sanitizeHeaderValue - the actual header-injection defense
 test('sanitizeHeaderValue: strips CRLF', () => {

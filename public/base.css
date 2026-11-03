@@ -128,6 +128,39 @@ h1 a:hover { color: var(--accent); }
   color: var(--accent-bright);
 }
 
+/* ─── Shared buttons ──────────────────────────────────────── */
+.btn-outline {
+  display: inline-block;
+  background: transparent;
+  border: 1px solid var(--accent);
+  color: var(--accent-bright);
+  font-family: inherit;
+  font-size: 1rem;
+  font-weight: 600;
+  padding: 0.6rem 1.5rem;
+  border-radius: 6px;
+  cursor: pointer;
+  text-decoration: none;
+}
+
+.btn-outline:hover {
+  border-color: var(--accent-bright);
+  color: var(--text);
+}
+
+.btn-text {
+  background: none;
+  border: none;
+  color: var(--text-dim);
+  font-family: inherit;
+  font-size: 0.95rem;
+  cursor: pointer;
+  padding: 0;
+  text-decoration: none;
+}
+
+.btn-text:hover { color: var(--accent-bright); }
+
 /* ─── Shared page panel ───────────────────────────────────── */
 .page-wrap,
 .message,

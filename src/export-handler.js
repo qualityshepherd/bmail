@@ -21,6 +21,7 @@ function inboundToMbox (email) {
   msg += `From: ${from}\n`
   msg += `To: ${email.recipient}\n`
   if (email.cc) msg += `Cc: ${email.cc}\n`
+  if (email.reply_to) msg += `Reply-To: ${email.reply_to}\n`
   if (email.message_id) msg += `Message-ID: ${email.message_id}\n`
   if (email.in_reply_to) msg += `In-Reply-To: ${email.in_reply_to}\n`
   msg += `Subject: ${email.subject || ''}\n`
@@ -66,7 +67,7 @@ export async function buildMbox (db) {
 
   const [{ results: inbound }, { results: outbound }] = await Promise.all([
     db.prepare(
-      'SELECT sender, sender_display, recipient, subject, body, message_id, in_reply_to, cc, created_at, read FROM emails ORDER BY created_at ASC'
+      'SELECT sender, sender_display, recipient, subject, body, message_id, in_reply_to, cc, reply_to, created_at, read FROM emails ORDER BY created_at ASC'
     ).all(),
     db.prepare(
       'SELECT from_address, to_address, cc_address, bcc_address, subject, body, message_id, in_reply_to, created_at FROM sent ORDER BY created_at ASC'

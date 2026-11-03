@@ -1,3 +1,5 @@
+import { parseAddressList, looksLikeAddress, extractEmail } from './html.js'
+
 // Strips CR/LF from any value that will be interpolated into a raw MIME
 // header line. Without this, a crafted subject or sender address (both
 // attacker-controlled - anyone can email you anything) could inject
@@ -5,6 +7,26 @@
 // Same category of bug as escapeHtml() in html.js, different syntax.
 export function sanitizeHeaderValue (value) {
   return String(value || '').replace(/[\r\n]/g, ' ')
+}
+
+// Reply-To wins, then the header From address, then envelope sender as a
+// last resort. `email.sender` is the SMTP envelope - good for blocklist
+// checks, bad for replies, since bounce-safe senders (craigslist included)
+// deliberately run a different envelope than their header From.
+export function resolveReplyTo (email) {
+  if (!email) return ''
+  const replyTo = parseAddressList(email.reply_to).filter(looksLikeAddress)
+  if (replyTo.length) return replyTo.join(', ')
+  if (email.from_address && looksLikeAddress(email.from_address)) return email.from_address
+  return email.sender || ''
+}
+
+// Worth telling the user about - the reply isn't going where the From row says.
+export function replyToDiffers (email) {
+  if (!email) return false
+  const resolved = parseAddressList(resolveReplyTo(email)).map(extractEmail)
+  const senderBare = extractEmail(email.sender)
+  return resolved.length > 0 && !(resolved.length === 1 && resolved[0] === senderBare)
 }
 
 export function buildReplySubject (originalSubject) {

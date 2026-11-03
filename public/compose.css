@@ -219,24 +219,9 @@
   margin-top: 1.25rem;
 }
 
-.compose-actions button[type="submit"] {
-  background: transparent;
-  border: 1px solid var(--accent);
-  color: var(--accent-bright);
-  font-family: inherit;
-  font-size: 1rem;
-  font-weight: 600;
-  padding: 0.65rem 1.5rem;
-  border-radius: 6px;
-  cursor: pointer;
-}
-
-.compose-actions button[type="submit"]:hover {
-  border-color: var(--accent-bright);
-  color: var(--text);
-}
-
-.compose-actions button[type="submit"]:disabled {
+/* Button/link styling itself is .btn-outline / .btn-text (base.css) now -
+   this is just the :disabled state, specific to actually sending. */
+#send-btn:disabled {
   opacity: 0.5;
   cursor: default;
 }

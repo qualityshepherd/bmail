@@ -1,5 +1,87 @@
+import { setupAttachments } from './attachments.js'
+
 const replyBody = document.getElementById('body')
-const replyForm = document.querySelector('.reply-form')
+const replyForm = document.getElementById('reply-form')
+
+// Same picker Compose uses - drag-drop, paste, browse. The shared module
+// keeps the real file input synced via DataTransfer, so this plain-POST
+// form just carries the right files without any extra submit handling.
+setupAttachments({
+  fileInput: document.getElementById('file-input'),
+  browseBtn: document.getElementById('browse-btn'),
+  fileList: document.getElementById('file-list'),
+  maxFileBytes: 15 * 1024 * 1024,
+  maxTotalBytes: 40 * 1024 * 1024,
+  onError: (msg) => alert(msg)
+})
+
+// ─── Local time ───────────────────────────────────────────
+// Dates render server-side in the Worker's clock (UTC), wrong for anyone not
+// in UTC. Same fix as inbox.js: swap in the real local time on load.
+function localizeTitle (ts) {
+  return new Date(Number(ts)).toLocaleString(undefined, {
+    month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit'
+  })
+}
+
+const msgDate = document.querySelector('.msg-date[data-ts]')
+if (msgDate) msgDate.textContent = localizeTitle(msgDate.dataset.ts)
+
+if (replyBody && replyBody.dataset.quoteTs) {
+  replyBody.value = replyBody.value.replace('__QUOTE_DATE__', localizeTitle(replyBody.dataset.quoteTs))
+}
+
+// ─── Reply disclosure ─────────────────────────────────────
+// Reply all is just Reply with data-cc pre-filled - the server sees one shape.
+const replyOpen = document.getElementById('reply-open')
+const replyCcRow = document.getElementById('reply-cc-row')
+const replyCc = document.getElementById('reply-cc')
+
+function openReply (cc) {
+  if (!replyForm) return
+  replyForm.hidden = false
+  if (replyOpen) replyOpen.hidden = true
+  if (cc && replyCc && replyCcRow) {
+    replyCc.value = cc
+    replyCcRow.classList.remove('reply-hidden')
+    const btn = document.getElementById('reply-show-cc')
+    if (btn) btn.remove()
+  }
+  if (replyBody) {
+    replyBody.focus()
+    // Caret above the quote, not below it.
+    replyBody.setSelectionRange(0, 0)
+    replyBody.scrollTop = 0
+  }
+}
+
+for (const id of ['reply-btn', 'reply-all-btn']) {
+  const btn = document.getElementById(id)
+  if (btn) btn.addEventListener('click', () => openReply(btn.dataset.cc))
+}
+
+const replyCancel = document.getElementById('reply-cancel')
+if (replyCancel && replyForm) {
+  replyCancel.addEventListener('click', () => {
+    replyForm.hidden = true
+    if (replyOpen) replyOpen.hidden = false
+  })
+}
+
+// Cc / Bcc toggles - same shape as compose.js
+function showReplyRow (rowId, btnId) {
+  const row = document.getElementById(rowId)
+  const btn = document.getElementById(btnId)
+  if (!row || !btn) return
+  btn.addEventListener('click', () => {
+    row.classList.remove('reply-hidden')
+    btn.remove()
+    const input = row.querySelector('input')
+    if (input) input.focus()
+  })
+}
+showReplyRow('reply-cc-row', 'reply-show-cc')
+showReplyRow('reply-bcc-row', 'reply-show-bcc')
 
 if (replyBody && replyForm) {
   replyBody.addEventListener('keydown', (e) => {

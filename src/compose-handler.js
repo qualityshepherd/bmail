@@ -6,17 +6,7 @@ import { sendEmail } from './mailer.js'
 import { escapeHtml, parseAddressList, looksLikeAddress } from './html.js'
 import { isRateLimited, SEND_RATE_LIMIT_MAX_ATTEMPTS, SEND_RATE_LIMIT_WINDOW_MS } from './auth.js'
 import { getRateLimit, incrementRateLimit } from './db-auth.js'
-
-const MAX_ATTACHMENT_BYTES = 15 * 1024 * 1024
-const MAX_TOTAL_BYTES = 40 * 1024 * 1024
-
-async function fileToBase64 (file) {
-  const buf = await file.arrayBuffer()
-  const bytes = new Uint8Array(buf)
-  let binary = ''
-  for (let i = 0; i < bytes.length; i++) binary += String.fromCharCode(bytes[i])
-  return btoa(binary)
-}
+import { buildAttachments } from './attachment-upload.js'
 
 export const handleCompose = withAuth(async (req, env, ctx, session) => {
   // A stolen session is still a bearer credential - bound how much mail it
@@ -56,20 +46,12 @@ export const handleCompose = withAuth(async (req, env, ctx, session) => {
     return new Response('From address is not a configured identity', { status: 400 })
   }
 
-  const oversized = files.find((f) => f.size > MAX_ATTACHMENT_BYTES)
-  if (oversized) {
-    return new Response(`Attachment "${oversized.name}" exceeds 15MB`, { status: 400, headers: { 'Content-Type': 'text/plain; charset=utf-8' } })
+  let attachments
+  try {
+    attachments = await buildAttachments(files)
+  } catch (err) {
+    return new Response(err.message, { status: 400, headers: { 'Content-Type': 'text/plain; charset=utf-8' } })
   }
-  const totalSize = files.reduce((s, f) => s + f.size, 0)
-  if (totalSize > MAX_TOTAL_BYTES) {
-    return new Response('Total attachments exceed 40MB', { status: 400 })
-  }
-
-  const attachments = await Promise.all(files.map(async (f) => ({
-    filename: f.name,
-    content: await fileToBase64(f),
-    type: f.type || 'application/octet-stream'
-  })))
 
   const messageId = generateMessageId(extractDomain(from))
 

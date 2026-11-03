@@ -1,11 +1,12 @@
 import { withAuth } from './auth-routes.js'
 import { getEmailById, buildReferencesChain, insertSent, updateSentStatus, getSetting } from './db.js'
-import { buildReplySubject, generateMessageId, extractDomain } from './reply.js'
+import { buildReplySubject, generateMessageId, extractDomain, resolveReplyTo } from './reply.js'
 import { sendEmail } from './mailer.js'
-import { escapeHtml, parseAddressList, extractEmail } from './html.js'
+import { escapeHtml, parseAddressList, looksLikeAddress } from './html.js'
 import { parseIdentities, findIdentityByAddress } from './identities.js'
 import { isRateLimited, SEND_RATE_LIMIT_MAX_ATTEMPTS, SEND_RATE_LIMIT_WINDOW_MS } from './auth.js'
 import { getRateLimit, incrementRateLimit } from './db-auth.js'
+import { buildAttachments } from './attachment-upload.js'
 
 export const handleReply = withAuth(async (req, env, ctx, session, emailId) => {
   // Shares the send_attempts bucket with /compose - the thing being bounded
@@ -23,7 +24,13 @@ export const handleReply = withAuth(async (req, env, ctx, session, emailId) => {
   const formData = await req.formData()
   const body = (formData.get('body') || '').toString()
   const from = (formData.get('from') || email.recipient || '').toString().trim()
-  const replyAll = formData.get('replyAll') === '1'
+  const files = formData.getAll('attachments').filter((f) => f instanceof File && f.size > 0)
+
+  // To is editable, so the form wins; resolve only as a fallback.
+  const rawTo = (formData.get('to') || '').toString().trim()
+  const toList = parseAddressList(rawTo || resolveReplyTo(email))
+  const ccList = parseAddressList(formData.get('cc'))
+  const bccList = parseAddressList(formData.get('bcc'))
 
   const identities = parseIdentities(await getSetting(env.DB, 'identities'))
   if (!findIdentityByAddress(identities, from)) {
@@ -34,13 +41,20 @@ export const handleReply = withAuth(async (req, env, ctx, session, emailId) => {
     return new Response(null, { status: 302, headers: { Location: `/message/${emailId}` } })
   }
 
-  // Reply-all: CC everyone from the original CC list except ourselves
-  let ccList
-  if (replyAll && email.cc) {
-    const fromBare = extractEmail(from).toLowerCase()
-    ccList = parseAddressList(email.cc).filter(
-      (addr) => extractEmail(addr).toLowerCase() !== fromBare
-    )
+  if (toList.length === 0) {
+    return new Response('To is required', { status: 400, headers: { 'Content-Type': 'text/plain; charset=utf-8' } })
+  }
+
+  const badAddr = [...toList, ...ccList, ...bccList].find((a) => !looksLikeAddress(a))
+  if (badAddr) {
+    return new Response(`Invalid address: ${badAddr}`, { status: 400, headers: { 'Content-Type': 'text/plain; charset=utf-8' } })
+  }
+
+  let attachments
+  try {
+    attachments = await buildAttachments(files)
+  } catch (err) {
+    return new Response(err.message, { status: 400, headers: { 'Content-Type': 'text/plain; charset=utf-8' } })
   }
 
   const references = await buildReferencesChain(env.DB, email)
@@ -50,8 +64,9 @@ export const handleReply = withAuth(async (req, env, ctx, session, emailId) => {
   const sentId = await insertSent(env.DB, {
     messageId,
     fromAddress: from,
-    toAddress: email.sender,
-    ccAddress: ccList && ccList.length ? ccList.join(', ') : null,
+    toAddress: toList.join(', '),
+    ccAddress: ccList.length ? ccList.join(', ') : null,
+    bccAddress: bccList.length ? bccList.join(', ') : null,
     subject,
     body,
     inReplyTo: email.message_id,
@@ -61,13 +76,15 @@ export const handleReply = withAuth(async (req, env, ctx, session, emailId) => {
   try {
     await sendEmail(env, {
       from,
-      to: email.sender,
-      cc: ccList && ccList.length ? ccList : undefined,
+      to: toList,
+      cc: ccList.length ? ccList : undefined,
+      bcc: bccList.length ? bccList : undefined,
       subject,
       text: body,
       messageId,
       inReplyTo: email.message_id,
-      references
+      references,
+      attachments: attachments.length ? attachments : undefined
     })
     await updateSentStatus(env.DB, sentId, 'sent')
   } catch (err) {
