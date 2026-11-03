@@ -69,7 +69,7 @@ CF dashboard → R2 → your bucket → Settings → Lifecycle rules. Add a rule
 
 ### Auth setup
 
-Deploying with a blank `AUTH_PUBKEY` displays the setup form. Pick a passphrase; something memorable. A movie quote is good! Copy the `AUTH_PUBKEY` into `wrangler.toml` and redeploy.
+Deploying with a blank `AUTH_PUBKEY` displays the setup form. Pick a long, memorable passphrase. An obscure and/or paraphrased movie quote is a good option. Nothing well known. Copy the `AUTH_PUBKEY` into `wrangler.toml` and redeploy.
 
 The phrase NEVER leaves your browser and is never stored. If you forget, deploy with a blank pubkey and repeat the process. 
 

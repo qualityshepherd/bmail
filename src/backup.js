@@ -17,11 +17,12 @@ async function dumpTable (db, table, cols) {
 
 // emails must come before attachments (FK: email_id → emails.id)
 const TABLES = [
-  ['emails', ['id', 'sender', 'recipient', 'subject', 'body', 'message_id', 'in_reply_to', 'created_at', 'sender_display', 'starred', 'status', 'status_changed_at', 'read', 'tags', 'cc', 'dmarc_result']],
+  ['emails', ['id', 'sender', 'recipient', 'subject', 'body', 'message_id', 'in_reply_to', 'created_at', 'sender_display', 'starred', 'status', 'status_changed_at', 'read', 'tags', 'cc', 'list_unsubscribe', 'list_unsubscribe_post', 'dmarc_result']],
   ['attachments', ['id', 'email_id', 'filename', 'content_type', 'r2_key', 'size']],
   ['sent', ['id', 'message_id', 'from_address', 'to_address', 'subject', 'body', 'in_reply_to', 'created_at', 'cc_address', 'bcc_address', 'send_status', 'send_error']],
   ['blocklist', ['id', 'pattern']],
-
+  ['spamlist', ['id', 'pattern']],
+  ['known_recipients', ['address', 'first_seen']],
   ['contacts', ['email', 'name', 'avatar_url']],
   ['settings', ['key', 'value']]
 ]
@@ -29,6 +30,7 @@ const TABLES = [
 async function writeBackup (env) {
   const date = new Date().toISOString().slice(0, 10)
   let sql = `-- Bmail backup ${date}\n`
+  sql += '-- D1 data only: attachment blobs are stored separately in R2 and are not included.\n'
   sql += '-- Restore: wrangler d1 migrations apply bmail --remote\n'
   sql += '--          wrangler d1 execute bmail --remote --file=this-file.sql\n\n'
   sql += 'PRAGMA foreign_keys = OFF;\n\n'

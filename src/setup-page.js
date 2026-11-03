@@ -11,13 +11,12 @@ export function renderSetupPage () {
   <h1>Bmail Setup</h1>
   <p class="warn">
     <strong>Your key never leaves this browser, and nothing is saved anywhere.</strong><br>
-    Pick a sentence only you would think of. The weirder and longer, the better - your
-    favorite obscure movie quote is perfect. "Password" is not. You'll type this same
+    Pick a sentence only you would think of. The weirder and longer, the better. An obscure and/or paraphrased movie quote works well. "Password" is not. You'll type this same
     passphrase again every time you log in, so remember it (a password manager is fine).
   </p>
 
   <label for="passphrase">your passphrase</label>
-  <input id="passphrase" type="text" placeholder="yeah well that's just like your opinion man" autocomplete="off" spellcheck="false">
+  <input id="passphrase" type="text" placeholder="a phrase only you would remember" autocomplete="off" spellcheck="false">
 
   <button id="generate">Generate keypair</button>
 

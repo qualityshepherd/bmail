@@ -2,7 +2,7 @@ const SCORE_COLORS = ['#c06060', '#b08040', '#b08040', '#6a9a6a', '#6a9a6a']
 const SCORE_FLAVORS = [
   'your dog could guess this',
   'a bored 12-year-old could crack this',
-  'mediocre. try a movie quote',
+  'mediocre. try an obscure, paraphrased movie quote',
   'not bad. a determined nerd might get there',
   'heat death of the universe. nice.'
 ]

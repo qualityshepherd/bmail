@@ -15,6 +15,10 @@ export function parseMailto (mailtoUrl) {
 
 const isPrivateOrReservedHost = (hostname) => {
   const h = hostname.toLowerCase()
+  // URL.hostname preserves square brackets around IPv6 literals. Reject all
+  // literal IPv6 targets rather than risk missing a private/reserved form
+  // (including IPv4-mapped IPv6). Domain-name targets remain supported.
+  if (h.startsWith('[') && h.endsWith(']')) return true
   if (h === 'localhost') return true
   const ipv4 = h.match(/^(\d{1,3})\.(\d{1,3})\.(\d{1,3})\.(\d{1,3})$/)
   if (ipv4) {
@@ -30,8 +34,8 @@ const isPrivateOrReservedHost = (hostname) => {
 }
 
 // The URL comes from an email, so treat it as hostile: http(s) only, never
-// a literal private/reserved IP. Doesn't catch DNS rebinding, just the
-// obvious literal-IP payloads.
+// a literal IP that could target a local/private service. Literal IPv6 is
+// blocked entirely; DNS rebinding is still outside this check's scope.
 export const isFetchableUnsubscribeUrl = (url) => {
   let parsed
   try { parsed = new URL(url) } catch { return false }

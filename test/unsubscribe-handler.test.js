@@ -43,6 +43,13 @@ test('isFetchableUnsubscribeUrl: rejects the cloud metadata address', () => {
   assert.equal(isFetchableUnsubscribeUrl('http://169.254.169.254/latest/meta-data'), false)
 })
 
+test('isFetchableUnsubscribeUrl: rejects IPv6 literals, including loopback and private ranges', () => {
+  assert.equal(isFetchableUnsubscribeUrl('http://[::1]/unsub'), false)
+  assert.equal(isFetchableUnsubscribeUrl('http://[fd00::1]/unsub'), false)
+  assert.equal(isFetchableUnsubscribeUrl('http://[fe80::1]/unsub'), false)
+  assert.equal(isFetchableUnsubscribeUrl('https://[2001:4860:4860::8888]/unsub'), false)
+})
+
 test('isFetchableUnsubscribeUrl: rejects an invalid URL', () => {
   assert.equal(isFetchableUnsubscribeUrl('not a url'), false)
 })
