@@ -1,7 +1,7 @@
 import { withAuth } from './auth-routes.js'
 import { getEmailById, getAttachmentsByEmailId, markRead, getAdjacentEmailId, getSetting, getAllTags } from './db.js'
 import { getContactsByEmails } from './db-contacts.js'
-import { escapeHtml, linkify, formatDate, formatBytes, avatarHue, avatarInitials, renderSettingsMenu, parseAddressList, extractEmail } from './html.js'
+import { escapeHtml, linkify, formatDate, formatBytes, avatarHue, avatarInitials, renderSettingsMenu, parseAddressList, extractEmail, safeRedirect } from './html.js'
 import { buildQuotedReplyText, resolveReplyTo, replyToDiffers } from './reply.js'
 import { resolveEffectiveQuery, parseTags, formatTags } from './search.js'
 import { parseIdentities, getDefaultIdentity } from './identities.js'
@@ -76,13 +76,10 @@ function renderMessagePage (email, attachments, { sent, backParam, prevId, nextI
     <a href="${prevHref || '#'}" class="nav-btn${prevHref ? '' : ' disabled'}" id="prev-btn" aria-label="Previous">&larr;</a>
     <a href="${nextHref || '#'}" class="nav-btn${nextHref ? '' : ' disabled'}" id="next-btn" aria-label="Next">&rarr;</a>`
 
-  // Pre-filled into the textarea, editable/trimmable by the user before
-  // sending - not appended invisibly at send time. escapeHtml here matters:
-  // the quoted body is attacker-controlled (the original email's own text),
-  // and a literal "</textarea>" in it would otherwise break out of the field.
-  // Date is a placeholder, not the real date - this renders on the Worker
-  // (UTC), so the actual local time gets swapped in client-side (message.js)
-  // using data-quote-ts, same as msg-date above.
+  // Pre-filled, editable - escapeHtml matters since the quoted body is
+  // attacker-controlled and a literal </textarea> would break out.
+  // Date is a placeholder - this renders on the Worker (UTC), swapped to
+  // local time client-side via data-quote-ts.
   const quote = buildQuotedReplyText({
     senderDisplay: email.sender_display,
     sender: email.sender,
@@ -254,8 +251,7 @@ export const handleMessageView = withAuth(async (req, env, ctx, session, emailId
   const url = new URL(req.url)
   const sent = url.searchParams.get('sent') === '1'
   const unsubscribed = url.searchParams.get('unsubscribed') || ''
-  const rawBack = url.searchParams.get('back') || ''
-  const backParam = (rawBack.startsWith('/') && !rawBack.startsWith('//')) ? rawBack : DEFAULT_BACK
+  const backParam = safeRedirect(url.searchParams.get('back'), DEFAULT_BACK)
 
   // backParam is a full path like "/inbox?q=status%3Aarchive" - extract
   // just the query text to resolve filters, but keep backParam itself

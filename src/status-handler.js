@@ -1,5 +1,6 @@
 import { withAuth } from './auth-routes.js'
 import { getEmailById, setStatus, getSpamPatterns, setSpamlist } from './db.js'
+import { safeRedirect } from './html.js'
 
 const VALID_STATUSES = new Set(['inbox', 'archive', 'spam', 'trash'])
 
@@ -23,6 +24,6 @@ export const handleStatusChange = withAuth(async (req, env, ctx, session, emailI
   const formBack = (formData.get('back') || '').toString()
   return new Response(null, {
     status: 302,
-    headers: { Location: (formBack.startsWith('/') && !formBack.startsWith('//')) ? formBack : '/inbox' }
+    headers: { Location: safeRedirect(formBack, '/inbox') }
   })
 })

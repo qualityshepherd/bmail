@@ -1,5 +1,6 @@
 import { withAuth } from './auth-routes.js'
 import { getEmailById, setStarred } from './db.js'
+import { safeRedirect } from './html.js'
 
 export const handleStarToggle = withAuth(async (req, env, ctx, session, emailId) => {
   const email = await getEmailById(env.DB, emailId)
@@ -9,10 +10,8 @@ export const handleStarToggle = withAuth(async (req, env, ctx, session, emailId)
 
   const formData = await req.formData()
   const back = (formData.get('back') || '').toString()
-  const location = (back.startsWith('/') && !back.startsWith('//')) ? back : `/message/${emailId}`
-
   return new Response(null, {
     status: 302,
-    headers: { Location: location }
+    headers: { Location: safeRedirect(back, `/message/${emailId}`) }
   })
 })

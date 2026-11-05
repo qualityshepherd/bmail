@@ -1,5 +1,6 @@
 import { withAuth } from './auth-routes.js'
 import { getAttachmentR2Keys, deleteEmailsByIds } from './db.js'
+import { safeRedirect } from './html.js'
 
 export const handleEmptySpam = withAuth(async (req, env) => {
   const { results } = await env.DB.prepare("SELECT id FROM emails WHERE status = 'spam'").all()
@@ -15,6 +16,6 @@ export const handleEmptySpam = withAuth(async (req, env) => {
   const back = (formData.get('back') || '').toString()
   return new Response(null, {
     status: 302,
-    headers: { Location: (back.startsWith('/') && !back.startsWith('//')) ? back : '/inbox?q=spam%3A' }
+    headers: { Location: safeRedirect(back, '/inbox?q=spam%3A') }
   })
 })

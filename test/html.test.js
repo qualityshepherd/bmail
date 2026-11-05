@@ -1,6 +1,6 @@
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
-import { escapeHtml, formatDate, formatBytes, linkify } from '../src/html.js'
+import { escapeHtml, formatDate, formatBytes, linkify, safeRedirect } from '../src/html.js'
 import { renderIdentityOptions } from '../src/message-view.js'
 
 // escapeHtml - this is the actual defense against a malicious sender
@@ -45,6 +45,30 @@ test('escapeHtml: handles non-string input by coercing to string', () => {
 
 test('escapeHtml: empty string returns empty string', () => {
   assert.equal(escapeHtml(''), '')
+})
+
+// safeRedirect - open-redirect guard shared by every `back`-param handler
+test('safeRedirect: a normal path passes through', () => {
+  assert.equal(safeRedirect('/inbox?q=archive', '/inbox'), '/inbox?q=archive')
+})
+
+test('safeRedirect: protocol-relative //host is rejected, not just scheme URLs', () => {
+  assert.equal(safeRedirect('//evil.com/phish', '/inbox'), '/inbox')
+})
+
+test('safeRedirect: absolute URLs are rejected', () => {
+  assert.equal(safeRedirect('https://evil.com', '/inbox'), '/inbox')
+  assert.equal(safeRedirect('http://evil.com', '/inbox'), '/inbox')
+})
+
+test('safeRedirect: a bare path with no leading slash is rejected', () => {
+  assert.equal(safeRedirect('inbox', '/inbox'), '/inbox')
+})
+
+test('safeRedirect: empty, null, and undefined all fall back', () => {
+  assert.equal(safeRedirect('', '/inbox'), '/inbox')
+  assert.equal(safeRedirect(null, '/inbox'), '/inbox')
+  assert.equal(safeRedirect(undefined, '/inbox'), '/inbox')
 })
 
 // formatDate

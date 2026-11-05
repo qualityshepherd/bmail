@@ -138,23 +138,22 @@ export async function getValidSession (req, env) {
   return { token, createdAt }
 }
 
-const SECURITY_HEADERS = {
+// index.js applies this to every response unconditionally, including this
+// one, so it doesn't need to be set here too - one definition, imported,
+// not two copies quietly drifting apart.
+export const SECURITY_HEADERS = {
   'X-Content-Type-Options': 'nosniff',
   'Content-Security-Policy': "default-src 'self'; script-src 'self' https://static.cloudflareinsights.com; connect-src 'self' https://cloudflareinsights.com; img-src 'self' https: blob:; style-src 'self' 'unsafe-inline'; frame-ancestors 'none'"
 }
 
-// Wraps a route handler so it 401s without a valid session, and applies
-// strict security headers to whatever response it produces. Any extra
-// args beyond (req, env, ctx) are forwarded through to the handler after
-// session - lets index.js pass route params like an email id.
+// Wraps a route handler so it 401s without a valid session. Any extra args
+// beyond (req, env, ctx) are forwarded through to the handler after session
+// - lets index.js pass route params like an email id.
 export function withAuth (handler) {
   return async (req, env, ctx, ...extra) => {
     const session = await getValidSession(req, env)
     if (!session) {
-      return new Response(
-        renderLoginPage(),
-        { status: 401, headers: { ...SECURITY_HEADERS, 'Content-Type': 'text/html; charset=utf-8' } }
-      )
+      return new Response(renderLoginPage(), { status: 401, headers: { 'Content-Type': 'text/html; charset=utf-8' } })
     }
     return handler(req, env, ctx, session, ...extra)
   }

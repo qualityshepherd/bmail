@@ -49,6 +49,11 @@ test('sanitizeFilename: plain filenames pass through unchanged', () => {
   assert.equal(sanitizeFilename('report 2026.pdf'), 'report 2026.pdf')
 })
 
+test('sanitizeFilename: handles null/undefined', () => {
+  assert.equal(sanitizeFilename(null), '')
+  assert.equal(sanitizeFilename(undefined), '')
+})
+
 test('contentDispositionValue: ascii filename matches in both parts', () => {
   const value = contentDispositionValue('attachment', 'report.pdf')
   assert.equal(value, 'attachment; filename="report.pdf"; filename*=UTF-8\'\'report.pdf')
@@ -74,9 +79,4 @@ test('contentDispositionValue: CRLF and quotes are stripped before either part i
   const value = contentDispositionValue('attachment', 'file\r\nX-Evil: injected".pdf')
   assert.ok(!value.includes('\r'))
   assert.ok(!value.includes('\n'))
-})
-
-test('sanitizeFilename: handles null/undefined', () => {
-  assert.equal(sanitizeFilename(null), '')
-  assert.equal(sanitizeFilename(undefined), '')
 })

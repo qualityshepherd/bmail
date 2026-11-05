@@ -1,15 +1,11 @@
-// Shared attachment picker: drag-drop (page-wide), browse button, paste,
-// file-list rendering with image previews, size limits. Used by compose.js
-// and message.js (reply) - elements are passed in since ids differ per page.
-//
-// Keeps the real <input type=file> synced to the tracked file Map via
-// DataTransfer, so a plain native form submit (multipart/form-data) just
-// works - callers that build their own FormData (compose.js) can read the
-// Map directly instead.
+// Shared attachment picker (drag-drop, browse, paste, file-list) - used by
+// compose.js and message.js, elements passed in since ids differ per page.
+// Keeps the real <input type=file> synced via DataTransfer, so a plain
+// form submit just works even without a custom submit handler.
 
 import { extractPastedImages, ensureFilename } from './paste-attach.js'
 
-function esc (str) {
+export function esc (str) {
   return String(str)
     .replace(/&/g, '&amp;').replace(/</g, '&lt;')
     .replace(/>/g, '&gt;').replace(/"/g, '&quot;')

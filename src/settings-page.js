@@ -165,7 +165,6 @@ function renderSettingsPage (tab, identitiesRaw, bgImage, contactCount = 0, spam
 <link rel="apple-touch-icon" href="/bmail_180px.png">
 <link rel="stylesheet" href="/base.css">
 <link rel="stylesheet" href="/settings.css">
-<script src="/settings.js" defer></script>
 </head>
 <body${bodyAttr}>
   <header>
@@ -175,6 +174,7 @@ function renderSettingsPage (tab, identitiesRaw, bgImage, contactCount = 0, spam
     <nav class="settings-tabs">${tabNav}</nav>
     ${content}
   </div>
+  <script type="module" src="/settings.js"></script>
 <script src="/sw-register.js" defer></script>
 </body>
 </html>`

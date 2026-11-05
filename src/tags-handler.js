@@ -1,6 +1,7 @@
 import { withAuth } from './auth-routes.js'
 import { getEmailById, setTags } from './db.js'
 import { parseTags, formatTags } from './search.js'
+import { safeRedirect } from './html.js'
 
 export const handleTagsChange = withAuth(async (req, env, ctx, session, emailId) => {
   const email = await getEmailById(env.DB, emailId)
@@ -17,6 +18,6 @@ export const handleTagsChange = withAuth(async (req, env, ctx, session, emailId)
   const back = (formData.get('back') || '').toString()
   return new Response(null, {
     status: 302,
-    headers: { Location: (back.startsWith('/') && !back.startsWith('//')) ? back : `/message/${emailId}` }
+    headers: { Location: safeRedirect(back, `/message/${emailId}`) }
   })
 })

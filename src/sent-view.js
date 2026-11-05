@@ -1,7 +1,7 @@
 import { withAuth } from './auth-routes.js'
 import { getSentById, getSetting } from './db.js'
 import { getContactsByEmails } from './db-contacts.js'
-import { escapeHtml, linkify, formatDate, avatarHue, avatarInitials, extractEmail, extractDisplayName, renderSettingsMenu } from './html.js'
+import { escapeHtml, linkify, formatDate, avatarHue, avatarInitials, extractEmail, extractDisplayName, renderSettingsMenu, safeRedirect } from './html.js'
 import { parseIdentities, getDefaultIdentity } from './identities.js'
 
 function renderSentPage (sent, backUrl, { identity = null, bgImage = '', contact = null } = {}) {
@@ -69,7 +69,7 @@ function renderSentPage (sent, backUrl, { identity = null, bgImage = '', contact
       <button type="submit">Delete</button>
     </form>
   </main>
-  <script src="/sent.js"></script>
+  <script type="module" src="/sent.js"></script>
 <script src="/sw-register.js" defer></script>
 </body>
 </html>`
@@ -80,8 +80,7 @@ export const handleSentView = withAuth(async (req, env, ctx, session, sentId) =>
   if (!sent) return new Response('Not found', { status: 404 })
 
   const url = new URL(req.url)
-  const rawBack = url.searchParams.get('back') || ''
-  const backUrl = (rawBack.startsWith('/') && !rawBack.startsWith('//')) ? rawBack : '/inbox?q=sent%3A'
+  const backUrl = safeRedirect(url.searchParams.get('back'), '/inbox?q=sent%3A')
 
   const [identitiesRaw, bgImage, contacts] = await Promise.all([
     getSetting(env.DB, 'identities'),

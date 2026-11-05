@@ -4,8 +4,21 @@ import {
   timingSafeEqual, isAuthorizedPubkey, isRateLimited,
   generateNonce, generateSessionToken, isNonceExpired, isSessionExpired,
   hexToBytes, sessionCookie, clearedSessionCookie, parseCookies,
-  hashToken, NONCE_TTL_MS, SESSION_TTL_MS
+  hashToken, verifySignature, NONCE_TTL_MS, SESSION_TTL_MS
 } from '../src/auth.js'
+
+function bytesToHex (bytes) {
+  return Array.from(bytes).map((b) => b.toString(16).padStart(2, '0')).join('')
+}
+
+// Real Ed25519 keypair + a real signature over `message` - same shape as
+// what the browser's crypto-worker.js produces, not a stand-in.
+async function signNonce (message) {
+  const keyPair = await crypto.subtle.generateKey('Ed25519', true, ['sign', 'verify'])
+  const publicKeyBytes = new Uint8Array(await crypto.subtle.exportKey('raw', keyPair.publicKey))
+  const sigBytes = new Uint8Array(await crypto.subtle.sign('Ed25519', keyPair.privateKey, new TextEncoder().encode(message)))
+  return { publicKeyBytes, sigHex: bytesToHex(sigBytes) }
+}
 
 test('isAuthorizedPubkey: matching pubkey returns true', () => {
   assert.equal(isAuthorizedPubkey('abc123', { AUTH_PUBKEY: 'abc123' }), true)
@@ -100,6 +113,35 @@ test('isSessionExpired: fresh session is not expired', () => {
 test('isSessionExpired: session older than TTL is expired', () => {
   const now = Date.now()
   assert.equal(isSessionExpired(now - SESSION_TTL_MS - 1, now), true)
+})
+
+// verifySignature - the actual login check. Real keypairs, real signatures,
+// no mocks: this is the one function that decides who gets in.
+test('verifySignature: a genuine signature over the exact nonce verifies true', async () => {
+  const { publicKeyBytes, sigHex } = await signNonce('abc123')
+  assert.equal(await verifySignature('abc123', sigHex, publicKeyBytes), true)
+})
+
+test('verifySignature: signature for a different nonce than claimed fails', async () => {
+  const { publicKeyBytes, sigHex } = await signNonce('abc123')
+  assert.equal(await verifySignature('tampered-nonce', sigHex, publicKeyBytes), false)
+})
+
+test('verifySignature: valid signature checked against the wrong public key fails', async () => {
+  const { sigHex } = await signNonce('abc123')
+  const otherKeyPair = await crypto.subtle.generateKey('Ed25519', true, ['sign', 'verify'])
+  const wrongPublicKeyBytes = new Uint8Array(await crypto.subtle.exportKey('raw', otherKeyPair.publicKey))
+  assert.equal(await verifySignature('abc123', sigHex, wrongPublicKeyBytes), false)
+})
+
+test('verifySignature: garbage hex signature returns false, does not throw', async () => {
+  const { publicKeyBytes } = await signNonce('abc123')
+  assert.equal(await verifySignature('abc123', 'not-valid-hex', publicKeyBytes), false)
+})
+
+test('verifySignature: malformed public key bytes returns false, does not throw', async () => {
+  const { sigHex } = await signNonce('abc123')
+  assert.equal(await verifySignature('abc123', sigHex, new Uint8Array([1, 2, 3])), false)
 })
 
 // hexToBytes

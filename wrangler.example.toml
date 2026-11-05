@@ -20,7 +20,8 @@ AUTH_PUBKEY = ""
 # Leave unset (or anything else) to use the Cloudflare send_email binding.
 # Resend is easier: just needs an API key + verified domain.
 # CF binding requires the sending domain on the same CF account with Email Routing.
-# Note: CC/BCC and attachments only work on the Resend path.
+# Note: CC/BCC and attachments work on resend and cf-email; the legacy/unset
+# path is single-To only, no CC/BCC, no attachments.
 OUTBOUND_PROVIDER = "resend"
 # Your carrier's email-to-SMS gateway address.
 # Examples:
@@ -48,7 +49,8 @@ bucket_name = "bmail-attachments"
 name = "OUTBOUND"
 
 # CF Email Service binding — set OUTBOUND_PROVIDER = "cf-email" to use this instead of Resend.
-# Requires Workers paid plan ($5/mo). Supports CC/BCC, attachments (5 MiB total), named recipients.
+# Requires Workers paid plan ($5/mo). Supports CC/BCC, attachments (25 MiB total message size,
+# incl. MIME overhead - realistically ~18-19MB of raw attachment content), named recipients.
 # Add your sending domain in CF dashboard → Email → Email Service first.
 # Disable "Email preview" in domain settings — it's auto-enabled for new domains.
 [[send_email]]

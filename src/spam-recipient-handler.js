@@ -1,5 +1,6 @@
 import { withAuth } from './auth-routes.js'
 import { getEmailById, setStatus, getSpamPatterns, setSpamlist } from './db.js'
+import { safeRedirect } from './html.js'
 
 export const handleSpamRecipient = withAuth(async (req, env, ctx, session, emailId) => {
   const email = await getEmailById(env.DB, emailId)
@@ -15,6 +16,6 @@ export const handleSpamRecipient = withAuth(async (req, env, ctx, session, email
   const formBack = (formData.get('back') || '').toString()
   return new Response(null, {
     status: 302,
-    headers: { Location: (formBack.startsWith('/') && !formBack.startsWith('//')) ? formBack : '/inbox' }
+    headers: { Location: safeRedirect(formBack, '/inbox') }
   })
 })

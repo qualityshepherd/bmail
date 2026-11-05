@@ -8,12 +8,9 @@ export function extractPastedImages (clipboardItems) {
     .filter(Boolean)
 }
 
-// The OS/browser gives pasted clipboard images a generic placeholder name
-// (commonly literally "image.png"), not a genuinely distinct filename - so
-// unlike drag-and-drop or browsed files, a paste's name can't be trusted to
-// be unique. The attachment list keys files by name, so without always
-// uniquifying here, a second pasted screenshot named "image.png" silently
-// overwrites the first in that Map.
+// Pasted images usually all share one generic name ("image.png"), and the
+// attachment list keys by name - without this, the second paste would
+// silently overwrite the first.
 export function ensureFilename (file) {
   const dot = file.name.lastIndexOf('.')
   const hasExt = dot > 0

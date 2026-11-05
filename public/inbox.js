@@ -1,3 +1,5 @@
+import './details-menu.js'
+
 function localizeDate (ts) {
   const date = new Date(Number(ts))
   const isThisYear = date.getFullYear() === new Date().getFullYear()
@@ -188,17 +190,3 @@ if (list && sentinel) {
     }
   }, true)
 })()
-
-// Close any open <details> on Escape
-document.addEventListener('keydown', (e) => {
-  if (e.key === 'Escape') {
-    document.querySelectorAll('details[open]').forEach((d) => d.removeAttribute('open'))
-  }
-})
-
-// Close any open <details> when clicking outside it
-document.addEventListener('click', (e) => {
-  document.querySelectorAll('details[open]').forEach((d) => {
-    if (!d.contains(e.target)) d.removeAttribute('open')
-  })
-})

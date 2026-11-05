@@ -1,20 +1,8 @@
-document.addEventListener('keydown', function (e) {
-  if (e.key === 'Escape') {
-    document.querySelectorAll('details[open]').forEach(function (d) {
-      d.removeAttribute('open')
-    })
-  }
-})
-
-document.addEventListener('click', function (e) {
-  document.querySelectorAll('details[open]').forEach(function (d) {
-    if (!d.contains(e.target)) d.removeAttribute('open')
-  })
-})
+import './details-menu.js'
 
 const clearCacheLink = document.getElementById('clear-cache-link')
 if (clearCacheLink) {
-  clearCacheLink.addEventListener('click', async function (e) {
+  clearCacheLink.addEventListener('click', async (e) => {
     e.preventDefault()
     if ('serviceWorker' in navigator) {
       const regs = await navigator.serviceWorker.getRegistrations()

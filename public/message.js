@@ -1,11 +1,10 @@
+import './details-menu.js'
 import { setupAttachments } from './attachments.js'
 
 const replyBody = document.getElementById('body')
 const replyForm = document.getElementById('reply-form')
 
-// Same picker Compose uses - drag-drop, paste, browse. The shared module
-// keeps the real file input synced via DataTransfer, so this plain-POST
-// form just carries the right files without any extra submit handling.
+// Same picker Compose uses - drag-drop, paste, browse.
 setupAttachments({
   fileInput: document.getElementById('file-input'),
   browseBtn: document.getElementById('browse-btn'),
@@ -16,8 +15,7 @@ setupAttachments({
 })
 
 // ─── Local time ───────────────────────────────────────────
-// Dates render server-side in the Worker's clock (UTC), wrong for anyone not
-// in UTC. Same fix as inbox.js: swap in the real local time on load.
+// Server renders in UTC - swap in the real local time, same as inbox.js.
 function localizeTitle (ts) {
   return new Date(Number(ts)).toLocaleString(undefined, {
     month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit'
@@ -93,10 +91,7 @@ if (replyBody && replyForm) {
   })
 }
 
-// Arrow-key prev/next, respecting whatever filter the message was reached
-// from (see message-view.js - prevHref/nextHref already carry the `back`
-// query forward). Never hijacks arrow keys while typing in a text field -
-// that would be a real way to lose a half-written reply.
+// Arrow-key prev/next - skip while typing, don't eat a half-written reply.
 document.addEventListener('keydown', (e) => {
   const tag = (e.target.tagName || '').toLowerCase()
   if (tag === 'textarea' || tag === 'input') return
@@ -111,9 +106,7 @@ document.addEventListener('keydown', (e) => {
   }
 })
 
-// Tags auto-save on blur via fetch — avoids the full page reload that
-// requestSubmit() would trigger, which would nuke focus if the user clicks
-// the reply textarea immediately after editing a tag.
+// Tags auto-save on blur via fetch - a full submit would reload the page.
 const tagsInput = document.getElementById('tags')
 const tagsForm = document.getElementById('tags-form')
 if (tagsInput && tagsForm) {
@@ -126,20 +119,6 @@ if (tagsInput && tagsForm) {
       .catch((err) => console.error('Tag save failed:', err))
   })
 }
-
-// Close any open <details> on Escape
-document.addEventListener('keydown', (e) => {
-  if (e.key === 'Escape') {
-    document.querySelectorAll('details[open]').forEach((d) => d.removeAttribute('open'))
-  }
-})
-
-// Close any open <details> when clicking outside it
-document.addEventListener('click', (e) => {
-  document.querySelectorAll('details[open]').forEach((d) => {
-    if (!d.contains(e.target)) d.removeAttribute('open')
-  })
-})
 
 // Traffic menu — confirm destructive actions before submitting
 const trafficPanel = document.querySelector('.traffic-panel')
@@ -154,8 +133,7 @@ if (trafficPanel) {
   })
 }
 
-// Delete-forever icon (trash icon, repurposed, only shown while already in
-// Trash) - confirm before submitting since there's no undo.
+// Delete-forever (trash icon, repurposed) - no undo, so confirm first.
 document.addEventListener('submit', (e) => {
   if (e.target.querySelector('.danger-icon') && !confirm('Permanently delete this message? This can\'t be undone.')) {
     e.preventDefault()

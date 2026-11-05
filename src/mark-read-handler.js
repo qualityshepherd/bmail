@@ -1,4 +1,5 @@
 import { withAuth } from './auth-routes.js'
+import { safeRedirect } from './html.js'
 
 export const handleMarkAllRead = withAuth(async (req, env) => {
   const formData = await req.formData()
@@ -15,6 +16,6 @@ export const handleMarkAllRead = withAuth(async (req, env) => {
 
   return new Response(null, {
     status: 302,
-    headers: { Location: (back.startsWith('/') && !back.startsWith('//')) ? back : '/inbox' }
+    headers: { Location: safeRedirect(back, '/inbox') }
   })
 })

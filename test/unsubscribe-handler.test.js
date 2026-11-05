@@ -18,6 +18,14 @@ test('parseHttpUrl: picks the http(s) entry out of a mixed list', () => {
   )
 })
 
+test('parseHttpUrl: empty header returns null', () => {
+  assert.equal(parseHttpUrl(''), null)
+})
+
+test('parseHttpUrl: a bare URL with no angle brackets is ignored', () => {
+  assert.equal(parseHttpUrl('https://example.com/unsub'), null)
+})
+
 // isFetchableUnsubscribeUrl
 test('isFetchableUnsubscribeUrl: allows an ordinary https URL', () => {
   assert.equal(isFetchableUnsubscribeUrl('https://example.com/unsub'), true)

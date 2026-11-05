@@ -1,4 +1,5 @@
-import { setupAttachments } from './attachments.js'
+import './details-menu.js'
+import { setupAttachments, esc } from './attachments.js'
 
 // ─── CC / BCC toggles ─────────────────────────────────────
 const showCcBtn = document.getElementById('show-cc')
@@ -19,12 +20,6 @@ function showAddrRow (row, btn) {
 
 if (showCcBtn && ccRow) showCcBtn.addEventListener('click', () => showAddrRow(ccRow, showCcBtn))
 if (showBccBtn && bccRow) showBccBtn.addEventListener('click', () => showAddrRow(bccRow, showBccBtn))
-
-function esc (str) {
-  return String(str)
-    .replace(/&/g, '&amp;').replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;').replace(/"/g, '&quot;')
-}
 
 // ─── Address autocomplete ─────────────────────────────────
 const datalist = document.getElementById('addr-datalist')
@@ -160,7 +155,7 @@ function showSendError (msg) {
   if (sendError) sendError.textContent = msg
 }
 
-const { attachedFiles } = setupAttachments({
+setupAttachments({
   fileInput: document.getElementById('file-input'),
   browseBtn: document.getElementById('browse-btn'),
   fileList: document.getElementById('file-list'),
@@ -179,12 +174,8 @@ async function doSubmit () {
   const bodyVal = (document.getElementById('body')?.value || '').trim()
   if (!subjectVal && !confirm('No subject — this may look like spam. Send anyway?')) return
   if (!bodyVal && !confirm('Body is empty. Send anyway?')) return
+  // setupAttachments keeps the real file input synced, so this just works.
   const formData = new FormData(composeForm)
-  // Replace the file input's entries with our tracked Map
-  formData.delete('attachments')
-  for (const [name, file] of attachedFiles) {
-    formData.append('attachments', file, name)
-  }
   if (sendBtn) sendBtn.disabled = true
   try {
     const res = await fetch('/compose', { method: 'POST', body: formData })
@@ -210,17 +201,3 @@ if (composeForm) {
     if ((e.metaKey || e.ctrlKey) && e.key === 'Enter') { e.preventDefault(); doSubmit() }
   })
 }
-
-// Close any open <details> on Escape
-document.addEventListener('keydown', (e) => {
-  if (e.key === 'Escape') {
-    document.querySelectorAll('details[open]').forEach((d) => d.removeAttribute('open'))
-  }
-})
-
-// Close any open <details> when clicking outside it
-document.addEventListener('click', (e) => {
-  document.querySelectorAll('details[open]').forEach((d) => {
-    if (!d.contains(e.target)) d.removeAttribute('open')
-  })
-})

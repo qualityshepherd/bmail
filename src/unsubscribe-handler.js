@@ -1,6 +1,7 @@
 import { withAuth } from './auth-routes.js'
 import { getEmailById } from './db-email.js'
 import { sendEmail } from './mailer.js'
+import { safeRedirect } from './html.js'
 
 export function parseHttpUrl (header) {
   const matches = header.match(/<(https?:\/\/[^>]+)>/gi) || []
@@ -102,8 +103,7 @@ export const handleUnsubscribe = withAuth(async (req, env, ctx, session, emailId
   if (!email || !email.list_unsubscribe) return new Response('Not found', { status: 404 })
 
   const formData = await req.formData()
-  const rawBack = (formData.get('back') || '').toString()
-  const backParam = rawBack.startsWith('/') && !rawBack.startsWith('//') ? rawBack : `/message/${emailId}`
+  const backParam = safeRedirect(formData.get('back'), `/message/${emailId}`)
   const successUrl = (confidence) => `/message/${emailId}?unsubscribed=${confidence}&back=${encodeURIComponent(backParam)}`
 
   const { method, target } = chooseUnsubscribeMethod(email)

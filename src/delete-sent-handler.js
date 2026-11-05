@@ -1,5 +1,6 @@
 import { withAuth } from './auth-routes.js'
 import { getSentById, deleteSentById } from './db.js'
+import { safeRedirect } from './html.js'
 
 export const handleDeleteSent = withAuth(async (req, env, ctx, session, sentId) => {
   const sent = await getSentById(env.DB, sentId)
@@ -11,6 +12,6 @@ export const handleDeleteSent = withAuth(async (req, env, ctx, session, sentId) 
   const back = (formData.get('back') || '').toString()
   return new Response(null, {
     status: 302,
-    headers: { Location: (back.startsWith('/') && !back.startsWith('//')) ? back : '/inbox?q=sent%3A' }
+    headers: { Location: safeRedirect(back, '/inbox?q=sent%3A') }
   })
 })

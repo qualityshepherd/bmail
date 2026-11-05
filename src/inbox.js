@@ -226,7 +226,7 @@ function renderInboxPage ({ emails, total, effectiveQuery, tags, currentUrl, ren
     </ul>
   </div>
   <div id="scroll-sentinel"></div>
-  <script src="/inbox.js"></script>
+  <script type="module" src="/inbox.js"></script>
 <script src="/sw-register.js" defer></script>
 </body>
 </html>`

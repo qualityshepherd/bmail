@@ -1,5 +1,6 @@
 import { withAuth } from './auth-routes.js'
 import { getEmailById, getAttachmentR2Keys, deleteEmailsByIds } from './db.js'
+import { safeRedirect } from './html.js'
 
 // Only reachable from Trash - matches the "no auto-delete from Inbox/Archive"
 // rule. A trashed message can still be hard-deleted one at a time, not just
@@ -16,6 +17,6 @@ export const handleDeleteMessage = withAuth(async (req, env, ctx, session, email
   const back = (formData.get('back') || '').toString()
   return new Response(null, {
     status: 302,
-    headers: { Location: (back.startsWith('/') && !back.startsWith('//')) ? back : '/inbox?q=trash%3A' }
+    headers: { Location: safeRedirect(back, '/inbox?q=trash%3A') }
   })
 })

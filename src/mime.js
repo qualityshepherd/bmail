@@ -46,20 +46,11 @@ export function extractMissingLinks (html, text) {
   return missing
 }
 
-// Formats a parsed From header for display: "Name <address>" if a display
-// name was given, otherwise just the bare address. Pure and separate from
-// anything security-relevant - this is ONLY for what a human reads in the
-// dashboard. Blocklist/allowlist/notification matching must keep using the
-// envelope sender (message.from from Cloudflare), never this - the header
-// From is attacker-controlled and easily spoofed, unlike the envelope.
-// Formats a parsed From header for display: just the display NAME, or
-// null if the sender didn't include one. Deliberately does NOT include
-// the address - that's already stored separately (the envelope `sender`
-// column), so combining them here would be duplicating data. Callers
-// combine name + envelope address themselves (e.g. for a hover tooltip).
-// This is ONLY for what a human reads - blocklist/allowlist/notification
-// matching must keep using the envelope sender, never this - the header
-// From is attacker-controlled and easily spoofed, unlike the envelope.
+// Just the display NAME from a parsed From header, or null. Deliberately
+// not the address too - that's the envelope `sender` column already,
+// combined by callers as needed. Display only - blocklist/notification
+// matching must keep using the envelope, never this (header From is
+// attacker-controlled and easily spoofed).
 export function formatSenderDisplay (from) {
   if (!from || !from.name) return null
   return from.name

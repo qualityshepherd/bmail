@@ -11,7 +11,7 @@ import {
   deleteExpiredLoginAttempts
 } from './db.js'
 import { SESSION_TTL_MS } from './auth.js'
-import { handleChallenge, handleLogin, handleLogout, handleMe } from './auth-routes.js'
+import { handleChallenge, handleLogin, handleLogout, handleMe, SECURITY_HEADERS } from './auth-routes.js'
 import { handleInbox } from './inbox.js'
 import { handleMessageView } from './message-view.js'
 import { handleAttachmentDownload } from './attachment-download.js'
@@ -41,11 +41,6 @@ import { renderLoginPage } from './login-page.js'
 const ATTACHMENT_RETENTION_MS = 30 * 24 * 60 * 60 * 1000
 const TRASH_SPAM_RETENTION_MS = 30 * 24 * 60 * 60 * 1000
 const FIVE_MINUTES_MS = 5 * 60 * 1000
-
-const PLAIN_SECURITY_HEADERS = {
-  'X-Content-Type-Options': 'nosniff',
-  'Content-Security-Policy': "default-src 'self'; script-src 'self' https://static.cloudflareinsights.com; connect-src 'self' https://cloudflareinsights.com; img-src 'self' https: blob:; style-src 'self' 'unsafe-inline'; frame-ancestors 'none'"
-}
 
 const SENT_PATTERN = new URLPattern({ pathname: '/sent/:id' })
 const DELETE_SENT_PATTERN = new URLPattern({ pathname: '/sent/:id/delete' })
@@ -154,7 +149,7 @@ export default {
       response = new Response('Internal Server Error', { status: 500, headers: { 'Content-Type': 'text/plain; charset=utf-8' } })
     }
 
-    for (const [key, value] of Object.entries(PLAIN_SECURITY_HEADERS)) {
+    for (const [key, value] of Object.entries(SECURITY_HEADERS)) {
       response.headers.set(key, value)
     }
     return response
