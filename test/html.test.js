@@ -71,6 +71,23 @@ test('safeRedirect: empty, null, and undefined all fall back', () => {
   assert.equal(safeRedirect(undefined, '/inbox'), '/inbox')
 })
 
+// browsers treat \ like / here, so these escape the host just like "//" does
+test('safeRedirect: backslash-prefixed values that resolve off-host are rejected', () => {
+  for (const payload of ['/\\evil.com', '/\\\\evil.com', '/\\/evil.com']) {
+    const result = safeRedirect(payload, '/inbox')
+    assert.equal(new URL(result, 'https://mybank.com/x').host, 'mybank.com', `payload ${JSON.stringify(payload)} must not escape the host`)
+  }
+})
+
+test('safeRedirect: leading whitespace/control chars before // are also rejected', () => {
+  assert.equal(safeRedirect('/\t/evil.com', '/inbox'), '/inbox')
+  assert.equal(safeRedirect('/\n/evil.com', '/inbox'), '/inbox')
+})
+
+test('safeRedirect: a single backslash deeper in the path is not a host separator, stays untouched', () => {
+  assert.equal(safeRedirect('/a\\evil.com', '/inbox'), '/a\\evil.com')
+})
+
 // formatDate
 test('formatDate: returns a non-empty string for a valid timestamp', () => {
   const result = formatDate(Date.now())

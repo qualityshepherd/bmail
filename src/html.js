@@ -13,14 +13,18 @@ export function escapeHtml (str) {
     .replace(/'/g, '&#039;')
 }
 
-// Every redirect-back param (form field or query string) is attacker
-// controlled - without the `//` check, `//evil.com` passes startsWith('/')
-// but browsers treat it as a protocol-relative URL to another host. Same
-// "kept in one place" reasoning as escapeHtml: this was independently
-// duplicated 13 times before being pulled in here.
+// back params are attacker controlled. Used to just check for "//" but
+// "/\evil.com" also escapes the host (browsers treat \ like / here). So
+// instead of guessing bypass strings, we just resolve it and check the host.
 export function safeRedirect (value, fallback) {
   const str = String(value || '')
-  return (str.startsWith('/') && !str.startsWith('//')) ? str : fallback
+  if (!str.startsWith('/')) return fallback
+  try {
+    const resolved = new URL(str, 'https://safe-redirect-check.invalid')
+    return resolved.origin === 'https://safe-redirect-check.invalid' ? str : fallback
+  } catch {
+    return fallback
+  }
 }
 
 export function formatDate (timestampMs, tz) {
