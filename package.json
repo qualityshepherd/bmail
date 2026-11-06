@@ -1,7 +1,7 @@
 {
   "name": "bmail",
   "author": "brine",
-  "version": "0.1.0",
+  "version": "1.0.0",
   "description": "Personal email system that runs on Cloudflare's free tier. Send, receive, and store plain-text emails on your own domain. Zero server costs, zero stored passwords, and one dependency.",
   "license": "AGPL-3.0-or-later",
   "type": "module",
