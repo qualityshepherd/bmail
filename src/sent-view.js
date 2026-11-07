@@ -55,7 +55,7 @@ function renderSentPage (sent, backUrl, { identity = null, bgImage = '', contact
           </span>
           <span class="msg-date">${escapeHtml(formatDate(sent.created_at))}</span>
         </div>
-        <div class="msg-to">to ${escapeHtml(toAddresses.join(', '))}</div>
+        ${toAddresses.length > 1 ? `<div class="msg-to">to ${escapeHtml(toAddresses.join(', '))}</div>` : ''}
         <div class="msg-to">from ${escapeHtml(sent.from_address)}</div>
         ${sent.cc_address ? `<div class="msg-to">cc ${escapeHtml(sent.cc_address)}</div>` : ''}
         ${sent.bcc_address ? `<div class="msg-to">bcc ${escapeHtml(sent.bcc_address)}</div>` : ''}
