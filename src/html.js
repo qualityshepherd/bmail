@@ -78,9 +78,27 @@ export function extractEmail (addr) {
   return m ? m[1].trim().toLowerCase() : String(addr || '').trim().toLowerCase()
 }
 
+// Shared by compose and reply forms - both feed the same <datalist> to the
+// client-side address autocomplete in public/addr-autocomplete.js.
+export function contactDatalist (contacts) {
+  return contacts.map((c) => {
+    const value = c.name ? `${escapeHtml(c.name)} <${escapeHtml(c.email)}>` : escapeHtml(c.email)
+    return `<option value="${value}"></option>`
+  }).join('')
+}
+
 export function extractDisplayName (addr) {
   const m = String(addr || '').match(/^(.+?)\s*</)
   return m ? m[1].trim() : String(addr || '').trim()
+}
+
+// Renders a raw "a@x.com, b@y.com" address list for display, substituting
+// each address with its matching contact's name where one exists.
+export function resolveAddressListDisplay (raw, contacts = new Map()) {
+  return parseAddressList(raw).map((addr) => {
+    const contact = contacts.get(extractEmail(addr))
+    return (contact && contact.name) || extractDisplayName(addr)
+  }).join(', ')
 }
 
 export function avatarInitials (display, address) {

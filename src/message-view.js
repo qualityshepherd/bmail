@@ -1,7 +1,7 @@
 import { withAuth } from './auth-routes.js'
 import { getEmailById, getAttachmentsByEmailId, markRead, getAdjacentEmailId, getSetting, getAllTags } from './db.js'
-import { getContactsByEmails } from './db-contacts.js'
-import { escapeHtml, linkify, formatDate, formatBytes, avatarHue, avatarInitials, renderSettingsMenu, parseAddressList, extractEmail, safeRedirect } from './html.js'
+import { getContactsByEmails, getAllContacts } from './db-contacts.js'
+import { escapeHtml, linkify, formatDate, formatBytes, avatarHue, avatarInitials, renderSettingsMenu, parseAddressList, extractEmail, safeRedirect, contactDatalist } from './html.js'
 import { buildQuotedReplyText, resolveReplyTo, replyToDiffers } from './reply.js'
 import { resolveEffectiveQuery, parseTags, formatTags } from './search.js'
 import { parseIdentities, getDefaultIdentity } from './identities.js'
@@ -45,7 +45,7 @@ function renderAttachment (emailId, attachment) {
   </li>`
 }
 
-function renderMessagePage (email, attachments, { sent, backParam, prevId, nextId, identities = [], allTags = [], identity = null, bgImage = '', contact = null }) {
+function renderMessagePage (email, attachments, { sent, backParam, prevId, nextId, identities = [], allTags = [], identity = null, bgImage = '', contact = null, allContacts = [] }) {
   const subject = email.subject ? escapeHtml(email.subject) : '(no subject)'
   const displayName = (contact && contact.name) || email.sender_display || email.sender
   const hasDisplayName = displayName !== email.sender
@@ -198,6 +198,8 @@ function renderMessagePage (email, attachments, { sent, backParam, prevId, nextI
       <a href="/message/${email.id}/forward" class="btn-outline">Forward</a>
     </div>
     <form method="post" action="/message/${email.id}/reply" class="reply-form" id="reply-form" enctype="multipart/form-data" hidden>
+      <datalist id="addr-datalist">${contactDatalist(allContacts)}</datalist>
+
       <label class="reply-row" for="reply-from">
         <span class="reply-label">From</span>
         <select id="reply-from" name="from">${renderIdentityOptions(identities, email.recipient)}</select>
@@ -264,21 +266,22 @@ export const handleMessageView = withAuth(async (req, env, ctx, session, emailId
   }
   const filters = resolveEffectiveQuery(backQuery)
 
-  const [attachments, prevId, nextId, identitiesRaw, allTagsRaw, bgImage, contacts] = await Promise.all([
+  const [attachments, prevId, nextId, identitiesRaw, allTagsRaw, bgImage, contacts, allContacts] = await Promise.all([
     getAttachmentsByEmailId(env.DB, emailId),
     getAdjacentEmailId(env.DB, filters, email.created_at, email.id, 'prev'),
     getAdjacentEmailId(env.DB, filters, email.created_at, email.id, 'next'),
     getSetting(env.DB, 'identities'),
     getAllTags(env.DB),
     getSetting(env.DB, 'bg_image'),
-    getContactsByEmails(env.DB, [email.sender])
+    getContactsByEmails(env.DB, [email.sender]),
+    getAllContacts(env.DB)
   ])
   const identities = parseIdentities(identitiesRaw)
   const identity = getDefaultIdentity(identities)
   const allTags = [...new Set(allTagsRaw.flatMap((t) => parseTags(t)))]
   const contact = contacts.get(email.sender.toLowerCase()) || null
 
-  return new Response(renderMessagePage({ ...email, unsubscribed }, attachments, { sent, backParam, prevId, nextId, identities, allTags, identity, bgImage: bgImage || '', contact }), {
+  return new Response(renderMessagePage({ ...email, unsubscribed }, attachments, { sent, backParam, prevId, nextId, identities, allTags, identity, bgImage: bgImage || '', contact, allContacts }), {
     headers: { 'Content-Type': 'text/html; charset=utf-8', 'Cache-Control': 'no-store' }
   })
 })

@@ -31,9 +31,10 @@ function renderTagChips (tagsString) {
 
 function renderSentRow (sent, currentUrl, contacts = new Map()) {
   const subjectText = sent.subject ? escapeHtml(sent.subject) : '(no subject)'
-  const bareEmail = extractEmail(sent.to_address)
+  const firstTo = sent.to_address.split(',')[0].trim()
+  const bareEmail = extractEmail(firstTo)
   const contact = contacts.get(bareEmail)
-  const displayName = (contact && contact.name) || extractDisplayName(sent.to_address)
+  const displayName = (contact && contact.name) || extractDisplayName(firstTo)
   const hue = avatarHue(bareEmail)
   const initials = avatarInitials(displayName, bareEmail)
 
@@ -299,7 +300,7 @@ export const handleInbox = withAuth(async (req, env, ctx, session) => {
 
   if (filters.sent) {
     const sent = await searchSent(env.DB, { limit: 50, before: before ? Number(before) : null, text: filters.text })
-    const sentContacts = await getContactsByEmails(env.DB, sent.map((s) => extractEmail(s.to_address)))
+    const sentContacts = await getContactsByEmails(env.DB, sent.map((s) => extractEmail(s.to_address.split(',')[0])))
     if (before !== null) {
       const rows = sent.length > 0 ? sent.map((s) => renderSentRow(s, currentUrl, sentContacts)).join('\n') : ''
       const oldestCreatedAt = sent.length > 0 ? sent[sent.length - 1].created_at : ''

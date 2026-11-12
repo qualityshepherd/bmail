@@ -2,19 +2,12 @@ import { withAuth } from './auth-routes.js'
 import { getSetting, getEmailById } from './db.js'
 import { getAllContacts } from './db-contacts.js'
 import { parseIdentities, getDefaultIdentity } from './identities.js'
-import { escapeHtml, formatDate, renderSettingsMenu } from './html.js'
+import { escapeHtml, formatDate, renderSettingsMenu, contactDatalist } from './html.js'
 
 function renderIdentityOptions (identities) {
   return identities.map((i) =>
     `<option value="${escapeHtml(i.address)}">${escapeHtml(i.name ? `${i.name} <${i.address}>` : i.address)}</option>`
   ).join('')
-}
-
-function contactDatalist (contacts) {
-  return contacts.map((c) => {
-    const value = c.name ? `${escapeHtml(c.name)} <${escapeHtml(c.email)}>` : escapeHtml(c.email)
-    return `<option value="${value}"></option>`
-  }).join('')
 }
 
 export function renderComposePage (identities, contacts = [], defaults = {}, { identity = null, bgImage = '' } = {}) {

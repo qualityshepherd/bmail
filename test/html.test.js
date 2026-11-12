@@ -1,6 +1,6 @@
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
-import { escapeHtml, formatDate, formatBytes, linkify, safeRedirect } from '../src/html.js'
+import { escapeHtml, formatDate, formatBytes, linkify, safeRedirect, resolveAddressListDisplay } from '../src/html.js'
 import { renderIdentityOptions } from '../src/message-view.js'
 
 // escapeHtml - this is the actual defense against a malicious sender
@@ -231,4 +231,37 @@ test('renderIdentityOptions: no match defaults to first, no synthetic option', (
 test('renderIdentityOptions: match is case-insensitive', () => {
   const html = renderIdentityOptions(IDENTITIES, 'ME@EXAMPLE.COM')
   assert.match(html, /value="me@example\.com" selected/)
+})
+
+test('resolveAddressListDisplay: substitutes a matched contact\'s name', () => {
+  const contacts = new Map([['alice@example.com', { name: 'Alice Smith' }]])
+  assert.equal(resolveAddressListDisplay('alice@example.com', contacts), 'Alice Smith')
+})
+
+test('resolveAddressListDisplay: falls back to the raw address when no contact matches', () => {
+  assert.equal(resolveAddressListDisplay('bob@example.com', new Map()), 'bob@example.com')
+})
+
+test('resolveAddressListDisplay: resolves every address in a multi-recipient list, not just the first', () => {
+  const contacts = new Map([
+    ['alice@example.com', { name: 'Alice Smith' }],
+    ['bob@example.com', { name: 'Bob Jones' }]
+  ])
+  assert.equal(
+    resolveAddressListDisplay('alice@example.com, bob@example.com, carol@example.com', contacts),
+    'Alice Smith, Bob Jones, carol@example.com'
+  )
+})
+
+test('resolveAddressListDisplay: matching is case-insensitive on the email', () => {
+  const contacts = new Map([['alice@example.com', { name: 'Alice Smith' }]])
+  assert.equal(resolveAddressListDisplay('ALICE@EXAMPLE.COM', contacts), 'Alice Smith')
+})
+
+test('resolveAddressListDisplay: a "Name <email>" address with no contact match falls back to its own name', () => {
+  assert.equal(resolveAddressListDisplay('Dave Lee <dave@example.com>', new Map()), 'Dave Lee')
+})
+
+test('resolveAddressListDisplay: empty input is an empty string', () => {
+  assert.equal(resolveAddressListDisplay('', new Map()), '')
 })

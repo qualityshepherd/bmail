@@ -1,13 +1,14 @@
 import { withAuth } from './auth-routes.js'
 import { getSentById, getSetting } from './db.js'
 import { getContactsByEmails } from './db-contacts.js'
-import { escapeHtml, linkify, formatDate, avatarHue, avatarInitials, extractEmail, extractDisplayName, renderSettingsMenu, safeRedirect } from './html.js'
+import { escapeHtml, linkify, formatDate, avatarHue, avatarInitials, extractEmail, extractDisplayName, resolveAddressListDisplay, renderSettingsMenu, safeRedirect } from './html.js'
 import { parseIdentities, getDefaultIdentity } from './identities.js'
 
-function renderSentPage (sent, backUrl, { identity = null, bgImage = '', contact = null } = {}) {
+function renderSentPage (sent, backUrl, { identity = null, bgImage = '', contacts = new Map() } = {}) {
   const subject = sent.subject ? escapeHtml(sent.subject) : '(no subject)'
   const toAddresses = sent.to_address.split(',').map((s) => s.trim()).filter(Boolean)
   const firstEmail = extractEmail(toAddresses[0])
+  const contact = contacts.get(firstEmail) || null
   const toDisplay = (contact && contact.name) || extractDisplayName(toAddresses[0])
   const hasDisplayName = toDisplay !== firstEmail
   const hue = avatarHue(firstEmail)
@@ -55,10 +56,10 @@ function renderSentPage (sent, backUrl, { identity = null, bgImage = '', contact
           </span>
           <span class="msg-date">${escapeHtml(formatDate(sent.created_at))}</span>
         </div>
-        ${toAddresses.length > 1 ? `<div class="msg-to">to ${escapeHtml(toAddresses.join(', '))}</div>` : ''}
+        ${toAddresses.length > 1 ? `<div class="msg-to">to ${escapeHtml(resolveAddressListDisplay(sent.to_address, contacts))}</div>` : ''}
         <div class="msg-to">from ${escapeHtml(sent.from_address)}</div>
-        ${sent.cc_address ? `<div class="msg-to">cc ${escapeHtml(sent.cc_address)}</div>` : ''}
-        ${sent.bcc_address ? `<div class="msg-to">bcc ${escapeHtml(sent.bcc_address)}</div>` : ''}
+        ${sent.cc_address ? `<div class="msg-to">cc ${escapeHtml(resolveAddressListDisplay(sent.cc_address, contacts))}</div>` : ''}
+        ${sent.bcc_address ? `<div class="msg-to">bcc ${escapeHtml(resolveAddressListDisplay(sent.bcc_address, contacts))}</div>` : ''}
       </div>
     </div>
     ${sent.send_status === 'failed' ? `<p class="send-error-banner">Send failed: ${escapeHtml(sent.send_error || 'unknown error')}</p>` : ''}
@@ -82,15 +83,19 @@ export const handleSentView = withAuth(async (req, env, ctx, session, sentId) =>
   const url = new URL(req.url)
   const backUrl = safeRedirect(url.searchParams.get('back'), '/inbox?q=sent%3A')
 
+  const recipientEmails = [sent.to_address, sent.cc_address, sent.bcc_address]
+    .filter(Boolean)
+    .flatMap((list) => list.split(',').map((s) => extractEmail(s.trim())))
+    .filter(Boolean)
+
   const [identitiesRaw, bgImage, contacts] = await Promise.all([
     getSetting(env.DB, 'identities'),
     getSetting(env.DB, 'bg_image'),
-    getContactsByEmails(env.DB, sent.to_address.split(',').map((s) => extractEmail(s.trim())).filter(Boolean))
+    getContactsByEmails(env.DB, recipientEmails)
   ])
   const identity = getDefaultIdentity(parseIdentities(identitiesRaw || ''))
-  const contact = contacts.get(extractEmail(sent.to_address.split(',')[0].trim())) || null
 
-  return new Response(renderSentPage(sent, backUrl, { identity, bgImage: bgImage || '', contact }), {
+  return new Response(renderSentPage(sent, backUrl, { identity, bgImage: bgImage || '', contacts }), {
     headers: { 'Content-Type': 'text/html; charset=utf-8', 'Cache-Control': 'no-store' }
   })
 })

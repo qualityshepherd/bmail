@@ -1,5 +1,6 @@
 import './details-menu.js'
 import { setupAttachments } from './attachments.js'
+import { createAddressAutocomplete } from './addr-autocomplete.js'
 
 const replyBody = document.getElementById('body')
 const replyForm = document.getElementById('reply-form')
@@ -80,6 +81,14 @@ function showReplyRow (rowId, btnId) {
 }
 showReplyRow('reply-cc-row', 'reply-show-cc')
 showReplyRow('reply-bcc-row', 'reply-show-bcc')
+
+// Same contact-matching dropdown compose.js has - reply never had it.
+const addrDatalist = document.getElementById('addr-datalist')
+const allContacts = addrDatalist ? [...addrDatalist.options].map((o) => o.value) : []
+const attachAutocomplete = createAddressAutocomplete(allContacts)
+attachAutocomplete('reply-to')
+attachAutocomplete('reply-cc')
+attachAutocomplete('reply-bcc')
 
 if (replyBody && replyForm) {
   replyBody.addEventListener('keydown', (e) => {
