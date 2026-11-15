@@ -7,7 +7,7 @@ import assert from 'node:assert/strict'
 import { createTestDb } from './helpers/d1-sqlite.js'
 import { insertEmail, setStatus, searchEmails, getStaleTrashSpamIds, isDuplicateKeyError } from '../src/db-email.js'
 import { insertAttachment, getStaleAttachments } from '../src/db-attachments.js'
-import { insertNonce, consumeNonce } from '../src/db-auth.js'
+import { insertNonce, consumeNonce, getSendVolume, incrementSendVolume } from '../src/db-auth.js'
 
 const baseEmail = { sender: 'a@example.com', recipient: 'me@example.com', subject: 'hi', body: 'hello' }
 
@@ -164,4 +164,51 @@ test('consumeNonce: consuming the same nonce a second time returns null, not the
 test('consumeNonce: an unknown nonce returns null', async () => {
   const db = createTestDb()
   assert.equal(await consumeNonce(db, 'never-issued'), null)
+})
+
+// — getSendVolume / incrementSendVolume: global + daily outbound caps —
+
+test('getSendVolume: no row yet is null', async () => {
+  const db = createTestDb()
+  assert.equal(await getSendVolume(db, 1), null)
+})
+
+test('incrementSendVolume: first increment starts the counter at 1', async () => {
+  const db = createTestDb()
+  const now = 1000
+  await incrementSendVolume(db, 1, now, 10000)
+  const record = await getSendVolume(db, 1)
+  assert.equal(record.count, 1)
+  assert.equal(record.resetAt, now + 10000)
+})
+
+test('incrementSendVolume: repeated increments within the window accumulate', async () => {
+  const db = createTestDb()
+  const now = 1000
+  await incrementSendVolume(db, 1, now, 10000)
+  await incrementSendVolume(db, 1, now + 1, 10000)
+  await incrementSendVolume(db, 1, now + 2, 10000)
+  assert.equal((await getSendVolume(db, 1)).count, 3)
+})
+
+test('incrementSendVolume: a window that has already reset restarts the count at 1', async () => {
+  const db = createTestDb()
+  await incrementSendVolume(db, 1, 1000, 10000) // resets at 11000
+  await incrementSendVolume(db, 1, 20000, 10000) // window long gone
+  assert.equal((await getSendVolume(db, 1)).count, 1)
+})
+
+test('incrementSendVolume: ids 1 (global) and 2 (daily) are independent counters', async () => {
+  const db = createTestDb()
+  await incrementSendVolume(db, 1, 1000, 10000)
+  await incrementSendVolume(db, 1, 1000, 10000)
+  await incrementSendVolume(db, 2, 1000, 10000)
+  assert.equal((await getSendVolume(db, 1)).count, 2)
+  assert.equal((await getSendVolume(db, 2)).count, 1)
+})
+
+test('getSendVolume / incrementSendVolume: an id outside {1, 2} is rejected, not silently allowed', async () => {
+  const db = createTestDb()
+  await assert.rejects(() => getSendVolume(db, 3))
+  await assert.rejects(() => incrementSendVolume(db, 3, 1000, 10000))
 })

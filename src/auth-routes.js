@@ -4,7 +4,7 @@ import {
   CHALLENGE_RATE_LIMIT_MAX_ATTEMPTS, CHALLENGE_RATE_LIMIT_WINDOW_MS,
   generateNonce, generateSessionToken, isNonceExpired, isSessionExpired,
   verifySignature, hexToBytes, sessionCookie, clearedSessionCookie, parseCookies,
-  hashToken
+  hashToken, isAllowedOrigin
 } from './auth.js'
 import {
   insertNonce, consumeNonce, insertSession, getSessionCreatedAt, deleteSession,
@@ -100,6 +100,9 @@ export async function handleLogin (req, env) {
 
 // POST /api/logout
 export async function handleLogout (req, env) {
+  if (!isAllowedOrigin(req.headers.get('Origin'), req.url)) {
+    return new Response('bad origin', { status: 403 })
+  }
   const cookies = parseCookies(req.headers.get('Cookie'))
   const token = cookies[env.SESSION_COOKIE_NAME]
   if (token) await deleteSession(env.DB, await hashToken(token))
@@ -151,6 +154,9 @@ export const SECURITY_HEADERS = {
 // - lets index.js pass route params like an email id.
 export function withAuth (handler) {
   return async (req, env, ctx, ...extra) => {
+    if (req.method !== 'GET' && !isAllowedOrigin(req.headers.get('Origin'), req.url)) {
+      return new Response('bad origin', { status: 403 })
+    }
     const session = await getValidSession(req, env)
     if (!session) {
       return new Response(renderLoginPage(), { status: 401, headers: { 'Content-Type': 'text/html; charset=utf-8' } })

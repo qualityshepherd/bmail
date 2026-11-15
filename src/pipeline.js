@@ -7,6 +7,7 @@ import {
   incrementSmsNotificationCount
 } from './db.js'
 import { classifySmsNotification, buildNewMailSmsPayload, buildSmsPauseWarning, SMS_NOTIFICATION_WINDOW_MS } from './notifications.js'
+import { isOversizedRawMessage, attachmentAllowed } from './inbound-limits.js'
 
 // Runs the full inbound pipeline for one message. Returns { dropped: true }
 // if the sender was blocklisted, { duplicate: true } if this message was
@@ -46,8 +47,7 @@ export async function ingestEmail ({ message, env }) {
 
   // rawSize is free (no stream read needed) - reject before postal-mime
   // parses the whole thing. Throwing hits the normal fallback-forward path.
-  const MAX_RAW_MESSAGE_BYTES = 150 * 1024 * 1024
-  if (message.rawSize > MAX_RAW_MESSAGE_BYTES) {
+  if (isOversizedRawMessage(message.rawSize)) {
     throw new Error(`Message too large to parse (${message.rawSize} bytes)`)
   }
 
@@ -101,18 +101,14 @@ export async function ingestEmail ({ message, env }) {
     throw err
   }
 
-  const MAX_ATTACHMENT_BYTES = 25 * 1024 * 1024
-  const MAX_TOTAL_ATTACHMENT_BYTES = 100 * 1024 * 1024
-
   const uploadedR2Keys = []
   let totalAttachmentBytes = 0
+  let attachmentCount = 0
   try {
     for (const attachment of parsed.attachments) {
-      if (attachment.content.byteLength > MAX_ATTACHMENT_BYTES) continue
-      // Per-attachment cap bounds one file; this bounds the sum across all of
-      // them, so one message can't carry e.g. a dozen 20MB files past it.
-      if (totalAttachmentBytes + attachment.content.byteLength > MAX_TOTAL_ATTACHMENT_BYTES) continue
+      if (!attachmentAllowed({ byteLength: attachment.content.byteLength, totalBytesSoFar: totalAttachmentBytes, countSoFar: attachmentCount })) continue
       totalAttachmentBytes += attachment.content.byteLength
+      attachmentCount++
       // R2 keys are internal identifiers, never user data - the filename
       // (attacker-controlled MIME content) lives only in D1.
       const r2Key = `attachments/${emailId}/${crypto.randomUUID()}`

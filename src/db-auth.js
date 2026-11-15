@@ -68,6 +68,31 @@ export async function deleteExpiredLoginAttempts (db, now) {
   await db.prepare('DELETE FROM send_attempts WHERE reset_at < ?').bind(now).run()
 }
 
+// Same shape as getRateLimit/incrementRateLimit above, but keyed by a fixed
+// id (1 = global send burst, 2 = daily send cap) instead of per-IP - one
+// mailbox, so "global" here really does mean every send, from anywhere.
+const SEND_VOLUME_IDS = new Set([1, 2])
+
+export async function getSendVolume (db, id) {
+  if (!SEND_VOLUME_IDS.has(id)) throw new Error('invalid send volume id')
+  const row = await db.prepare('SELECT count, reset_at FROM send_volume_state WHERE id = ?').bind(id).first()
+  return row ? { count: row.count, resetAt: row.reset_at } : null
+}
+
+export async function incrementSendVolume (db, id, now, windowMs) {
+  if (!SEND_VOLUME_IDS.has(id)) throw new Error('invalid send volume id')
+  const resetAt = now + windowMs
+  await db
+    .prepare(
+      `INSERT INTO send_volume_state (id, count, reset_at) VALUES (?, 1, ?)
+       ON CONFLICT (id) DO UPDATE SET
+         count = CASE WHEN reset_at <= ? THEN 1 ELSE count + 1 END,
+         reset_at = CASE WHEN reset_at <= ? THEN ? ELSE reset_at END`
+    )
+    .bind(id, resetAt, now, now, resetAt)
+    .run()
+}
+
 // Single global counter, not per-IP - one mailbox. RETURNING gives back the
 // post-increment count, enough on its own to decide send/warn/suppress.
 export async function incrementSmsNotificationCount (db, now, windowMs) {

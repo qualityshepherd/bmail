@@ -4,20 +4,45 @@ import { parseIdentities, findIdentityByAddress } from './identities.js'
 import { generateMessageId, extractDomain } from './reply.js'
 import { sendEmail } from './mailer.js'
 import { escapeHtml, parseAddressList, looksLikeAddress } from './html.js'
-import { isRateLimited, SEND_RATE_LIMIT_MAX_ATTEMPTS, SEND_RATE_LIMIT_WINDOW_MS } from './auth.js'
-import { getRateLimit, incrementRateLimit } from './db-auth.js'
+import {
+  isRateLimited, SEND_RATE_LIMIT_MAX_ATTEMPTS, SEND_RATE_LIMIT_WINDOW_MS,
+  SEND_GLOBAL_RATE_LIMIT_MAX_ATTEMPTS, SEND_GLOBAL_RATE_LIMIT_WINDOW_MS,
+  SEND_DAILY_RATE_LIMIT_MAX_ATTEMPTS, SEND_DAILY_RATE_LIMIT_WINDOW_MS
+} from './auth.js'
+import { getRateLimit, incrementRateLimit, getSendVolume, incrementSendVolume } from './db-auth.js'
 import { buildAttachments } from './attachment-upload.js'
+
+const SEND_VOLUME_GLOBAL_ID = 1
+const SEND_VOLUME_DAILY_ID = 2
 
 export const handleCompose = withAuth(async (req, env, ctx, session) => {
   // A stolen session is still a bearer credential - bound how much mail it
   // can send through this identity regardless of whether individual sends
   // succeed, same rate-limit shape as login/challenge.
   const ip = req.headers.get('CF-Connecting-IP') || 'unknown'
-  const rlRecord = await getRateLimit(env.DB, 'send_attempts', ip)
-  if (isRateLimited(rlRecord, Date.now(), SEND_RATE_LIMIT_MAX_ATTEMPTS)) {
+  const now = Date.now()
+  const [rlRecord, globalRecord, dailyRecord] = await Promise.all([
+    getRateLimit(env.DB, 'send_attempts', ip),
+    getSendVolume(env.DB, SEND_VOLUME_GLOBAL_ID),
+    getSendVolume(env.DB, SEND_VOLUME_DAILY_ID)
+  ])
+  if (isRateLimited(rlRecord, now, SEND_RATE_LIMIT_MAX_ATTEMPTS)) {
     return new Response('Too many messages sent recently - try again shortly.', { status: 429, headers: { 'Content-Type': 'text/plain; charset=utf-8' } })
   }
-  await incrementRateLimit(env.DB, 'send_attempts', ip, Date.now(), SEND_RATE_LIMIT_WINDOW_MS)
+  // Per-IP alone can be evaded by one stolen session spreading its sends
+  // across many IPs - these two catch that regardless of where it comes
+  // from, bounding the worst case (domain reputation damage) either way.
+  if (isRateLimited(globalRecord, now, SEND_GLOBAL_RATE_LIMIT_MAX_ATTEMPTS)) {
+    return new Response('Sending volume limit reached - try again shortly.', { status: 429, headers: { 'Content-Type': 'text/plain; charset=utf-8' } })
+  }
+  if (isRateLimited(dailyRecord, now, SEND_DAILY_RATE_LIMIT_MAX_ATTEMPTS)) {
+    return new Response("Today's sending limit reached - try again tomorrow.", { status: 429, headers: { 'Content-Type': 'text/plain; charset=utf-8' } })
+  }
+  await Promise.all([
+    incrementRateLimit(env.DB, 'send_attempts', ip, now, SEND_RATE_LIMIT_WINDOW_MS),
+    incrementSendVolume(env.DB, SEND_VOLUME_GLOBAL_ID, now, SEND_GLOBAL_RATE_LIMIT_WINDOW_MS),
+    incrementSendVolume(env.DB, SEND_VOLUME_DAILY_ID, now, SEND_DAILY_RATE_LIMIT_WINDOW_MS)
+  ])
 
   const identities = parseIdentities(await getSetting(env.DB, 'identities'))
   if (identities.length === 0) {

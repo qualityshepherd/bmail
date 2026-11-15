@@ -4,7 +4,7 @@ import {
   timingSafeEqual, isAuthorizedPubkey, isRateLimited,
   generateNonce, generateSessionToken, isNonceExpired, isSessionExpired,
   hexToBytes, sessionCookie, clearedSessionCookie, parseCookies,
-  hashToken, verifySignature, NONCE_TTL_MS, SESSION_TTL_MS
+  hashToken, verifySignature, isAllowedOrigin, NONCE_TTL_MS, SESSION_TTL_MS
 } from '../src/auth.js'
 
 function bytesToHex (bytes) {
@@ -186,4 +186,26 @@ test('hashToken: same input yields same hash', async () => {
 
 test('hashToken: different inputs yield different hashes', async () => {
   assert.notEqual(await hashToken('abc'), await hashToken('xyz'))
+})
+
+// isAllowedOrigin - CSRF defense-in-depth on top of SameSite=Lax
+test('isAllowedOrigin: no Origin header at all is allowed (plain navigations never send one)', () => {
+  assert.equal(isAllowedOrigin(null, 'https://brine.dev/compose'), true)
+  assert.equal(isAllowedOrigin('', 'https://brine.dev/compose'), true)
+})
+
+test('isAllowedOrigin: matching origin is allowed', () => {
+  assert.equal(isAllowedOrigin('https://brine.dev', 'https://brine.dev/compose'), true)
+})
+
+test('isAllowedOrigin: cross-site origin is rejected', () => {
+  assert.equal(isAllowedOrigin('https://evil.example', 'https://brine.dev/compose'), false)
+})
+
+test('isAllowedOrigin: different scheme counts as a different origin', () => {
+  assert.equal(isAllowedOrigin('http://brine.dev', 'https://brine.dev/compose'), false)
+})
+
+test('isAllowedOrigin: garbage Origin header is rejected, not thrown', () => {
+  assert.equal(isAllowedOrigin('not a url', 'https://brine.dev/compose'), false)
 })

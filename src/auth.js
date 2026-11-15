@@ -36,6 +36,12 @@ export const CHALLENGE_RATE_LIMIT_MAX_ATTEMPTS = 20
 export const CHALLENGE_RATE_LIMIT_WINDOW_MS = 60 * 1000
 export const SEND_RATE_LIMIT_MAX_ATTEMPTS = 20
 export const SEND_RATE_LIMIT_WINDOW_MS = 10 * 60 * 1000
+// Per-IP alone can be evaded by a stolen session sent across many IPs -
+// these count every send attempt regardless of source, as a backstop.
+export const SEND_GLOBAL_RATE_LIMIT_MAX_ATTEMPTS = 60
+export const SEND_GLOBAL_RATE_LIMIT_WINDOW_MS = 10 * 60 * 1000
+export const SEND_DAILY_RATE_LIMIT_MAX_ATTEMPTS = 200
+export const SEND_DAILY_RATE_LIMIT_WINDOW_MS = 24 * 60 * 60 * 1000
 
 export function generateNonce () {
   const buf = new Uint8Array(16)
@@ -98,6 +104,20 @@ export function sessionCookie (token, cookieName, maxAgeSeconds) {
 
 export function clearedSessionCookie (cookieName) {
   return `${cookieName}=; Path=/; Max-Age=0; HttpOnly; Secure; SameSite=Lax`
+}
+
+// CSRF defense-in-depth on top of SameSite=Lax, which already blocks the
+// common cross-site-POST case on its own - this catches the gap SameSite
+// can't (a same-site-but-different-origin context). An absent Origin header
+// is allowed through: plain top-level navigations never send one, and
+// that's SameSite=Lax's job to cover, not this check's.
+export function isAllowedOrigin (originHeader, requestUrl) {
+  if (!originHeader) return true
+  try {
+    return new URL(originHeader).origin === new URL(requestUrl).origin
+  } catch {
+    return false
+  }
 }
 
 export function parseCookies (cookieHeader) {
