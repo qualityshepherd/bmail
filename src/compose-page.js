@@ -4,6 +4,7 @@ import { getAllContacts } from './db-contacts.js'
 import { parseIdentities, getDefaultIdentity } from './identities.js'
 import { escapeHtml, formatDate, renderSettingsMenu, contactDatalist } from './html.js'
 import { pickBackground } from './backgrounds.js'
+import { parseMailto } from './mailto.js'
 
 function renderIdentityOptions (identities) {
   return identities.map((i) =>
@@ -12,7 +13,7 @@ function renderIdentityOptions (identities) {
 }
 
 export function renderComposePage (identities, contacts = [], defaults = {}, { identity = null, bgImage = '' } = {}) {
-  const { to = '', subject = '', body = '', isForward = false, cancelHref = '/inbox' } = defaults
+  const { to = '', cc = '', bcc = '', subject = '', body = '', isForward = false, cancelHref = '/inbox' } = defaults
   const pageTitle = isForward ? 'Forward' : 'Compose'
   const heading = isForward ? 'Forward message' : 'New message'
 
@@ -86,21 +87,21 @@ export function renderComposePage (identities, contacts = [], defaults = {}, { i
         <input type="text" id="to" name="to" placeholder="Recipients"
                autocomplete="off" autofocus value="${escapeHtml(to)}">
         <div class="addr-toggles" id="addr-toggles">
-          <button type="button" id="show-cc">Cc</button>
-          <button type="button" id="show-bcc">Bcc</button>
+          <button type="button" id="show-cc"${cc ? ' class="compose-hidden"' : ''}>Cc</button>
+          <button type="button" id="show-bcc"${bcc ? ' class="compose-hidden"' : ''}>Bcc</button>
         </div>
       </label>
 
-      <label class="compose-row compose-hidden" for="cc" id="cc-row">
+      <label class="compose-row${cc ? '' : ' compose-hidden'}" for="cc" id="cc-row">
         <span class="compose-label">Cc</span>
         <input type="text" id="cc" name="cc" placeholder="CC recipients"
-               autocomplete="off">
+               autocomplete="off" value="${escapeHtml(cc)}">
       </label>
 
-      <label class="compose-row compose-hidden" for="bcc" id="bcc-row">
+      <label class="compose-row${bcc ? '' : ' compose-hidden'}" for="bcc" id="bcc-row">
         <span class="compose-label">Bcc</span>
         <input type="text" id="bcc" name="bcc" placeholder="BCC recipients"
-               autocomplete="off">
+               autocomplete="off" value="${escapeHtml(bcc)}">
       </label>
 
       <label class="compose-row" for="subject">
@@ -139,7 +140,10 @@ export const handleComposePage = withAuth(async (req, env, ctx, session) => {
   ])
   const identities = parseIdentities(identitiesRaw)
   const identity = getDefaultIdentity(identities)
-  return new Response(renderComposePage(identities, contacts, {}, { identity, bgImage: pickBackground(bgImage) }), {
+  // /compose?mailto=... is what the browser opens when bmail is the mail
+  // handler (see settings.js)
+  const defaults = parseMailto(new URL(req.url).searchParams.get('mailto'))
+  return new Response(renderComposePage(identities, contacts, defaults, { identity, bgImage: pickBackground(bgImage) }), {
     headers: { 'Content-Type': 'text/html; charset=utf-8' }
   })
 })

@@ -15,6 +15,7 @@
     "predeploy": "node scripts/bump-sw-cache.js",
     "deploy": "wrangler deploy",
     "test": "node --test test/*.test.js && npx standard .",
+    "a11y": "node scripts/a11y.js",
     "db:migrate:local": "wrangler d1 migrations apply bmail --local",
     "db:migrate:remote": "wrangler d1 migrations apply bmail --remote",
     "pretty": "npx standard --fix .",

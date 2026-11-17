@@ -22,6 +22,11 @@ export function renderAppearanceTab (bgImage) {
     </form>
     ${status}
     <a href="#" id="clear-cache-link" class="btn-outline">Clear cache &amp; reload</a>
+    <div id="mailto-handler" hidden>
+      <p class="settings-hint">Make email links on other sites open here instead of a desktop mail app.</p>
+      <button type="button" id="mailto-handler-btn" class="btn-outline">Open email links in bmail</button>
+      <p class="settings-hint" id="mailto-handler-msg" role="status"></p>
+    </div>
   </section>`
 }
 
