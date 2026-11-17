@@ -61,31 +61,34 @@ export function formatBytes (bytes) {
 // same grey tile. Hue is lopsided anyway: 180-270 is a quarter of the
 // circle and all of it reads as "blue".
 //
-// Twelve, chosen by search rather than by eye: lightness and saturation
+// Eleven, chosen by search rather than by eye: lightness and saturation
 // vary per swatch, not just hue. Spacing hues evenly at a fixed s/l puts
 // every colour on one ring in Lab space, which is what held the old
-// hand-tuned set to deltaE 9.4 - letting all three move spreads them in
-// three dimensions and gets 16.5 out of half again as many swatches.
-// Saturation is capped where the palette already sat, so nothing here is
-// louder than the rest of the app.
+// hand-tuned set to deltaE 9.4 - letting all three move spreads them
+// through three dimensions and gets 17.1. Saturation is capped where the
+// palette already sat, so nothing here is louder than the rest of the app.
+//
+// Eleven and not twelve because it's coprime with the old eight. Two
+// addresses that collided before stay collided with a 1-in-3 chance at
+// twelve (8 and 12 share a factor of 4); at eleven it's 1 in 11. It also
+// happens to measure better - 17.1 against 16.5 - with one less colour.
 //
 // Kept dim on purpose: these sit on a dark page, often over a wallpaper,
 // so they only reach 1.5-1.9 against the background. Bright enough to
 // name the sender, not bright enough to be the loudest thing on screen.
 // Text on them stays 4.6-7.0, all AA.
 export const AVATAR_SWATCHES = [
-  ['#683131', '#dda7a7'], // red
-  ['#5b4333', '#d8bdac'], // tan
-  ['#494b25', '#d9dca8'], // olive
+  ['#6c3b33', '#ddafa7'], // rust
+  ['#3d3e28', '#d2d4af'], // olive
   ['#265026', '#a7dda7'], // green
-  ['#244236', '#abd9c6'], // sage
-  ['#273a45', '#acc8d8'], // slate
-  ['#33496c', '#a7bcdd'], // blue
+  ['#265041', '#a7ddca'], // sage
+  ['#2a4e5a', '#a7cfdd'], // teal
+  ['#33476c', '#a7badd'], // blue
   ['#33336c', '#a7a7dd'], // indigo
-  ['#432f50', '#c6add7'], // violet
-  ['#69336c', '#daa7dd'], // magenta
-  ['#6a3452', '#dca8c4'], // rose
-  ['#4b3038', '#d4afba'] //  mauve
+  ['#462f50', '#caadd7'], // violet
+  ['#63336c', '#d5a7dd'], // magenta
+  ['#6c334c', '#dda7bf'], // rose
+  ['#4b3036', '#d4afb9'] //  mauve
 ]
 
 // Normalizes the address itself rather than trusting call sites to agree -
