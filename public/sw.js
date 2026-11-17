@@ -1,4 +1,4 @@
-const CACHE = 'bmail-81d95a4f'
+const CACHE = 'bmail-27fe5995'
 const STATIC = [
   '/base.css', '/inbox.css', '/message.css', '/compose.css',
   '/settings.css', '/login.css',

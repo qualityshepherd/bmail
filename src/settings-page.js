@@ -9,8 +9,9 @@ import { renderAppearanceTab } from './settings-appearance.js'
 import { renderContactsTab } from './settings-contacts.js'
 import { renderFiltersTab } from './settings-filters.js'
 import { renderExportTab } from './settings-export.js'
+import { pickBackground } from './backgrounds.js'
 
-function renderSettingsPage (tab, identitiesRaw, bgImage, contactCount = 0, spamText = '', blockText = '', catchAllLockdown = false, knownRecipientCount = 0, showRemoteAvatars = false) {
+export function renderSettingsPage (tab, identitiesRaw, bgImage, contactCount = 0, spamText = '', blockText = '', catchAllLockdown = false, knownRecipientCount = 0) {
   const tabs = [
     { key: 'identities', label: 'Identities' },
     { key: 'appearance', label: 'Appearance' },
@@ -27,15 +28,17 @@ function renderSettingsPage (tab, identitiesRaw, bgImage, contactCount = 0, spam
   const content = tab === 'appearance'
     ? renderAppearanceTab(bgImage)
     : tab === 'contacts'
-      ? renderContactsTab(contactCount, showRemoteAvatars)
+      ? renderContactsTab(contactCount)
       : tab === 'filters'
         ? renderFiltersTab(spamText, blockText, catchAllLockdown, knownRecipientCount)
         : tab === 'export'
           ? renderExportTab()
           : renderIdentitiesTab(identitiesRaw)
 
-  const bodyAttr = bgImage && /^https?:\/\//i.test(bgImage)
-    ? ` style="background-image: linear-gradient(rgba(0,0,0,0.55),rgba(0,0,0,0.55)),url('${escapeHtml(bgImage)}')"`
+  // the tab shows the raw list to edit; the page behind it shows today's
+  const todaysBg = pickBackground(bgImage)
+  const bodyAttr = todaysBg
+    ? ` style="background-image: linear-gradient(rgba(0,0,0,0.55),rgba(0,0,0,0.55)),url('${escapeHtml(todaysBg)}')"`
     : ''
 
   return `<!DOCTYPE html>
@@ -57,10 +60,10 @@ function renderSettingsPage (tab, identitiesRaw, bgImage, contactCount = 0, spam
   <header>
     <h1><a href="/inbox"><img src="/bmail_logo2.png" alt="" class="site-logo">Bmail</a></h1>
   </header>
-  <div class="settings-wrap">
+  <main class="settings-wrap">
     <nav class="settings-tabs">${tabNav}</nav>
     ${content}
-  </div>
+  </main>
   <script type="module" src="/settings.js"></script>
 <script src="/sw-register.js" defer></script>
 </body>
@@ -70,19 +73,17 @@ function renderSettingsPage (tab, identitiesRaw, bgImage, contactCount = 0, spam
 export const handleSettingsPage = withAuth(async (req, env) => {
   const url = new URL(req.url)
   const tab = url.searchParams.get('tab') || 'identities'
-  const [identitiesRaw, bgImage, contactCount, spamText, blockText, catchAllMode, knownRecipientCount, avatarPref] = await Promise.all([
+  const [identitiesRaw, bgImage, contactCount, spamText, blockText, catchAllMode, knownRecipientCount] = await Promise.all([
     getSetting(env.DB, 'identities'),
     getSetting(env.DB, 'bg_image'),
     getAllContactsCount(env.DB),
     getSpamlistText(env.DB),
     getBlocklistText(env.DB),
     getSetting(env.DB, 'catchAllMode'),
-    getKnownRecipientCount(env.DB),
-    getSetting(env.DB, 'showRemoteAvatars')
+    getKnownRecipientCount(env.DB)
   ])
   const catchAllLockdown = catchAllMode === 'known-only'
-  const showRemoteAvatars = avatarPref === 'on'
-  return new Response(renderSettingsPage(tab, identitiesRaw || '', bgImage || '', contactCount, spamText, blockText, catchAllLockdown, knownRecipientCount, showRemoteAvatars), {
+  return new Response(renderSettingsPage(tab, identitiesRaw || '', bgImage || '', contactCount, spamText, blockText, catchAllLockdown, knownRecipientCount), {
     headers: { 'Content-Type': 'text/html; charset=utf-8' }
   })
 })

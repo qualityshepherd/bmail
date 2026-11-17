@@ -15,6 +15,7 @@ import { handleChallenge, handleLogin, handleLogout, handleMe, SECURITY_HEADERS 
 import { handleInbox } from './inbox.js'
 import { handleMessageView } from './message-view.js'
 import { handleAttachmentDownload } from './attachment-download.js'
+import { handleAvatar } from './avatar-handler.js'
 import { handleReply } from './reply-handler.js'
 import { handleStarToggle } from './star-handler.js'
 import { handleBlockSender } from './block-handler.js'
@@ -31,7 +32,7 @@ import { handleArchiveAll } from './archive-all-handler.js'
 import { handleSettingsPage } from './settings-page.js'
 import { handleSettingsSaveIdentities } from './settings-identities.js'
 import { handleSettingsSaveAppearance } from './settings-appearance.js'
-import { handleSettingsImportContacts, handleSettingsClearContacts, handleSettingsSaveAvatarPref } from './settings-contacts.js'
+import { handleSettingsImportContacts, handleSettingsClearContacts } from './settings-contacts.js'
 import { handleSettingsSaveFilters } from './settings-filters.js'
 import { handleSentView } from './sent-view.js'
 import { handleUnsubscribe } from './unsubscribe-handler.js'
@@ -46,6 +47,7 @@ const ATTACHMENT_RETENTION_MS = 30 * 24 * 60 * 60 * 1000
 const TRASH_SPAM_RETENTION_MS = 30 * 24 * 60 * 60 * 1000
 const FIVE_MINUTES_MS = 5 * 60 * 1000
 
+const AVATAR_PATTERN = new URLPattern({ pathname: '/avatar/:email' })
 const SENT_PATTERN = new URLPattern({ pathname: '/sent/:id' })
 const DELETE_SENT_PATTERN = new URLPattern({ pathname: '/sent/:id/delete' })
 const MESSAGE_PATTERN = new URLPattern({ pathname: '/message/:id' })
@@ -73,7 +75,6 @@ const ROUTES = [
   ['POST', '/settings/appearance', (req, env, ctx) => handleSettingsSaveAppearance(req, env, ctx)],
   ['POST', '/settings/contacts', (req, env, ctx) => handleSettingsImportContacts(req, env, ctx)],
   ['POST', '/settings/contacts/clear', (req, env, ctx) => handleSettingsClearContacts(req, env, ctx)],
-  ['POST', '/settings/contacts/avatars', (req, env, ctx) => handleSettingsSaveAvatarPref(req, env, ctx)],
   ['POST', '/settings/filters', (req, env, ctx) => handleSettingsSaveFilters(req, env, ctx)],
   ['POST', '/trash/empty', (req, env, ctx) => handleEmptyTrash(req, env, ctx)],
   ['POST', '/spam/empty', (req, env, ctx) => handleEmptySpam(req, env, ctx)],
@@ -94,6 +95,7 @@ const ROUTES = [
   ['POST', UNSUBSCRIBE_PATTERN, (req, env, ctx, m) => handleUnsubscribe(req, env, ctx, m.pathname.groups.id)],
   ['POST', DELETE_MESSAGE_PATTERN, (req, env, ctx, m) => handleDeleteMessage(req, env, ctx, m.pathname.groups.id)],
   ['GET', ATTACHMENT_PATTERN, (req, env, ctx, m) => handleAttachmentDownload(req, env, ctx, m.pathname.groups.id, m.pathname.groups.attachmentId)],
+  ['GET', AVATAR_PATTERN, (req, env, ctx, m) => handleAvatar(req, env, ctx, m.pathname.groups.email)],
   ['POST', DELETE_SENT_PATTERN, (req, env, ctx, m) => handleDeleteSent(req, env, ctx, m.pathname.groups.id)],
   ['GET', SENT_PATTERN, (req, env, ctx, m) => handleSentView(req, env, ctx, m.pathname.groups.id)],
   ['GET', FORWARD_PATTERN, (req, env, ctx, m) => handleForwardPage(req, env, ctx, m.pathname.groups.id)],

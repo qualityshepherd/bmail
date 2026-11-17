@@ -3,6 +3,7 @@ import { getSetting, getEmailById } from './db.js'
 import { getAllContacts } from './db-contacts.js'
 import { parseIdentities, getDefaultIdentity } from './identities.js'
 import { escapeHtml, formatDate, renderSettingsMenu, contactDatalist } from './html.js'
+import { pickBackground } from './backgrounds.js'
 
 function renderIdentityOptions (identities) {
   return identities.map((i) =>
@@ -40,11 +41,11 @@ export function renderComposePage (identities, contacts = [], defaults = {}, { i
     <h1><a href="/inbox"><img src="/bmail_logo2.png" alt="" class="site-logo">Bmail</a></h1>
     ${renderSettingsMenu(identity)}
   </header>
-  <div class="compose-wrap">
+  <main class="compose-wrap">
     <h2>Compose isn't set up yet</h2>
     <p>Add at least one sending identity first.</p>
     <p><a href="/settings">Set up identities &rarr;</a></p>
-  </div>
+  </main>
 <script src="/sw-register.js" defer></script>
 </body>
 </html>`
@@ -70,7 +71,7 @@ export function renderComposePage (identities, contacts = [], defaults = {}, { i
     <h1><a href="/inbox"><img src="/bmail_logo2.png" alt="" class="site-logo">Bmail</a></h1>
     ${renderSettingsMenu(identity)}
   </header>
-  <div class="compose-wrap">
+  <main class="compose-wrap">
     <h2>${heading}</h2>
     <form method="post" action="/compose" id="compose-form" enctype="multipart/form-data">
       <datalist id="addr-datalist">${contactDatalist(contacts)}</datalist>
@@ -123,7 +124,7 @@ export function renderComposePage (identities, contacts = [], defaults = {}, { i
         <span class="compose-send-error" id="compose-send-error" role="alert"></span>
       </div>
     </form>
-  </div>
+  </main>
   <script type="module" src="/compose.js"></script>
 <script src="/sw-register.js" defer></script>
 </body>
@@ -138,7 +139,7 @@ export const handleComposePage = withAuth(async (req, env, ctx, session) => {
   ])
   const identities = parseIdentities(identitiesRaw)
   const identity = getDefaultIdentity(identities)
-  return new Response(renderComposePage(identities, contacts, {}, { identity, bgImage: bgImage || '' }), {
+  return new Response(renderComposePage(identities, contacts, {}, { identity, bgImage: pickBackground(bgImage) }), {
     headers: { 'Content-Type': 'text/html; charset=utf-8' }
   })
 })
@@ -160,7 +161,7 @@ export const handleForwardPage = withAuth(async (req, env, ctx, session, emailId
   const from = email.sender_display ? `${email.sender_display} <${email.sender}>` : email.sender
   const fwdBody = `\n\n---------- Forwarded message ----------\nFrom: ${from}\nDate: ${formatDate(email.created_at)}\nSubject: ${rawSubject}\n\n${email.body || ''}`
 
-  return new Response(renderComposePage(identities, contacts, { subject: fwdSubject, body: fwdBody, isForward: true, cancelHref: `/message/${emailId}` }, { identity, bgImage: bgImage || '' }), {
+  return new Response(renderComposePage(identities, contacts, { subject: fwdSubject, body: fwdBody, isForward: true, cancelHref: `/message/${emailId}` }, { identity, bgImage: pickBackground(bgImage) }), {
     headers: { 'Content-Type': 'text/html; charset=utf-8' }
   })
 })

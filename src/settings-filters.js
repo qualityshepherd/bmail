@@ -10,7 +10,7 @@ export function renderFiltersTab (spamText, blockText, catchAllLockdown, knownRe
       <textarea id="spamlist" name="spamlist" rows="5" placeholder="shadyrv@example.com&#10;*@marketing.example.com">${escapeHtml(spamText)}</textarea>
       <label for="blocklist">Block list — silently drop, never stored</label>
       <textarea id="blocklist" name="blocklist" rows="5" placeholder="troll@example.com&#10;*@spam.example.com">${escapeHtml(blockText)}</textarea>
-      <h3>Catch-all lockdown</h3>
+      <h2>Catch-all lockdown</h2>
       <p class="settings-hint">${knownRecipientCount} address${knownRecipientCount === 1 ? '' : 'es'} have received real mail
          and are on the allow-list. Use this if the catch-all address gets bombed with mail to
          made-up local-parts - anything not already on that list gets silently dropped, before it's

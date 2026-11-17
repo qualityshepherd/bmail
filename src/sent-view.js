@@ -1,22 +1,22 @@
 import { withAuth } from './auth-routes.js'
 import { getSentById, getSetting } from './db.js'
 import { getContactsByEmails } from './db-contacts.js'
-import { escapeHtml, linkify, formatDate, avatarHue, avatarInitials, extractEmail, extractDisplayName, resolveAddressListDisplay, renderSettingsMenu, safeRedirect } from './html.js'
+import { escapeHtml, linkify, formatDate, avatarSwatch, avatarInitials, extractEmail, extractDisplayName, resolveAddressListDisplay, renderSettingsMenu, safeRedirect } from './html.js'
 import { parseIdentities, getDefaultIdentity } from './identities.js'
+import { pickBackground } from './backgrounds.js'
 
-function renderSentPage (sent, backUrl, { identity = null, bgImage = '', contacts = new Map() } = {}) {
+export function renderSentPage (sent, backUrl, { identity = null, bgImage = '', contacts = new Map() } = {}) {
   const subject = sent.subject ? escapeHtml(sent.subject) : '(no subject)'
   const toAddresses = sent.to_address.split(',').map((s) => s.trim()).filter(Boolean)
   const firstEmail = extractEmail(toAddresses[0])
   const contact = contacts.get(firstEmail) || null
   const toDisplay = (contact && contact.name) || extractDisplayName(toAddresses[0])
   const hasDisplayName = toDisplay !== firstEmail
-  const hue = avatarHue(firstEmail)
   const initials = toAddresses.length > 1 ? `+${toAddresses.length}` : avatarInitials(toDisplay, firstEmail)
 
-  const avatarHtml = (contact && contact.avatarUrl && /^https?:\/\//i.test(contact.avatarUrl))
+  const avatarHtml = (contact && contact.avatarUrl)
     ? `<img class="msg-avatar msg-avatar-img" src="${escapeHtml(contact.avatarUrl)}" alt="" aria-hidden="true">`
-    : `<span class="msg-avatar" style="--hue:${hue}" aria-hidden="true">${initials}</span>`
+    : `<span class="msg-avatar" style="${avatarSwatch(firstEmail)}" aria-hidden="true">${initials}</span>`
 
   const bodyAttr = bgImage && /^https?:\/\//i.test(bgImage)
     ? ` style="background-image: linear-gradient(rgba(0,0,0,0.55),rgba(0,0,0,0.55)),url('${escapeHtml(bgImage)}')"`
@@ -95,7 +95,7 @@ export const handleSentView = withAuth(async (req, env, ctx, session, sentId) =>
   ])
   const identity = getDefaultIdentity(parseIdentities(identitiesRaw || ''))
 
-  return new Response(renderSentPage(sent, backUrl, { identity, bgImage: bgImage || '', contacts }), {
+  return new Response(renderSentPage(sent, backUrl, { identity, bgImage: pickBackground(bgImage), contacts }), {
     headers: { 'Content-Type': 'text/html; charset=utf-8', 'Cache-Control': 'no-store' }
   })
 })

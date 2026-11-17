@@ -1,5 +1,3 @@
-import { getSetting } from './db-admin.js'
-
 export async function upsertContacts (db, contacts) {
   if (contacts.length === 0) return
   // One statement per contact — D1 caps bound parameters at 100 per query,
@@ -10,23 +8,35 @@ export async function upsertContacts (db, contacts) {
   await db.batch(contacts.map((c) => stmt.bind(c.email, c.name || '', c.avatarUrl || '')))
 }
 
-// Returns a Map<lowerCaseEmail, { name, avatarUrl }> for efficient per-row lookup.
-// Remote avatars are opt-in (off by default) - viewing a message shouldn't
-// ping whatever host a contact put in their avatar field. Checked once
-// here rather than at every render call site.
+// Map<lowerCaseEmail, { name, avatarUrl }> for per-row lookup.
+//
+// avatarUrl is a path on our own origin, not the url in the row - that one
+// is just where the photo came from once. Built here rather than at each
+// render site so nothing can accidentally leak the original back into a
+// page and start making third-party requests again.
 export async function getContactsByEmails (db, emails) {
   const map = new Map()
   if (emails.length === 0) return map
-  const showRemoteAvatars = (await getSetting(db, 'showRemoteAvatars')) === 'on'
   const unique = [...new Set(emails.map((e) => e.toLowerCase()))]
   const placeholders = unique.map(() => '?').join(', ')
   const { results } = await db.prepare(
     `SELECT email, name, avatar_url FROM contacts WHERE email IN (${placeholders})`
   ).bind(...unique).all()
   for (const row of results) {
-    map.set(row.email, { name: row.name, avatarUrl: showRemoteAvatars ? row.avatar_url : '' })
+    map.set(row.email, {
+      name: row.name,
+      avatarUrl: row.avatar_url ? `/avatar/${encodeURIComponent(row.email)}` : ''
+    })
   }
   return map
+}
+
+// Raw row, for the avatar route - it needs the original url, not the path.
+export async function getContactByEmail (db, email) {
+  const { results } = await db.prepare(
+    'SELECT email, name, avatar_url FROM contacts WHERE email = ?'
+  ).bind(String(email || '').toLowerCase()).all()
+  return results[0] || null
 }
 
 export async function getAllContacts (db) {
@@ -41,4 +51,12 @@ export async function getAllContactsCount (db) {
 
 export async function deleteAllContacts (db) {
   await db.prepare('DELETE FROM contacts').run()
+}
+
+// Every photo url still spoken for, for the R2 sweep.
+export async function getAllAvatarUrls (db) {
+  const { results } = await db.prepare(
+    "SELECT DISTINCT avatar_url FROM contacts WHERE avatar_url <> ''"
+  ).all()
+  return results.map((r) => r.avatar_url)
 }

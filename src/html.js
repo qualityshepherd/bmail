@@ -55,12 +55,44 @@ export function formatBytes (bytes) {
   return `${(bytes / (1024 * 1024)).toFixed(1)} MB`
 }
 
-// Deterministic hue (0–359) from any string — used to color initials avatars
-// consistently per sender without any external lookup.
-export function avatarHue (str) {
+// Eight swatches, not 360 hues. This was hsl(<hash % 360>, 12%, 26%) - and
+// the hash was fine, but at 12% saturation the whole colour wheel only
+// moves the rgb channels 16 levels out of 255, so every avatar came out the
+// same grey tile. Hue is lopsided anyway: 180-270 is a quarter of the
+// circle and all of it reads as "blue".
+//
+// Hand-picked and measured instead - min deltaE 9.4 between any two (the
+// old scheme managed 4.2), text contrast 5.2-6.7. Saturation nudged up in
+// the greens and blues where the eye is dull, down in the reds where it
+// isn't. Eight colours you can tell apart beats 360 you can't; collisions
+// are the point now, not a bug.
+//
+// Kept dim on purpose: these sit on a dark page, often over a wallpaper,
+// so they only reach 1.5-1.9 against the background. Bright enough to
+// name the sender, not bright enough to be the loudest thing on screen.
+export const AVATAR_SWATCHES = [
+  ['#61382e', '#ddb2a7'], // terracotta
+  ['#564425', '#ddc9a6'], // amber
+  ['#424927', '#d0d9ab'], // olive
+  ['#324d2d', '#b3d7ad'], // moss
+  ['#25463c', '#abd9cb'], // sage
+  ['#2a4651', '#a9cdda'], // teal
+  ['#2d385c', '#a8b4dc'], // slate blue
+  ['#503055', '#d2acd8'] //  plum
+]
+
+// Normalizes the address itself rather than trusting call sites to agree -
+// the inbox was hashing the raw sender while the sent list hashed the
+// lowercased bare one, so a person could wear two colours depending on
+// which screen you were looking at.
+export function avatarSwatch (str) {
+  const key = extractEmail(str) || String(str || '').trim().toLowerCase()
   let h = 0
-  for (let i = 0; i < str.length; i++) h = (h * 31 + str.charCodeAt(i)) >>> 0
-  return h % 360
+  for (let i = 0; i < key.length; i++) h = (h * 31 + key.charCodeAt(i)) >>> 0
+  // high bits: 31 is -1 mod 8, so the low ones are just an alternating
+  // character sum - a bad index into a power-of-two palette
+  const [bg, fg] = AVATAR_SWATCHES[(h >>> 16) % AVATAR_SWATCHES.length]
+  return `--av-bg:${bg};--av-fg:${fg}`
 }
 
 export function parseAddressList (raw) {
@@ -152,9 +184,8 @@ export function renderSettingsMenu (identity) {
   } else {
     const addr = identity ? identity.address : 'bmail'
     const name = identity ? (identity.name || identity.address) : ''
-    const hue = avatarHue(addr)
     const initials = avatarInitials(name, addr)
-    avatarHtml = `<span class="header-avatar header-avatar-initials" style="--hue:${hue}">${initials}</span>`
+    avatarHtml = `<span class="header-avatar header-avatar-initials" style="${avatarSwatch(addr)}">${initials}</span>`
   }
 
   return `<details class="settings-menu">

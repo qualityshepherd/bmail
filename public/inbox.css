@@ -148,13 +148,13 @@
   height: 38px;
   border-radius: 7px;
   flex-shrink: 0;
-  background: hsl(var(--hue), 12%, 26%);
+  background: var(--av-bg);
   display: flex;
   align-items: center;
   justify-content: center;
   font-size: 0.75rem;
   font-weight: 700;
-  color: hsl(var(--hue), 18%, 68%);
+  color: var(--av-fg);
 }
 
 /* ─── Two-line row body ──────────────────────────────────── */
@@ -180,7 +180,9 @@
 .row-sender {
   font-size: 0.8rem;
   color: var(--text-dim);
-  opacity: 0.6;
+  /* 0.85 is the floor that still clears 4.5:1 once composited onto the
+     page - unread is marked by the bold subject above, not by this */
+  opacity: 0.85;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -204,10 +206,12 @@
 
 /* Unread: subject bold + full brightness, sender slightly brighter */
 .email-item.unread .row-subject { font-weight: 700; color: var(--text); }
-.email-item.unread .row-sender { opacity: 0.9; }
+.email-item.unread .row-sender { opacity: 1; }
 
 /* Preview text after the dash */
-.preview { color: var(--text-dim); opacity: 0.5; }
+/* 0.85, not 0.5 - at half opacity this composited to 2.42:1 on the page
+   background, under the 4.5 AA floor, and it's the most-read text here */
+.preview { color: var(--text-dim); opacity: 0.85; }
 
 /* Tag chips in sender line */
 .tag-chip {
@@ -259,8 +263,8 @@
 
 .status-icon-form button:hover { border-color: var(--accent); color: var(--accent-bright); }
 
-.status-icon-form button.danger-icon { color: #b06060; }
-.status-icon-form button.danger-icon:hover { border-color: #b06060; color: #d07070; }
+.status-icon-form button.danger-icon { color: #c06a6a; }
+.status-icon-form button.danger-icon:hover { border-color: #c06a6a; color: #d07070; }
 
 /* ─── Bulk action menu ───────────────────────────────────── */
 .bulk-menu {
@@ -319,7 +323,7 @@
   color: var(--accent-bright);
 }
 
-.bulk-panel .danger-btn { color: #b06060; }
+.bulk-panel .danger-btn { color: #c06a6a; }
 .bulk-panel .danger-btn:hover { color: #d07070; background: rgba(176,96,96,0.08); }
 
 /* ─── Empty state ────────────────────────────────────────── */
@@ -343,7 +347,7 @@
 
   .avatar { width: 34px; height: 34px; border-radius: 6px; }
   .row-subject { font-size: 1rem; }
-  .row-sender { font-size: 0.875rem; opacity: 0.8; }
+  .row-sender { font-size: 0.875rem; opacity: 0.85; }
   .row-date { font-size: 0.875rem; }
   .email-item::after { left: 1rem; }
 }

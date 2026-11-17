@@ -37,8 +37,8 @@ header .settings-menu { margin-left: 0; justify-self: end; }
   color: var(--accent-bright);
 }
 
-.header-actions .status-icon-form button.danger-icon { color: #b06060; }
-.header-actions .status-icon-form button.danger-icon:hover { border-color: #b06060; color: #d07070; }
+.header-actions .status-icon-form button.danger-icon { color: #c06a6a; }
+.header-actions .status-icon-form button.danger-icon:hover { border-color: #c06a6a; color: #d07070; }
 
 /* ─── ··· Traffic menu ────────────────────────────────────── */
 .traffic-menu {
@@ -203,19 +203,20 @@ header .settings-menu { margin-left: 0; justify-self: end; }
 .msg-avatar {
   width: 40px;
   height: 40px;
-  border-radius: 50%;
+  /* matches the inbox's 7px on 38px - same avatar, same shape */
+  border-radius: 7px;
   flex-shrink: 0;
-  background: hsl(var(--hue), 12%, 26%);
+  background: var(--av-bg);
   display: flex;
   align-items: center;
   justify-content: center;
   font-size: 0.78rem;
   font-weight: 700;
-  color: hsl(var(--hue), 18%, 68%);
+  color: var(--av-fg);
 }
 
 .msg-avatar-img {
-  border-radius: 50%;
+  border-radius: 7px;
   object-fit: cover;
 }
 
@@ -461,7 +462,7 @@ header .settings-menu { margin-left: 0; justify-self: end; }
 .delete-form button {
   background: transparent;
   border: 1px solid #6a2a2a;
-  color: #b06060;
+  color: #c06a6a;
   font-family: inherit;
   font-size: 0.9rem;
   padding: 0.45rem 1rem;

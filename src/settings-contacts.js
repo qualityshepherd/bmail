@@ -1,16 +1,19 @@
 import { withAuth } from './auth-routes.js'
-import { setSetting } from './db-admin.js'
-import { upsertContacts, deleteAllContacts } from './db-contacts.js'
+import { upsertContacts, deleteAllContacts, getAllAvatarUrls } from './db-contacts.js'
 import { parseVCards } from './contacts.js'
+import { cacheAvatars, reconcileAvatars } from './avatars.js'
 
-export function renderContactsTab (contactCount, showRemoteAvatars) {
+export function renderContactsTab (contactCount) {
   const countLine = contactCount === 0
     ? '<p class="empty-hint">No contacts imported yet.</p>'
     : `<p class="settings-hint">${contactCount} contact${contactCount === 1 ? '' : 's'} stored.</p>`
 
   return `<section class="settings-section">
     <p class="settings-hint">Paste the contents of a <code>.vcf</code> file to import contacts.
-       Names and avatar URLs are used in the inbox. New contacts are added; existing overwritten. Base64 photos are skipped.</p>
+       Names and photos are used in the inbox. New contacts are added; existing overwritten.
+       Photos are downloaded once, here, and served from Bmail &mdash; your browser never
+       requests anything from the host the vCard pointed at. Base64 photos are skipped;
+       they may take a moment to appear after importing.</p>
     ${countLine}
     <form method="post" action="/settings/contacts">
       <textarea name="vcf" rows="5" placeholder="BEGIN:VCARD&#10;VERSION:3.0&#10;FN:Jane Smith&#10;EMAIL:jane@example.com&#10;PHOTO;VALUE=URI:https://example.com/jane.jpg&#10;END:VCARD"></textarea>
@@ -25,23 +28,12 @@ export function renderContactsTab (contactCount, showRemoteAvatars) {
            </form>
          </details>`
       : ''}
-    <h3>Remote avatars</h3>
-    <p class="settings-hint">Off by default: a contact's avatar URL is remote content, and just viewing
-       a message from them would otherwise make your browser fetch it - a passive way for someone to
-       know when their mail gets opened.</p>
-    <form method="post" action="/settings/contacts/avatars">
-      <label>
-        <input type="checkbox" name="showRemoteAvatars" value="1"${showRemoteAvatars ? ' checked' : ''}>
-        Load contact avatar images from remote URLs
-      </label>
-      <button type="submit" class="btn-outline">Save</button>
-    </form>
   </section>`
 }
 
 const MAX_VCF_LENGTH = 5 * 1024 * 1024
 
-export const handleSettingsImportContacts = withAuth(async (req, env) => {
+export const handleSettingsImportContacts = withAuth(async (req, env, ctx) => {
   const formData = await req.formData()
   const vcf = (formData.get('vcf') || '').toString()
   if (vcf.length > MAX_VCF_LENGTH) {
@@ -49,17 +41,22 @@ export const handleSettingsImportContacts = withAuth(async (req, env) => {
   }
   const contacts = parseVCards(vcf)
   await upsertContacts(env.DB, contacts)
+  // in the background - a few hundred photos would hold the redirect open.
+  // Sweep after, not before: the new ones are in the table by then, so the
+  // only thing it drops is a photo somebody has since changed.
+  ctx.waitUntil(
+    cacheAvatars(env, contacts)
+      .then(() => getAllAvatarUrls(env.DB))
+      .then((urls) => reconcileAvatars(env, urls))
+      .catch(() => {})
+  )
   return new Response(null, { status: 302, headers: { Location: '/settings?tab=contacts' } })
 })
 
-export const handleSettingsClearContacts = withAuth(async (req, env) => {
+export const handleSettingsClearContacts = withAuth(async (req, env, ctx) => {
   await deleteAllContacts(env.DB)
-  return new Response(null, { status: 302, headers: { Location: '/settings?tab=contacts' } })
-})
-
-export const handleSettingsSaveAvatarPref = withAuth(async (req, env) => {
-  const formData = await req.formData()
-  const showRemoteAvatars = formData.get('showRemoteAvatars') === '1' ? 'on' : 'off'
-  await setSetting(env.DB, 'showRemoteAvatars', showRemoteAvatars)
+  // "This cannot be undone" has to mean the photos too, or clearing the
+  // address book leaves everyone's face sitting in the bucket.
+  ctx.waitUntil(reconcileAvatars(env, []).catch(() => {}))
   return new Response(null, { status: 302, headers: { Location: '/settings?tab=contacts' } })
 })

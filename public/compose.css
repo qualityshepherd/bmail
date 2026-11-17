@@ -209,7 +209,7 @@
   flex-shrink: 0;
 }
 
-.file-list li button:hover { color: #b06060; }
+.file-list li button:hover { color: #c06a6a; }
 
 /* ─── Send row ────────────────────────────────────────────── */
 .compose-actions {

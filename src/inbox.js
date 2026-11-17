@@ -4,9 +4,10 @@ import { searchSent, getSentCount } from './db-sent.js'
 import { getSetting } from './db-admin.js'
 import { getContactsByEmails } from './db-contacts.js'
 import { resolveEffectiveQuery, stringifySearchFilters, parseTags, topTags } from './search.js'
-import { escapeHtml, formatShortDate, avatarHue, avatarInitials, extractEmail, extractDisplayName, renderSettingsMenu } from './html.js'
+import { escapeHtml, formatShortDate, avatarSwatch, avatarInitials, extractEmail, extractDisplayName, renderSettingsMenu } from './html.js'
 import { renderStatusIcons, renderStarIcon } from './status-icons.js'
 import { parseIdentities, getDefaultIdentity } from './identities.js'
+import { pickBackground } from './backgrounds.js'
 
 const FOLDER_LINKS = [
   { label: 'Inbox', query: 'inbox:' },
@@ -35,12 +36,11 @@ function renderSentRow (sent, currentUrl, contacts = new Map()) {
   const bareEmail = extractEmail(firstTo)
   const contact = contacts.get(bareEmail)
   const displayName = (contact && contact.name) || extractDisplayName(firstTo)
-  const hue = avatarHue(bareEmail)
   const initials = avatarInitials(displayName, bareEmail)
 
-  const avatarHtml = (contact && contact.avatarUrl && /^https?:\/\//i.test(contact.avatarUrl))
+  const avatarHtml = (contact && contact.avatarUrl)
     ? `<img class="avatar avatar-img" src="${escapeHtml(contact.avatarUrl)}" alt="" aria-hidden="true">`
-    : `<span class="avatar" style="--hue:${hue}" aria-hidden="true">${initials}</span>`
+    : `<span class="avatar" style="${avatarSwatch(bareEmail)}" aria-hidden="true">${initials}</span>`
 
   const statusBadge = sent.send_status && sent.send_status !== 'sent'
     ? `<span class="sent-status-badge sent-status-${escapeHtml(sent.send_status)}">${escapeHtml(sent.send_status)}</span>`
@@ -73,12 +73,11 @@ function renderRow (email, currentUrl, contacts = new Map()) {
     ? '<span class="dmarc-badge" title="Sender authentication failed (DMARC)">⚠ unverified</span>'
     : ''
   const unreadClass = email.read ? '' : ' unread'
-  const hue = avatarHue(email.sender)
   const initials = avatarInitials(displayName, email.sender)
 
-  const avatarHtml = (contact && contact.avatarUrl && /^https?:\/\//i.test(contact.avatarUrl))
+  const avatarHtml = (contact && contact.avatarUrl)
     ? `<img class="avatar avatar-img" src="${escapeHtml(contact.avatarUrl)}" alt="" aria-hidden="true">`
-    : `<span class="avatar" style="--hue:${hue}" aria-hidden="true">${initials}</span>`
+    : `<span class="avatar" style="${avatarSwatch(email.sender)}" aria-hidden="true">${initials}</span>`
 
   return `<li class="email-item${unreadClass}" data-created-at="${email.created_at}">
     <a class="email-row" href="/message/${email.id}?back=${encodeURIComponent(currentUrl)}" data-ts="${email.created_at}">
@@ -118,7 +117,7 @@ function renderTagLinks (tags) {
     const q = t.tag.includes(' ') ? `tag:"${t.tag}"` : `tag:${t.tag}`
     return `<a href="/inbox?q=${encodeURIComponent(q)}">#${escapeHtml(t.tag)} (${t.count})</a>`
   }).join('')
-  return `<nav class="tag-links">${links}</nav>`
+  return `<nav class="tag-links" aria-label="Tags">${links}</nav>`
 }
 
 const DOTS_ICON = '<svg viewBox="0 0 24 24" width="16" height="16"><circle cx="5" cy="12" r="1.5" fill="currentColor"/><circle cx="12" cy="12" r="1.5" fill="currentColor"/><circle cx="19" cy="12" r="1.5" fill="currentColor"/></svg>'
@@ -168,7 +167,7 @@ function renderBulkMenu (effectiveQuery, currentUrl, hasEmails) {
     </details>`
 }
 
-function renderInboxPage ({ emails, total, effectiveQuery, tags, currentUrl, renderRowFn = renderRow, unreadCount = 0, unreadSpamCount = 0, identity = null, bgImage = '', contacts = new Map() }) {
+export function renderInboxPage ({ emails, total, effectiveQuery, tags, currentUrl, renderRowFn = renderRow, unreadCount = 0, unreadSpamCount = 0, identity = null, bgImage = '', contacts = new Map() }) {
   const rows = emails.length > 0
     ? emails.map((e) => renderRowFn(e, currentUrl, contacts)).join('\n')
     : '<li class="empty">No mail here.</li>'
@@ -204,7 +203,7 @@ function renderInboxPage ({ emails, total, effectiveQuery, tags, currentUrl, ren
     <h1><a href="/inbox"><img src="/bmail_logo2.png" alt="" class="site-logo">Bmail</a></h1>
     ${renderSettingsMenu(identity)}
   </header>
-  <div class="page-wrap">
+  <main class="page-wrap">
     <div class="search-bar">
       <a href="/compose" class="compose-btn">+ Compose</a>
       <form method="get" action="/inbox" class="search-form">
@@ -217,7 +216,7 @@ function renderInboxPage ({ emails, total, effectiveQuery, tags, currentUrl, ren
         </button>
       </form>
     </div>
-    <nav class="folder-links">
+    <nav class="folder-links" aria-label="Folders">
       ${renderFolderLinks(effectiveQuery, unreadCount, unreadSpamCount)}
       ${renderBulkMenu(effectiveQuery, currentUrl, emails.length > 0)}
     </nav>
@@ -225,7 +224,7 @@ function renderInboxPage ({ emails, total, effectiveQuery, tags, currentUrl, ren
     <ul class="inbox" id="email-list" data-query="${escapeHtml(effectiveQuery)}" data-oldest="${oldestCreatedAt}" data-oldest-id="${oldestId}" data-newest="${newestCreatedAt}" data-newest-id="${newestId}" data-total="${total}">
       ${rows}
     </ul>
-  </div>
+  </main>
   <div id="scroll-sentinel"></div>
   <script type="module" src="/inbox.js"></script>
 <script src="/sw-register.js" defer></script>
@@ -314,7 +313,7 @@ export const handleInbox = withAuth(async (req, env, ctx, session) => {
       })
     }
     const [total, unreadCount, unreadSpamCount] = await Promise.all([getSentCount(env.DB), getUnreadInboxCount(env.DB), getUnreadSpamCount(env.DB)])
-    return new Response(renderInboxPage({ emails: sent, total, effectiveQuery, tags: [], currentUrl, renderRowFn: renderSentRow, unreadCount, unreadSpamCount, identity, bgImage: bgImage || '', contacts: sentContacts }), {
+    return new Response(renderInboxPage({ emails: sent, total, effectiveQuery, tags: [], currentUrl, renderRowFn: renderSentRow, unreadCount, unreadSpamCount, identity, bgImage: pickBackground(bgImage), contacts: sentContacts }), {
       headers: { 'Content-Type': 'text/html; charset=utf-8', ...noStoreHeaders }
     })
   }
@@ -329,7 +328,7 @@ export const handleInbox = withAuth(async (req, env, ctx, session) => {
   ])
   const tags = topTags(allTagsRaw, 8)
 
-  return new Response(renderInboxPage({ emails, total, effectiveQuery, tags, currentUrl, unreadCount, unreadSpamCount, identity, bgImage: bgImage || '', contacts }), {
+  return new Response(renderInboxPage({ emails, total, effectiveQuery, tags, currentUrl, unreadCount, unreadSpamCount, identity, bgImage: pickBackground(bgImage), contacts }), {
     headers: { 'Content-Type': 'text/html; charset=utf-8', ...noStoreHeaders }
   })
 })

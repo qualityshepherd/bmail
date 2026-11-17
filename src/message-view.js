@@ -1,11 +1,12 @@
 import { withAuth } from './auth-routes.js'
 import { getEmailById, getAttachmentsByEmailId, markRead, getAdjacentEmailId, getSetting, getAllTags } from './db.js'
 import { getContactsByEmails, getAllContacts } from './db-contacts.js'
-import { escapeHtml, linkify, formatDate, formatBytes, avatarHue, avatarInitials, renderSettingsMenu, parseAddressList, extractEmail, safeRedirect, contactDatalist } from './html.js'
+import { escapeHtml, linkify, formatDate, formatBytes, avatarSwatch, avatarInitials, renderSettingsMenu, parseAddressList, extractEmail, safeRedirect, contactDatalist } from './html.js'
 import { buildQuotedReplyText, resolveReplyTo, replyToDiffers } from './reply.js'
 import { resolveEffectiveQuery, parseTags, formatTags } from './search.js'
 import { parseIdentities, getDefaultIdentity } from './identities.js'
 import { renderStarIcon, renderStatusIcons } from './status-icons.js'
+import { pickBackground } from './backgrounds.js'
 
 const DEFAULT_BACK = '/inbox?q=' + encodeURIComponent('status:inbox')
 
@@ -45,17 +46,16 @@ function renderAttachment (emailId, attachment) {
   </li>`
 }
 
-function renderMessagePage (email, attachments, { sent, backParam, prevId, nextId, identities = [], allTags = [], identity = null, bgImage = '', contact = null, allContacts = [] }) {
+export function renderMessagePage (email, attachments, { sent, backParam, prevId, nextId, identities = [], allTags = [], identity = null, bgImage = '', contact = null, allContacts = [] }) {
   const subject = email.subject ? escapeHtml(email.subject) : '(no subject)'
   const displayName = (contact && contact.name) || email.sender_display || email.sender
   const hasDisplayName = displayName !== email.sender
   const body = linkify(email.body || '')
-  const hue = avatarHue(email.sender)
   const initials = avatarInitials(displayName, email.sender)
 
-  const avatarHtml = (contact && contact.avatarUrl && /^https?:\/\//i.test(contact.avatarUrl))
+  const avatarHtml = (contact && contact.avatarUrl)
     ? `<img class="msg-avatar msg-avatar-img" src="${escapeHtml(contact.avatarUrl)}" alt="" aria-hidden="true">`
-    : `<span class="msg-avatar" style="--hue:${hue}" aria-hidden="true">${initials}</span>`
+    : `<span class="msg-avatar" style="${avatarSwatch(email.sender)}" aria-hidden="true">${initials}</span>`
 
   const attachmentsHtml = attachments.length > 0
     ? `<ul class="attachments">${attachments.map((a) => renderAttachment(email.id, a)).join('\n')}</ul>`
@@ -281,7 +281,7 @@ export const handleMessageView = withAuth(async (req, env, ctx, session, emailId
   const allTags = [...new Set(allTagsRaw.flatMap((t) => parseTags(t)))]
   const contact = contacts.get(email.sender.toLowerCase()) || null
 
-  return new Response(renderMessagePage({ ...email, unsubscribed }, attachments, { sent, backParam, prevId, nextId, identities, allTags, identity, bgImage: bgImage || '', contact, allContacts }), {
+  return new Response(renderMessagePage({ ...email, unsubscribed }, attachments, { sent, backParam, prevId, nextId, identities, allTags, identity, bgImage: pickBackground(bgImage), contact, allContacts }), {
     headers: { 'Content-Type': 'text/html; charset=utf-8', 'Cache-Control': 'no-store' }
   })
 })

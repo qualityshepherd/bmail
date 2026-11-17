@@ -6,7 +6,9 @@
   "license": "AGPL-3.0-or-later",
   "type": "module",
   "standard": {
-    "env": ["browser"]
+    "env": [
+      "browser"
+    ]
   },
   "scripts": {
     "dev": "wrangler dev",
@@ -23,6 +25,7 @@
     "postal-mime": "^2.7.6"
   },
   "devDependencies": {
+    "axe-core": "^4.14.1",
     "puppeteer": "^25.7.0",
     "wrangler": "^4.123.0"
   }
