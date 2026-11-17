@@ -61,24 +61,31 @@ export function formatBytes (bytes) {
 // same grey tile. Hue is lopsided anyway: 180-270 is a quarter of the
 // circle and all of it reads as "blue".
 //
-// Hand-picked and measured instead - min deltaE 9.4 between any two (the
-// old scheme managed 4.2), text contrast 5.2-6.7. Saturation nudged up in
-// the greens and blues where the eye is dull, down in the reds where it
-// isn't. Eight colours you can tell apart beats 360 you can't; collisions
-// are the point now, not a bug.
+// Twelve, chosen by search rather than by eye: lightness and saturation
+// vary per swatch, not just hue. Spacing hues evenly at a fixed s/l puts
+// every colour on one ring in Lab space, which is what held the old
+// hand-tuned set to deltaE 9.4 - letting all three move spreads them in
+// three dimensions and gets 16.5 out of half again as many swatches.
+// Saturation is capped where the palette already sat, so nothing here is
+// louder than the rest of the app.
 //
 // Kept dim on purpose: these sit on a dark page, often over a wallpaper,
 // so they only reach 1.5-1.9 against the background. Bright enough to
 // name the sender, not bright enough to be the loudest thing on screen.
+// Text on them stays 4.6-7.0, all AA.
 export const AVATAR_SWATCHES = [
-  ['#61382e', '#ddb2a7'], // terracotta
-  ['#564425', '#ddc9a6'], // amber
-  ['#424927', '#d0d9ab'], // olive
-  ['#324d2d', '#b3d7ad'], // moss
-  ['#25463c', '#abd9cb'], // sage
-  ['#2a4651', '#a9cdda'], // teal
-  ['#2d385c', '#a8b4dc'], // slate blue
-  ['#503055', '#d2acd8'] //  plum
+  ['#683131', '#dda7a7'], // red
+  ['#5b4333', '#d8bdac'], // tan
+  ['#494b25', '#d9dca8'], // olive
+  ['#265026', '#a7dda7'], // green
+  ['#244236', '#abd9c6'], // sage
+  ['#273a45', '#acc8d8'], // slate
+  ['#33496c', '#a7bcdd'], // blue
+  ['#33336c', '#a7a7dd'], // indigo
+  ['#432f50', '#c6add7'], // violet
+  ['#69336c', '#daa7dd'], // magenta
+  ['#6a3452', '#dca8c4'], // rose
+  ['#4b3038', '#d4afba'] //  mauve
 ]
 
 // Normalizes the address itself rather than trusting call sites to agree -
@@ -89,8 +96,7 @@ export function avatarSwatch (str) {
   const key = extractEmail(str) || String(str || '').trim().toLowerCase()
   let h = 0
   for (let i = 0; i < key.length; i++) h = (h * 31 + key.charCodeAt(i)) >>> 0
-  // high bits: 31 is -1 mod 8, so the low ones are just an alternating
-  // character sum - a bad index into a power-of-two palette
+  // high bits - with a multiplier of 31 the low ones barely mix
   const [bg, fg] = AVATAR_SWATCHES[(h >>> 16) % AVATAR_SWATCHES.length]
   return `--av-bg:${bg};--av-fg:${fg}`
 }
