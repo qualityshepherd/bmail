@@ -104,9 +104,37 @@ export function avatarSwatch (str) {
   return `--av-bg:${bg};--av-fg:${fg}`
 }
 
+// Splits on commas outside quotes and <>. An unquoted "Moreale, Manuel <m@x>"
+// glues back together and comes out quoted, so the header stays valid.
 export function parseAddressList (raw) {
   if (!raw) return []
-  return raw.split(',').map((s) => s.trim()).filter(Boolean)
+  const parts = []
+  let cur = ''
+  let quoted = false
+  let angle = false
+  for (const ch of String(raw)) {
+    if (ch === '"') quoted = !quoted
+    else if (ch === '<' && !quoted) angle = true
+    else if (ch === '>' && !quoted) angle = false
+    if (ch === ',' && !quoted && !angle) { parts.push(cur); cur = '' } else cur += ch
+  }
+  parts.push(cur)
+
+  const out = []
+  let name = ''
+  for (const p of parts.map((s) => s.trim()).filter(Boolean)) {
+    if (!p.includes('@')) { name = name ? `${name}, ${p}` : p; continue }
+    // only a <bracketed> address can carry the name; a stray word is left to fail validation
+    if (name && /^[^"<]*<[^>]+>$/.test(p)) {
+      out.push(`"${`${name}, ${p.slice(0, p.indexOf('<')).trim()}`.replace(/"/g, '')}" ${p.slice(p.indexOf('<'))}`)
+    } else {
+      if (name) out.push(name)
+      out.push(p)
+    }
+    name = ''
+  }
+  if (name) out.push(name)
+  return out
 }
 
 export function looksLikeAddress (addr) {

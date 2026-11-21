@@ -121,18 +121,39 @@ export function isMailProvider (domain) {
 
 const ICON_LINK = /<link\b[^>]*\brel=["'][^"']*apple-touch-icon[^"']*["'][^>]*>/i
 
-// A person on their own domain: their site's touch icon is their face, more
-// or less. Declared one first, then the conventional path.
-export async function findTouchIcon (domain, _fetch = fetch) {
+// The site owner's h-card photo, from an IndieWeb homepage: an explicit
+// u-photo inside the first h-card, or the img an <a class="h-card"> wraps.
+const attr = (tag, name) => tag.match(new RegExp(`\\b${name}=["']([^"']+)["']`, 'i'))?.[1]
+export function hCardPhoto (html) {
+  const start = html.search(/\bclass=["'][^"']*\bh-card\b/i)
+  if (start === -1) return null
+  const open = html.lastIndexOf('<', start)
+  // stop at the next post, or a photo blog's entries would lend their u-photos
+  let chunk = html.slice(open, open + 8192)
+  const post = chunk.slice(1).search(/\bclass=["'][^"']*\bh-(entry|feed)\b/i)
+  if (post !== -1) chunk = chunk.slice(0, post + 1)
+  const first = chunk.match(/^<[^>]*>/)?.[0] || ''
+  if (/^<img\b/i.test(first) && /\bu-photo\b/i.test(first)) return attr(first, 'src')
+  const photo = chunk.match(/<(img|a|link|data)\b[^>]*\bclass=["'][^"']*\bu-photo\b[^>]*>/i)?.[0]
+  if (photo) return /^<img/i.test(photo) ? attr(photo, 'src') : attr(photo, 'href') || attr(photo, 'value')
+  // implied photo: the h-card's own first child is an img
+  const implied = chunk.slice(first.length).match(/^\s*<img\b[^>]*>/i)?.[0]
+  return implied ? attr(implied, 'src') : null
+}
+
+// A person on their own domain: their h-card photo is their face, the
+// touch icon is at least their mark. Declared ones first, then the usual path.
+export async function findSiteAvatars (domain, _fetch = fetch) {
   if (!domain || isMailProvider(domain)) return []
   const base = `https://${domain}/`
   const found = []
   try {
     const res = await _fetch(base, { redirect: 'follow', signal: AbortSignal.timeout(5000) })
     if (res.ok) {
-      const html = (await res.text()).slice(0, 65536)
-      const href = html.match(ICON_LINK)?.[0].match(/\bhref=["']([^"']+)["']/i)?.[1]
-      if (href) found.push(new URL(href.replace(/&amp;/g, '&'), res.url || base).href)
+      const html = (await res.text()).slice(0, 262144)
+      const at = (href) => href && found.push(new URL(href.replace(/&amp;/g, '&'), res.url || base).href)
+      at(hCardPhoto(html))
+      at(html.match(ICON_LINK)?.[0].match(/\bhref=["']([^"']+)["']/i)?.[1])
     }
   } catch {}
   found.push(`${base}apple-touch-icon.png`)

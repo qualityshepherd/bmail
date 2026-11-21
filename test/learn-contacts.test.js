@@ -3,7 +3,7 @@ import assert from 'node:assert/strict'
 import { createTestDb } from './helpers/d1-sqlite.js'
 import { upsertContacts, learnContacts, fillContactName, getContactByEmail, getAllContactRows } from '../src/db-contacts.js'
 import { peopleFromSend, toVCards, parseVCards } from '../src/contacts.js'
-import { isMailProvider, findTouchIcon, avatarKey } from '../src/avatars.js'
+import { isMailProvider, findSiteAvatars, hCardPhoto, avatarKey } from '../src/avatars.js'
 import { learnFromSend } from '../src/learn-contacts.js'
 
 const bucket = () => {
@@ -104,12 +104,31 @@ test('isMailProvider: big hosts and their country spellings, not personal domain
   for (const d of ['manuelmoreale.com', 'trout.fish', 'me.brine.dev', 'mail.example.org']) assert.ok(!isMailProvider(d), d)
 })
 
-test('findTouchIcon: the declared icon first, then the usual path; mail hosts get nothing', async () => {
+test('findSiteAvatars: the declared icon first, then the usual path; mail hosts get nothing', async () => {
   const page = html('<head><link href="/img/face.png" rel="apple-touch-icon" sizes="180x180"></head>')
-  const urls = await findTouchIcon('trout.fish', async () => page)
+  const urls = await findSiteAvatars('trout.fish', async () => page)
   assert.deepEqual(urls, ['https://trout.fish/img/face.png', 'https://trout.fish/apple-touch-icon.png'])
-  assert.deepEqual(await findTouchIcon('gmail.com', async () => { throw new Error('fetched') }), [])
-  assert.deepEqual(await findTouchIcon('down.org', async () => { throw new Error('timeout') }), ['https://down.org/apple-touch-icon.png'])
+  assert.deepEqual(await findSiteAvatars('gmail.com', async () => { throw new Error('fetched') }), [])
+  assert.deepEqual(await findSiteAvatars('down.org', async () => { throw new Error('timeout') }), ['https://down.org/apple-touch-icon.png'])
+})
+
+test('hCardPhoto: explicit u-photo, an h-card img, and the implied photo', () => {
+  assert.equal(hCardPhoto('<div class="h-card"><a class="p-name" href="/">K</a><img class="u-photo" alt="" src="/me.jpg"></div>'), '/me.jpg')
+  assert.equal(hCardPhoto('<img src="/me.jpg" class="h-card u-photo" alt="K">'), '/me.jpg')
+  assert.equal(hCardPhoto('<a class="h-card" href="/"><img src="/face.png" alt="K"></a>'), '/face.png')
+  assert.equal(hCardPhoto('<div class="h-card"><a class="u-photo" href="/me.png">photo</a></div>'), '/me.png')
+})
+
+test('hCardPhoto: no h-card, or a byline h-card with post photos after it, is nothing', () => {
+  assert.equal(hCardPhoto('<img class="u-photo" src="/stray.jpg">'), null)
+  assert.equal(hCardPhoto('<span class="h-card">K Trout</span><article class="h-entry"><img class="u-photo" src="/sunset.jpg"></article>'), null)
+})
+
+test('findSiteAvatars: the h-card photo goes ahead of the touch icon', async () => {
+  const page = html('<link rel="apple-touch-icon" href="/icon.png"><div class="h-card"><img class="u-photo" src="https://cdn.trout.fish/me.jpg"></div>')
+  assert.deepEqual(await findSiteAvatars('trout.fish', async () => page), [
+    'https://cdn.trout.fish/me.jpg', 'https://trout.fish/icon.png', 'https://trout.fish/apple-touch-icon.png'
+  ])
 })
 
 test('learnFromSend: a new contact on its own domain gets its touch icon stored', async () => {
