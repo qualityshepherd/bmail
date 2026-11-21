@@ -8,6 +8,7 @@ import {
 } from './db.js'
 import { classifySmsNotification, buildNewMailSmsPayload, buildSmsPauseWarning, SMS_NOTIFICATION_WINDOW_MS } from './notifications.js'
 import { isOversizedRawMessage, attachmentAllowed } from './inbound-limits.js'
+import { fillContactName } from './db-contacts.js'
 
 // Runs the full inbound pipeline for one message. Returns { dropped: true }
 // if the sender was blocklisted, { duplicate: true } if this message was
@@ -99,6 +100,12 @@ export async function ingestEmail ({ message, env }) {
       if (existing) return { dropped: false, duplicate: true, emailId: existing.id }
     }
     throw err
+  }
+
+  // their From line can fill a blank name on someone you already know -
+  // never makes a contact, and spam or a failed dmarc gets no say
+  if (!isSpam && dmarcResult !== 'fail') {
+    await fillContactName(env.DB, parsed.fromAddress || message.from, parsed.senderDisplay).catch(() => {})
   }
 
   const uploadedR2Keys = []

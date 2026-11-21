@@ -7,6 +7,7 @@ import { parseIdentities, findIdentityByAddress } from './identities.js'
 import { isRateLimited, SEND_RATE_LIMIT_MAX_ATTEMPTS, SEND_RATE_LIMIT_WINDOW_MS } from './auth.js'
 import { getRateLimit, incrementRateLimit } from './db-auth.js'
 import { buildAttachments } from './attachment-upload.js'
+import { learnFromSend } from './learn-contacts.js'
 
 export const handleReply = withAuth(async (req, env, ctx, session, emailId) => {
   // Shares the send_attempts bucket with /compose - the thing being bounded
@@ -87,6 +88,7 @@ export const handleReply = withAuth(async (req, env, ctx, session, emailId) => {
       attachments: attachments.length ? attachments : undefined
     })
     await updateSentStatus(env.DB, sentId, 'sent')
+    ctx.waitUntil(learnFromSend(env, { to: toList, cc: ccList, own: identities.map((i) => i.address), repliedTo: email }).catch(() => {}))
   } catch (err) {
     console.error('Bmail reply send failed:', err)
     await updateSentStatus(env.DB, sentId, 'failed', err.message || 'unknown error').catch(() => {})

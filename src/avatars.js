@@ -102,3 +102,39 @@ export async function reconcileAvatars (env, avatarUrls) {
   }
   return stale.length
 }
+
+// Big mail hosts - their site icon is the provider's logo, not the person
+const MAIL_HOSTS = new Set([
+  'gmail.com', 'googlemail.com', 'icloud.com', 'me.com', 'mac.com', 'msn.com',
+  'aol.com', 'proton.me', 'protonmail.com', 'pm.me', 'fastmail.com', 'fastmail.fm',
+  'mail.com', 'zoho.com', 'hey.com', 'tutanota.com', 'tuta.io', 'duck.com',
+  'qq.com', '163.com', '126.com', 'ymail.com', 'rocketmail.com', 'web.de',
+  'comcast.net', 'verizon.net', 'att.net', 'sbcglobal.net'
+])
+// the ones with a country spelling: yahoo.co.uk, hotmail.fr, gmx.de...
+const MAIL_FAMILIES = /^(yahoo|hotmail|outlook|live|gmx|yandex)\.[a-z.]+$/
+
+export function isMailProvider (domain) {
+  const d = String(domain || '').toLowerCase()
+  return MAIL_HOSTS.has(d) || MAIL_FAMILIES.test(d)
+}
+
+const ICON_LINK = /<link\b[^>]*\brel=["'][^"']*apple-touch-icon[^"']*["'][^>]*>/i
+
+// A person on their own domain: their site's touch icon is their face, more
+// or less. Declared one first, then the conventional path.
+export async function findTouchIcon (domain, _fetch = fetch) {
+  if (!domain || isMailProvider(domain)) return []
+  const base = `https://${domain}/`
+  const found = []
+  try {
+    const res = await _fetch(base, { redirect: 'follow', signal: AbortSignal.timeout(5000) })
+    if (res.ok) {
+      const html = (await res.text()).slice(0, 65536)
+      const href = html.match(ICON_LINK)?.[0].match(/\bhref=["']([^"']+)["']/i)?.[1]
+      if (href) found.push(new URL(href.replace(/&amp;/g, '&'), res.url || base).href)
+    }
+  } catch {}
+  found.push(`${base}apple-touch-icon.png`)
+  return [...new Set(found)].filter((u) => /^https:\/\//i.test(u))
+}

@@ -1,6 +1,6 @@
 import { withAuth } from './auth-routes.js'
-import { upsertContacts, deleteAllContacts, getAllAvatarUrls } from './db-contacts.js'
-import { parseVCards } from './contacts.js'
+import { upsertContacts, deleteAllContacts, getAllAvatarUrls, getAllContactRows } from './db-contacts.js'
+import { parseVCards, toVCards } from './contacts.js'
 import { cacheAvatars, reconcileAvatars } from './avatars.js'
 
 export function renderContactsTab (contactCount) {
@@ -10,7 +10,8 @@ export function renderContactsTab (contactCount) {
 
   return `<section class="settings-section">
     <p class="settings-hint">Paste the contents of a <code>.vcf</code> file to import contacts.
-       Names and photos are used in the inbox. New contacts are added; existing overwritten.
+       Names and photos are used in the inbox. Imported names and photos replace what's there,
+       but a blank in the file never erases one. Anyone you send mail to is added too.
        Photos are downloaded once, here, and served from Bmail &mdash; your browser never
        requests anything from the host the vCard pointed at. Base64 photos are skipped;
        they may take a moment to appear after importing.</p>
@@ -19,6 +20,7 @@ export function renderContactsTab (contactCount) {
       <textarea name="vcf" rows="5" placeholder="BEGIN:VCARD&#10;VERSION:3.0&#10;FN:Jane Smith&#10;EMAIL:jane@example.com&#10;PHOTO;VALUE=URI:https://example.com/jane.jpg&#10;END:VCARD"></textarea>
       <button type="submit" class="btn-outline">Import contacts</button>
     </form>
+    ${contactCount > 0 ? '<p><a class="btn-outline" href="/settings/contacts/export" download>Export contacts (.vcf)</a></p>' : ''}
     ${contactCount > 0
       ? `<details class="clear-contacts">
            <summary>Clear all contacts</summary>
@@ -59,4 +61,15 @@ export const handleSettingsClearContacts = withAuth(async (req, env, ctx) => {
   // address book leaves everyone's face sitting in the bucket.
   ctx.waitUntil(reconcileAvatars(env, []).catch(() => {}))
   return new Response(null, { status: 302, headers: { Location: '/settings?tab=contacts' } })
+})
+
+export const handleSettingsExportContacts = withAuth(async (req, env) => {
+  const vcf = toVCards(await getAllContactRows(env.DB))
+  return new Response(vcf, {
+    headers: {
+      'Content-Type': 'text/vcard; charset=utf-8',
+      'Content-Disposition': 'attachment; filename="bmail-contacts.vcf"',
+      'Cache-Control': 'no-store'
+    }
+  })
 })

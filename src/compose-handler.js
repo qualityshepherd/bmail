@@ -11,6 +11,7 @@ import {
 } from './auth.js'
 import { getRateLimit, incrementRateLimit, getSendVolume, incrementSendVolume } from './db-auth.js'
 import { buildAttachments } from './attachment-upload.js'
+import { learnFromSend } from './learn-contacts.js'
 
 const SEND_VOLUME_GLOBAL_ID = 1
 const SEND_VOLUME_DAILY_ID = 2
@@ -117,6 +118,7 @@ export const handleCompose = withAuth(async (req, env, ctx, session) => {
       attachments: attachments.length ? attachments : undefined
     })
     await updateSentStatus(env.DB, sentId, 'sent')
+    ctx.waitUntil(learnFromSend(env, { to: toList, cc: ccList, own: identities.map((i) => i.address) }).catch(() => {}))
   } catch (err) {
     console.error('Bmail compose send failed:', err)
     await updateSentStatus(env.DB, sentId, 'failed', err.message || 'unknown error').catch(() => {})

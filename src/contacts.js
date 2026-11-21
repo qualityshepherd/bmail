@@ -16,6 +16,8 @@ export function parseVCards (text) {
       continue
     }
     if (upper === 'END:VCARD') {
+      // our own export writes the address as FN when there's no name
+      if (current && current.name.toLowerCase() === current.email) current.name = ''
       if (current && current.email) results.push(current)
       current = null
       continue
@@ -33,7 +35,7 @@ export function parseVCards (text) {
 
     // FN (formatted/full name) — take the first one seen
     if (propFull === 'FN' && !current.name) {
-      current.name = value
+      current.name = value.replace(/\\([\\,;nN])/g, (_, c) => c === 'n' || c === 'N' ? ' ' : c)
       continue
     }
 
@@ -58,4 +60,46 @@ export function parseVCards (text) {
   }
 
   return results
+}
+
+// vCard 3.0 text escaping: backslash first, then the separators
+const vEsc = (s) => String(s || '').replace(/\\/g, '\\\\').replace(/\r?\n/g, '\\n').replace(/([,;])/g, '\\$1')
+
+// The photo goes out as its original url, not the bytes - small file, and
+// Apple and Google both follow a PHOTO uri. A dead link is just no photo.
+export function toVCards (contacts) {
+  return contacts.map((c) => [
+    'BEGIN:VCARD',
+    'VERSION:3.0',
+    `FN:${vEsc(c.name || c.email)}`,
+    `N:${vEsc(c.name)};;;;`,
+    `EMAIL;TYPE=INTERNET:${c.email}`,
+    ...(/^https?:\/\//i.test(c.avatar_url || '') ? [`PHOTO;VALUE=URI:${c.avatar_url}`] : []),
+    'END:VCARD'
+  ].join('\r\n')).join('\r\n') + (contacts.length ? '\r\n' : '')
+}
+
+// "K Trout <k@trout.fish>" -> typed name; a bare address has no opinion.
+const typedName = (addr) => {
+  const m = String(addr || '').match(/^\s*"?(.*?)"?\s*<[^>]+>\s*$/)
+  return m ? m[1].trim() : ''
+}
+
+// Who a send teaches us about: To and Cc, never Bcc, never our own
+// addresses. A reply with no typed name borrows the From name of the
+// mail being answered - as a fill, not an overwrite.
+export function peopleFromSend ({ to = [], cc = [], own = [], repliedTo = null }) {
+  const mine = new Set(own.map((a) => String(a).trim().toLowerCase()))
+  const theirs = new Set([repliedTo?.from_address, repliedTo?.sender].filter(Boolean).map((a) => a.trim().toLowerCase()))
+  const seen = new Map()
+  for (const addr of [...to, ...cc]) {
+    const m = String(addr).match(/<([^>]+)>/)
+    const email = (m ? m[1] : String(addr)).trim().toLowerCase()
+    if (!email.includes('@') || mine.has(email) || seen.has(email)) continue
+    const name = typedName(addr)
+    if (name) seen.set(email, { email, name, typed: true })
+    else if (theirs.has(email) && repliedTo.sender_display) seen.set(email, { email, name: repliedTo.sender_display, typed: false })
+    else seen.set(email, { email, name: '', typed: false })
+  }
+  return [...seen.values()]
 }

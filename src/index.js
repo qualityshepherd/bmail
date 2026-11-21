@@ -32,7 +32,7 @@ import { handleArchiveAll } from './archive-all-handler.js'
 import { handleSettingsPage } from './settings-page.js'
 import { handleSettingsSaveIdentities } from './settings-identities.js'
 import { handleSettingsSaveAppearance } from './settings-appearance.js'
-import { handleSettingsImportContacts, handleSettingsClearContacts } from './settings-contacts.js'
+import { handleSettingsImportContacts, handleSettingsClearContacts, handleSettingsExportContacts } from './settings-contacts.js'
 import { handleSettingsSaveFilters } from './settings-filters.js'
 import { handleSentView } from './sent-view.js'
 import { handleUnsubscribe } from './unsubscribe-handler.js'
@@ -75,6 +75,7 @@ const ROUTES = [
   ['POST', '/settings/appearance', (req, env, ctx) => handleSettingsSaveAppearance(req, env, ctx)],
   ['POST', '/settings/contacts', (req, env, ctx) => handleSettingsImportContacts(req, env, ctx)],
   ['POST', '/settings/contacts/clear', (req, env, ctx) => handleSettingsClearContacts(req, env, ctx)],
+  ['GET', '/settings/contacts/export', (req, env, ctx) => handleSettingsExportContacts(req, env, ctx)],
   ['POST', '/settings/filters', (req, env, ctx) => handleSettingsSaveFilters(req, env, ctx)],
   ['POST', '/trash/empty', (req, env, ctx) => handleEmptyTrash(req, env, ctx)],
   ['POST', '/spam/empty', (req, env, ctx) => handleEmptySpam(req, env, ctx)],
